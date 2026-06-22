@@ -28,8 +28,9 @@ of "is this proven?" are not.
 | 7. Ship | `flow-ship` | Assemble a PR/MR draft from the specs (suggest, don't run) |
 
 - **Entry:** `flow-start` begins (or resumes) a ticket and scaffolds its `.specs/` record.
-- **Anytime utilities:** `flow-status` (the compass — where am I, what's next) and
-  `flow-context` (add context the ticket and code don't carry).
+- **Anytime utilities:** `flow-status` (the compass — where am I, what's next),
+  `flow-context` (add context the ticket and code don't carry), and `flow-help`
+  (explain the flow and answer questions).
 
 Navigation is **human-driven and bidirectional**: the AI recommends and proves; you
 choose to advance, repeat, or regress. A regression is logged, not lost.

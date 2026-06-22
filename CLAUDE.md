@@ -41,9 +41,12 @@ human converges and decides.**
   navigation rules). Every skill reads it + the ticket's `state.md` at start. This
   is how independent skills stay DRY without referencing each other's files.
 - **Skills are independent and invocable** (`flow-start`, `flow-understand`,
-  `flow-explore`, `flow-plan`, `flow-execute`, `flow-verify`, `flow-design`,
-  `flow-ship`, `flow-status`). `flow-status` reads `state.md` and recommends the
-  next skill; each skill also updates state and suggests the next move on exit.
+  `flow-design`, `flow-explore`, `flow-plan`, `flow-execute`, `flow-verify`,
+  `flow-ship`, plus utilities `flow-status`, `flow-context`, `flow-help`).
+  `flow-status` reads `state.md` and recommends the next skill; `flow-context`
+  appends developer context; `flow-help` explains the flow; each phase skill also
+  updates state and suggests the next move on exit. Help/explainer skills must be
+  self-contained — only `.apm/` ships to consumers, not `docs/`.
 - **Navigation is human-driven and bidirectional.** The AI never auto-advances a
   phase. It recommends and proves; the developer chooses advance / repeat / regress.
   Regression is a logged entry, not lost history.

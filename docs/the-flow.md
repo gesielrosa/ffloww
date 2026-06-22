@@ -100,3 +100,5 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
   recommends the next skill. Changes nothing.
 - **`flow-context`** — append developer context to `context.md` at any point. See
   [the context channel](context-channel.md).
+- **`flow-help`** — explains the flow and answers questions about it, in plain language
+  (read-only). For "where am I", use `flow-status`.

@@ -95,3 +95,10 @@ recommends the next move on exit. None of them run `git`.
   decision. Does not change phase, write code, or run git.
 
 See [the context channel](context-channel.md).
+
+## `flow-help` — explain the flow
+
+- **When:** anytime the developer wants to understand the flow or has questions about it.
+- **Does:** explains the phases, skills, principles, navigation, and `.specs/` in plain
+  language; tailors to an active ticket via `CONVENTIONS.md`/`state.md` when present.
+  Read-only — it teaches and changes nothing. For "where am I", use `flow-status`.
