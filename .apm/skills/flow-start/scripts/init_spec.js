@@ -304,7 +304,7 @@ function writeFile(filePath, content, { overwrite = true } = {}) {
 function ensureConventions(specsRoot) {
     const file = path.join(specsRoot, 'CONVENTIONS.md');
     const written = writeFile(file, fill(CONVENTIONS_TEMPLATE, { date: today() }), { overwrite: false });
-    console.log(written ? '✅ Created .specs/CONVENTIONS.md' : 'ℹ️  .specs/CONVENTIONS.md already exists (kept)');
+    console.log(written ? '[ok] Created .specs/CONVENTIONS.md' : '[skip] .specs/CONVENTIONS.md already exists (kept)');
 }
 
 /** Scaffold a ticket folder. Returns the ticket dir, or null on error/no-op. */
@@ -315,7 +315,7 @@ function initSpec(ticket, root, title) {
     ensureConventions(specsRoot);
 
     if (fs.existsSync(ticketDir)) {
-        console.log(`ℹ️  ${path.join('.specs', ticket)} already initialized — skipping (no files overwritten).`);
+        console.log(`[skip] ${path.join('.specs', ticket)} already initialized — skipping (no files overwritten).`);
         return null;
     }
 
@@ -330,7 +330,7 @@ function initSpec(ticket, root, title) {
     writeFile(path.join(ticketDir, 'steps', '_TEMPLATE.md'), STEP_TEMPLATE);
     writeFile(path.join(ticketDir, 'assets', '.gitkeep'), '');
 
-    console.log(`✅ Scaffolded ${path.join('.specs', ticket)}/ (state.md, understanding.md, context.md, discoveries.md, decisions.md, plan.md, steps/, assets/)`);
+    console.log(`[ok] Scaffolded ${path.join('.specs', ticket)}/ (state.md, understanding.md, context.md, discoveries.md, decisions.md, plan.md, steps/, assets/)`);
     return ticketDir;
 }
 
@@ -360,11 +360,11 @@ function main() {
         process.exit(1);
     }
     if (ticket.includes('/') || ticket.includes('\\')) {
-        console.log('❌ Error: ticket id must not contain path separators.');
+        console.log('[error] ticket id must not contain path separators.');
         process.exit(1);
     }
 
-    console.log(`🚀 Initializing .specs for ticket: ${ticket}`);
+    console.log(`[init] Initializing .specs for ticket: ${ticket}`);
     console.log(`   Project root: ${path.resolve(root)}`);
     console.log();
 
