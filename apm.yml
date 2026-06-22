@@ -1,0 +1,38 @@
+name: ffloww
+version: 0.1.0
+description: >-
+  Ticket-to-PR development flow as installable APM skills. A set of invocable
+  flow-* skills (plus the azure-devops and figma MCP servers) that guide a
+  developer through understand -> design -> explore -> plan -> execute -> verify
+  -> ship, keeping .specs/ as the durable, auditable record. The AI navigates
+  and proves; the developer decides, validates, and owns. Git and PR steps are
+  suggested, never executed, so the package stays repo- and platform-agnostic.
+author: gesielrosa
+license: MIT
+keywords:
+  - workflow
+  - dev-flow
+  - specs
+  - spec-driven
+  - azure-devops
+  - figma
+targets:
+  - claude
+  - copilot
+includes: auto
+dependencies:
+  apm: []
+  mcp:
+    - name: azure-devops
+      registry: false
+      transport: stdio
+      command: npx
+      args:
+        - -y
+        - '@azure-devops/mcp'
+        - 'HAL-LMKSRVST'
+    - name: figma
+      registry: false
+      transport: http
+      url: https://mcp.figma.com/mcp
+scripts: {}
