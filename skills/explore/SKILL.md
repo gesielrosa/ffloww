@@ -28,10 +28,11 @@ about the code rests on a `file:line` reference you have read.
 
 1. **Map the relevant code.** Find where the affected behavior lives, how data and control
    flow through it, what it touches (callers, tests, configs), and the prior art to
-   follow. Split this into two to four focused questions and, in one message, call the
-   Agent tool once per question with subagent_type `flow:code-mapper`, passing the ticket
-   id, the project root, the question, and any known starting points. They run in
-   parallel, keep their file reads in their own contexts, and each returns a compact map.
+   follow. Code that fits in a few files is read directly. For anything larger, split
+   the mapping into two to four focused questions and, in one message, call the Agent
+   tool once per question with subagent_type `flow:code-mapper`, passing the ticket id,
+   the project root, the question, and any known starting points. They run in parallel,
+   keep their file reads in their own contexts, and each returns a compact map.
 
 2. **Check before you rely on it.** A mapper's entry is a lead until you have read it:
    open the cited lines the options will rest on. Record the map in `discoveries.md` with

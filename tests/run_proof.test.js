@@ -78,3 +78,13 @@ test('references to secrets and ordinary output stay as they are', () => {
     assert.match(entry, /^Tests: 12 passed, tokens: 1200$/m);
     assert.doesNotMatch(entry, /Redacted/);
 });
+
+test("a chained or piped command is noted, since its exit code is the last part's", () => {
+    const { root, dir } = project('AB-1', [['01', 'x']]);
+    const piped = run('run_proof.js', ['AB-1', '01', '--root', root, '--cmd', 'false | true']);
+    assert.match(piped.out, /Exit code: 0\n {3}Note: {6}the exit code is the last part's \(the command chains with "\|"\)/);
+    run('run_proof.js', ['AB-1', '01', '--root', root, '--cmd', "true && echo 'a; b | c'"]);
+    const [first, second] = runEntries(fs.readFileSync(path.join(dir, 'steps', '01-x.md'), 'utf8'));
+    assert.match(first, /- Exit code: 0\n- Note: the exit code is the last part's/);
+    assert.doesNotMatch(second, /- Note:/);
+});

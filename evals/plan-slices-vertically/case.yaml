@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: plan-slices-vertically
+description: Given the developer's choices up front, /flow:plan writes the ADR and slices INV-42 into vertical steps, each provable through the CLI, then asks about granularity; it writes no production code.
+tags: [plan]
+context:
+  scaffold_script: scaffold.sh

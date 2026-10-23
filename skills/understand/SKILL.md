@@ -32,10 +32,12 @@ stop.
      drafts, and confirm each one with the developer.
    - **Open questions**: anything to resolve before planning.
 
-3. **Ask for extra context.** Present the draft (problem + acceptance criteria) and ask
-   for what the ticket and the codebase do not carry: links (Slack, docs, related PRs or
-   incidents), hard constraints, out-of-ticket decisions, gotchas, related work. Append
-   what the developer gives to `context.md` and refine the understanding with it.
+3. **Gather extra context.** Record the background the developer already gave, then
+   present the draft (problem + acceptance criteria) and ask for what the ticket and the
+   codebase still do not carry: links (Slack, docs, related PRs or incidents), hard
+   constraints, out-of-ticket decisions, gotchas, related work. Background goes to
+   `context.md`; an answer that refines an acceptance criterion goes into that criterion
+   in `understanding.md`, so each fact lives in one place.
 
 4. **Determine design involvement.** Infer it from the work (screens, components, UI
    changes, visual wording); a Figma link is often missing from the ticket. When there is
@@ -54,6 +56,9 @@ stop.
 
 ## Handoff
 
-Summarize the problem and acceptance criteria for a quick sanity check. Then name the
-next command from the `Next:` line of the state output, and suggest `/clear` before it:
-the understanding is on disk.
+While open questions that shape an acceptance criterion remain, end your turn with
+them: numbered, together, each with your recommended answer. The developer answers
+them, or chooses to carry them forward (they stay under Open questions). Once that is
+settled, summarize the problem and acceptance criteria for a quick sanity check, name
+the next command from the `Next:` line of the state output, and suggest `/clear` before
+it: the understanding is on disk.

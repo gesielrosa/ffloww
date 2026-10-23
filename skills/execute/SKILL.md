@@ -61,9 +61,10 @@ and stop.
    lists every changed and new file, `git diff` shows the changes to tracked files, and
    each new (untracked) file is read in full, since `git diff` leaves it out.
 
-5. **Open the human gate.** Present the evidence and the change, and ask the developer to
-   validate them: approve / request changes / regress. Record the decision (who + when)
-   in the step's **Gate** section. On approval, run
+5. **Open the human gate.** A passing proof readies the step for the gate; the
+   developer's approval is what makes it `proven`. Present the evidence and the change,
+   and ask the developer to validate them: approve / request changes / regress. Record
+   the decision (who + when) in the step's **Gate** section. On approval, run
    `state.js <ticket-id> step <step-id> proven`.
 
 6. **Draft the commit.** On approval, propose a commit message for this step in the

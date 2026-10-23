@@ -93,7 +93,8 @@ human converges and decides.**
   `verification.md`). Recorded evidence cannot be edited afterwards, so the runner masks
   secrets first (`scripts/lib/redact.js`: secret-named env var values, auth headers,
   `key=value` credentials, URL credentials, private keys, known token formats) and the
-  entry notes the count.
+  entry notes the count. A proof's exit code is its verdict, so the runner also notes a
+  command chained with `;`, `||` or a pipe (its exit code is the last part's).
 - **A cleared session resumes from disk.** A `SessionStart` hook
   (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds

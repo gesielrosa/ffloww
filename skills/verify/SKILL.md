@@ -39,9 +39,10 @@ steps are done.
      node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> ticket --label "AC <n>: <criterion>" --root "<project-root>" --tail 15 --cmd "<command>"
      ```
 
-   The runner saves the full output to `evidence/` and records the exact command, its
-   exit code, and the last lines. Give the Bash call a timeout that fits the proof; read
-   the log when you need more than the last lines. A criterion no command proves (a
+   Each command exits non-zero exactly when its criterion fails. The runner saves the
+   full output to `evidence/` and records the exact command, its exit code, and the last
+   lines. Give the Bash call a timeout that fits the proof; read the log when you need
+   more than the last lines. A criterion no command proves (a
    screenshot, a manual check) gets an entry by hand with the screenshot path, or is
    listed as needing the developer: every acceptance criterion ends up with evidence or
    a named gap.

@@ -76,8 +76,10 @@ only ticket in progress under \`.specs/\`, or ask which.
 \`state.md\` changes only through the flow's state script (\`state.js\`: \`show\`, \`phase\`,
 \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand edits.
 Phases move forward freely; moving back is a regression and needs a reason, recorded in
-\`decisions.md\` too. A step moves \`todo → in-progress → proven → done\`, one at a time,
-and the next step starts once the previous one is committed.
+\`decisions.md\` too. A step moves \`todo → in-progress → proven\` (approved at its gate)
+\`→ done\` (committed), one at a time, and the next step starts once the previous one is
+committed. Before the gate, a step's proof passes or fails; only the developer's
+approval makes it \`proven\`.
 
 ## Roles
 
@@ -91,6 +93,11 @@ and the next step starts once the previous one is committed.
 
 - Proof is raw evidence recorded by the proof runner (\`run_proof.js\`): command, exit
   code, real output; or a screenshot path. Numbers, not opinions.
+- A proof's exit code is its verdict: each proof command exits non-zero exactly when its
+  criterion fails (\`! cmd\` when a failure is expected). The runner keeps the full
+  output, so no \`| tail\` or \`; echo $?\` is needed; it notes a command chained with
+  \`;\`, \`||\` or a pipe, whose exit code is its last part's, so that part carries the
+  verdict.
 - The developer grades the evidence at the step's \`Gate\`; the assistant presents it
   and records the decision. Recorded evidence is immutable: a new result is a new run.
 - Proofs read credentials from environment variables; the runner masks the secrets it

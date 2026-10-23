@@ -36,9 +36,10 @@ skills that cover the work of the step.
    `node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> <step-id> --root "<project-root>" --cmd "<command>"`.
    The runner saves the full output under `evidence/` and appends the entry to the step's
    Evidence section; it prints the exit code and the last lines. Give the Bash call a timeout that
-   fits the proof. To see more than the last lines, read the log it names. A proof that is not a
-   command (a screenshot) goes to the path the Proof names, and you add an Evidence entry with
-   that path.
+   fits the proof. To see more than the last lines, read the log it names. When the runner notes
+   a command chained with `;`, `||` or a pipe, its exit code is the last part's: say in your reply
+   whether that part carries the verdict. A proof that is not a command (a screenshot) goes to the
+   path the Proof names, and you add an Evidence entry with that path.
 3. **Loop on failure, up to three proof attempts.** If the proof fails, fix and re-run it through
    the runner. After three failing attempts, stop and return.
 4. **On change requests,** apply them within the step's scope and re-run the proof through the

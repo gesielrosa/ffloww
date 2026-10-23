@@ -34,7 +34,10 @@ next phase. Reading the ticket itself starts in `/flow:understand`.
    ```
 
 4. **Orient.**
-   - **New ticket**: report the ticket folder and the files created.
+   - **New ticket**: report the ticket folder and the files created. When the current
+     branch (`git branch --show-current`) is the default one (`main`, `master`, or the
+     remote's), suggest a ticket branch before the first commit, as a command for the
+     developer to run (e.g. `git switch -c <ticket-id>-<slug>`).
    - **Existing ticket** (skipped): this is a resume. Summarize the phase, the step
      statuses, and the last navigation entries.
 

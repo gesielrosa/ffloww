@@ -23,19 +23,24 @@ and `verification.md` when a whole-ticket check was run.
    recorded evidence. When something is missing, stop and name the command that closes
    the gap (`/flow:execute` or `/flow:verify`): only proven, approved work ships.
 
-2. **Assemble the PR/MR draft** from the specs alone:
-   - **Summary**: the problem and scope (from `understanding.md`).
+2. **Assemble the PR/MR draft** from the specs alone, for a reviewer who sees only the PR:
+   - **Summary**: the problem and scope (from `understanding.md`), then the smallest view
+     that makes the change clear: a call tree, a file tree, or a diff sketch.
    - **Approach**: the decision and trade-offs (from `decisions.md`).
-   - **Acceptance criteria**: the checklist, each marked with how it was met and a
-     pointer to its evidence.
-   - **Steps**: a short per-step summary with evidence highlights.
+   - **Acceptance criteria**: the checklist, each with its proof inline: the command, its
+     exit code, and the decisive output line. `.specs/` may stay out of the repository,
+     so a log path alone proves nothing to the reviewer.
+   - **Merge danger**: a one-way or two-way door (how hard it is to roll back), and the
+     blast radius (what else it can affect).
+   - **Steps**: one line each.
    - **Work item**: the link.
 
    Save it to `.specs/<ticket-id>/pr.md` and show it to the developer.
 
-3. **Suggest the ship sequence**: create a branch (a name suggested from the ticket),
-   push, and open the PR/MR with the draft, as commands for the developer to run. Their
-   conventions (host, branch and commit style) decide the final form.
+3. **Suggest the ship sequence**, built from what `git branch` and `git remote -v` show:
+   create a branch (a name suggested from the ticket) when the work sits on the default
+   branch, push, and open the PR/MR with the draft, as commands for the developer to
+   run. Their conventions (host, branch and commit style) decide the final form.
 
 4. **Update state** through the state script, from the project root; once the developer
    confirms it is shipped, move to `done` the same way:

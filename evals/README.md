@@ -10,6 +10,7 @@ the files left behind.
 | `start-names-next-command` | `/flow:start` scaffolds `.specs/`, stays in `start`, and names `/flow:understand <id>` |
 | `status-names-next-command` | a plain "where are we?" reaches the status report, read-only, with the next command |
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
+| `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
 
 Run from the repository root:
@@ -30,3 +31,7 @@ To compare two versions of the flow, extract each into its own folder with this 
 copied in, run both with the same flags and `--json <file>`, and compare
 `aggregates.overallScore` and each case's score. Results land in `evals/results/`, which
 git ignores.
+
+`plan-slices-vertically/scaffold.sh` is generated: it writes the invoice-tool fixture and
+INV-42's `.specs` at the explore phase with heredocs, from the rehearsal run that found
+the horizontal slicing. Edit it as a fixture, not by hand-tuning the plan it leads to.

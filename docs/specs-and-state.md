@@ -127,6 +127,11 @@ secrets (`*_TOKEN`, `*_PASSWORD`, `*_PAT`, …), auth headers, `key=value` crede
 credentials in URLs, private keys, and well-known token formats. The entry notes how
 many were masked. Proofs should read credentials from environment variables.
 
+A proof's exit code is its verdict: each proof command exits non-zero exactly when its
+criterion fails (`! cmd` when a failure is expected). A command chained with `;`, `||`
+or a pipe reports its last part's exit code (`cmd; echo $?` always exits 0), so the
+runner adds a note to such an entry, and the last part has to carry the verdict.
+
 ## Gates — "make it prove it"
 
 A step is not done because the agent says so:

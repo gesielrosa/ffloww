@@ -17,7 +17,7 @@ writes.
 - **Does:** collects the ticket id (+ optional title); runs `init_spec.js` to scaffold
   `.specs/<ticket-id>/` and the repo-level `CONVENTIONS.md` (refreshed while unedited);
   orients from `state.md`. On an existing ticket it resumes and points to the current
-  phase.
+  phase; on a new one it suggests a ticket branch when you are on the default branch.
 - **Writes:** the `.specs/` scaffold.
 - **Hands off to:** `/flow:understand` (new ticket) or the current-phase skill (resume).
 
@@ -55,7 +55,8 @@ writes.
 
 - **When:** after exploring, to converge.
 - **Does:** records your chosen approach as an ADR; agrees the proof strategy; slices
-  the work into small, provable steps; marks who builds each (`delegate` to a Sonnet
+  the work into vertical, provable steps (tracer bullets); marks who builds each
+  (`delegate` to a Sonnet
   subagent, `delegate-light` to a Haiku one, or `inline`).
 - **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; sets
   `proof_definition` and `steps:` in `state.md`.
@@ -88,9 +89,10 @@ writes.
 ## `/flow:ship` — phase 7
 
 - **When:** all steps done and verified.
-- **Does:** assembles a PR/MR draft from the specs; suggests the ship sequence (branch,
-  push, open PR). **Suggests, never executes** — no git, no assumptions about your VCS
-  host or commit conventions.
+- **Does:** assembles a PR/MR draft from the specs, for a reviewer who sees only the PR
+  (the smallest view of the change, each acceptance criterion with its proof inline,
+  merge danger); suggests the ship sequence (branch, push, open PR). **Suggests, never
+  executes** — no git, no assumptions about your VCS host or commit conventions.
 - **Writes:** `pr.md`; sets `phase: ship` (then `done` once you confirm shipped).
 - **Hands off to:** you.
 

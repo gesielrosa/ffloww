@@ -88,6 +88,29 @@ function fenceFor(text) {
     return '`'.repeat(Math.max(3, longestRun(text, '`') + 1));
 }
 
+/**
+ * The shell operators, outside quotes, that leave the exit code to the command's last
+ * part: ";", "||" and a pipe. ("&&" fails when any part fails, so it keeps the verdict.)
+ */
+function maskingOperators(cmd) {
+    const found = new Set();
+    let quote = null;
+    for (let i = 0; i < cmd.length; i++) {
+        const c = cmd[i];
+        if (quote) {
+            if (c === '\\' && quote === '"') i++;
+            else if (c === quote) quote = null;
+        } else if (c === '\\') i++;
+        else if (c === "'" || c === '"') quote = c;
+        else if (c === ';') found.add(';');
+        else if (c === '|' && cmd[i + 1] === '|') {
+            found.add('||');
+            i++;
+        } else if (c === '|') found.add('|');
+    }
+    return [...found];
+}
+
 /** Find the step spec for a step id: steps/<id>-<slug>.md (or steps/<id>.md). */
 function findStepFile(stepsDir, stepId) {
     if (!fs.existsSync(stepsDir)) return { error: `no steps/ folder in ${stepsDir}` };
@@ -216,6 +239,8 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     fs.appendFileSync(logFile, `\n# finished: ${isoStamp(finished)}\n# exit code: ${exit}\n`, 'utf8');
 
     const logRel = path.relative(ticketDir, logFile).split(path.sep).join('/');
+    const operators = maskingOperators(cmd);
+    const note = operators.length > 0 ? `the exit code is the last part's (the command chains with ${operators.map((o) => `"${o}"`).join(', ')})` : '';
     const excerptText = excerpt.join('\n');
     const fence = fenceFor(excerptText);
     const entry = [
@@ -223,6 +248,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
         '',
         `- Command: ${inlineCode(shown.text)}`,
         `- Exit code: ${exit}`,
+        ...(note ? [`- Note: ${note}`] : []),
         `- Duration: ${seconds}s`,
         `- Log: ${inlineCode(logRel)} (${plural(lines.length, 'line')})`,
         ...(redacted > 0 ? [`- Redacted: ${plural(redacted, 'secret')}`] : []),
@@ -233,7 +259,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     ];
     appendEvidence(found.file, entry);
 
-    return { specFile: found.file, logFile, exit, seconds, total: lines.length, excerpt, command: shown.text, redacted };
+    return { specFile: found.file, logFile, exit, note, seconds, total: lines.length, excerpt, command: shown.text, redacted };
 }
 
 function parseArgs(argv) {
@@ -289,6 +315,7 @@ function main() {
     console.log(`[ok] Evidence recorded in ${path.relative(root, run.specFile)}`);
     console.log(`   Command:   ${run.command}`);
     console.log(`   Exit code: ${run.exit}`);
+    if (run.note) console.log(`   Note:      ${run.note}; write the proof so its exit code is the verdict`);
     console.log(`   Duration:  ${run.seconds}s`);
     console.log(`   Log:       ${path.relative(root, run.logFile)} (${plural(run.total, 'line')})`);
     if (run.redacted > 0) console.log(`   Redacted:  ${plural(run.redacted, 'secret')}`);

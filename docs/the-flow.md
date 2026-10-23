@@ -18,7 +18,8 @@ a phase by itself (each phase skill sets `disable-model-invocation`).
 Begins or resumes a ticket. Collects the ticket id (and an optional title) and runs
 the bundled `init_spec.js` to scaffold `.specs/<ticket-id>/` and the repo-level
 `CONVENTIONS.md`. If the ticket already exists, it resumes: it reads `state.md` and
-points to the skill for the current phase. It does no analysis itself.
+points to the skill for the current phase. On a new ticket it suggests a ticket branch
+when you are on the default branch, before the first commit. It does no analysis itself.
 
 ## 1. Understand — `/flow:understand`
 
@@ -28,7 +29,11 @@ Captures *what* must be built and *why*, before any code is explored.
 - Fills `understanding.md`: ticket link, problem, scope/non-goals, and **acceptance
   criteria**. It never invents acceptance criteria — it confirms gaps with you.
 - **Asks for extra context** after drafting the understanding — links, constraints,
-  out-of-ticket decisions, gotchas — and saves it to `context.md`.
+  out-of-ticket decisions, gotchas — and saves it to `context.md`; an answer that refines
+  an acceptance criterion goes into the criterion itself.
+- Closes once the open questions that shape the acceptance criteria are answered (or
+  you choose to carry them forward), asking the remaining ones together, each with a
+  recommended answer.
 - **Determines design involvement actively.** It infers design from the work and does
   not rely on a Figma link being in the ticket; when unsure, it asks. Sets
   `design_involved` accordingly.
@@ -62,8 +67,13 @@ The convergent phase. You architect, it types.
   `decisions.md` (context, decision, trade-offs, consequences).
 - Agrees the **proof strategy** (project-defined; often tests) and writes it to
   `state.md` as `proof_definition`.
-- Slices the work into small steps: one `steps/NN-<slug>.md` each (from
-  `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`.
+- Slices the work into **vertical** steps (tracer bullets): each a narrow path through
+  every layer it touches, provable on its own through the entry point the acceptance
+  criteria use; refactoring that makes the change easy comes first, and a wide
+  mechanical change goes expand–contract. One `steps/NN-<slug>.md` each (from
+  `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`, and each proof command
+  exits non-zero exactly when its step fails. It asks you whether the granularity is
+  right before you approve.
 - Marks who builds each step: `delegate` (a subagent on Sonnet; the spec must need no
   decision), `delegate-light` (a lighter subagent on Haiku, for mechanical steps), or
   `inline` (the main session). You can change any of them.
@@ -98,8 +108,11 @@ Proves work meets its requirements — it **proves, it does not fix**.
 Prepares to ship. It **suggests, it does not execute** — no `git`, no branches, no PRs.
 
 - Confirms every step is `done` and the acceptance criteria are met with evidence.
-- Assembles a PR/MR draft **from the specs** (summary, approach + trade-offs,
-  acceptance criteria with evidence, per-step summary, work-item link) into
+- Assembles a PR/MR draft **from the specs**, for a reviewer who sees only the PR:
+  summary with the smallest view of the change (a call tree, a file tree, a diff
+  sketch), approach + trade-offs, acceptance criteria each with its proof inline
+  (command, exit code, decisive output line), merge danger (one-way or two-way door,
+  blast radius), one line per step, and the work-item link — into
   `.specs/<ticket-id>/pr.md`.
 - Suggests the ship sequence (branch, push, open PR) as commands you run — it does not
   assume your VCS host or commit conventions.

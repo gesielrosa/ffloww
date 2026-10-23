@@ -34,12 +34,21 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`,
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set proof_definition "<the proof>"
    ```
 
-3. **Break into small steps**, each small, independently buildable, and independently
-   provable (roughly one commit each); a step too big to prove in one go becomes two.
-   For each, copy `steps/_TEMPLATE.md` to `steps/NN-<slug>.md` (NN = 01, 02, …), replace
-   the `<n>`/`<title>` placeholders, and fill **Spec**, **Changes**, and **Proof**;
-   **Evidence** and **Gate** belong to `/flow:execute`. Then fill `plan.md`: the approach
-   in a paragraph, the ordered steps, and the proof strategy.
+3. **Slice the work into vertical steps.** Each step is a **tracer bullet**: a narrow
+   path through every layer it touches, provable on its own through the entry point the
+   acceptance criteria use (the command, the endpoint, the screen), roughly one commit.
+   A slice by layer (all the data first, then the API, then the UI) proves only an
+   interface nothing calls yet. Refactoring that makes the change easy comes first, as
+   its own step. A wide mechanical change (a rename across the codebase) goes
+   expand–contract: add the new form, move the callers in batches, then remove the old
+   one. A step too big to prove in one go becomes two.
+
+   For each step, copy `steps/_TEMPLATE.md` to `steps/NN-<slug>.md` (NN = 01, 02, …),
+   replace the `<n>`/`<title>` placeholders, and fill **Spec**, **Changes**, and
+   **Proof**, whose commands each exit non-zero exactly when the step fails its
+   criterion; **Evidence** and **Gate** belong to `/flow:execute`. Then fill `plan.md`:
+   the approach in a paragraph, the ordered steps with the acceptance criteria each one
+   proves, and the proof strategy.
 
 4. **Choose who builds each step.** Set each step's **Executor** line to one of:
    - `delegate`: a subagent on Sonnet builds it, so the spec must be buildable without a
@@ -68,8 +77,10 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`,
 ## Handoff
 
 Present the plan for the developer's approval: the decision, the proof strategy, and the
-ordered steps with who builds each. Then name the next command from the `Next:` line of
-the state output, and suggest `/clear` before it: the plan is on disk. When the
+ordered steps with who builds each and the criteria each proves. Ask whether the
+granularity is right: a step to split or merge, a step that cannot be proven on its own.
+Once approved, name the next command from the `Next:` line of the state output, and
+suggest `/clear` before it: the plan is on disk. When the
 developer wants to revisit exploration or understanding instead, that is a regression:
 record the reason in `decisions.md` and move back with
 `state.js <ticket-id> phase <earlier phase> --reason "<why>"`.
