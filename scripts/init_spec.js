@@ -40,103 +40,56 @@ function today() {
 
 const CONVENTIONS_TEMPLATE = `# .specs — ffloww flow conventions
 
-Shared contract for the ffloww development flow. Every \`/flow:*\` skill reads this
-file, the ticket's \`state.md\`, and the ticket's \`context.md\` before acting. Written
-once per project; safe to edit to fit local conventions. Generated {date}.
+The contract every \`/flow:*\` skill follows. Each skill reads it, the ticket's
+\`state.md\`, and its \`context.md\` before acting. Written once; safe to edit.
+Generated {date}.
 
-## What .specs/ is
+## The record
 
-\`.specs/<ticket-id>/\` is the durable, auditable record of one piece of work — the
-flow's memory. It survives across sessions and context resets. **State lives on
-disk here, never only in the assistant's context.**
+\`.specs/<ticket-id>/\` is the flow's memory: state lives on disk, never only in the
+conversation, so any phase or step can start in a fresh context.
 
-Per ticket:
+- \`state.md\` — phase, steps, navigation log; the single source of truth
+- \`understanding.md\` — problem, scope, acceptance criteria, design notes
+- \`context.md\` — what the developer adds beyond the ticket and the code (\`/flow:context\`)
+- \`discoveries.md\` — code map and options · \`decisions.md\` — ADR log and regressions
+- \`plan.md\` — the breakdown · \`steps/NN-<slug>.md\` — one spec per step
+- \`verification.md\` — whole-ticket check · \`evidence/\` — proof logs · \`assets/\` — design exports
 
-- \`state.md\` — single source of truth: current phase, step statuses, navigation log
-- \`understanding.md\` — problem, scope, acceptance criteria (+ design notes)
-- \`context.md\` — extra context the developer provides (not in the ticket, design, or code)
-- \`discoveries.md\` — exploration findings and the options considered
-- \`decisions.md\` — ADR log: chosen approach, trade-offs, regression reasons
-- \`plan.md\` — the step breakdown
-- \`steps/NN-<slug>.md\` — one spec per step (copy from \`steps/_TEMPLATE.md\`); its
-  \`Executor\` line says who builds it: \`delegate\` (a subagent on Sonnet),
-  \`delegate-light\` (the same subagent on Haiku, for mechanical steps), or \`inline\`
-  (the main session)
-- \`verification.md\` — whole-ticket check, one evidence entry per acceptance criterion
-- \`evidence/\` — full proof logs, written by the proof runner
-- \`assets/\` — Figma exports, screenshots, images used as reference
+Flow: start → understand → design (if any) → explore → plan → execute ⇄ verify → ship.
 
-## The flow
+## State
 
-| Phase | Skill | Produces |
-| --- | --- | --- |
-| start | \`/flow:start\` | this scaffold |
-| understand | \`/flow:understand\` | \`understanding.md\` (+ acceptance criteria) |
-| design *(if any)* | \`/flow:design\` | \`assets/\` + design notes |
-| explore | \`/flow:explore\` | \`discoveries.md\` (options) |
-| plan | \`/flow:plan\` | \`decisions.md\` + \`steps/NN-*.md\` |
-| execute | \`/flow:execute\` | code for one step + proof + commit *suggestion* |
-| verify | \`/flow:verify\` | raw evidence for a step |
-| ship | \`/flow:ship\` | PR/MR draft built from these specs |
+Change \`state.md\` only through the flow's state script (\`state.js\`: \`show\`, \`phase\`,
+\`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand edits.
+Phases move forward freely; moving back is a regression and needs a reason, recorded
+in \`decisions.md\` too. A step moves \`todo → in-progress → proven → done\`, one at a
+time.
 
-Two utility skills run anytime, outside the phases: \`/flow:status\` (see where you are
-and what to run next) and \`/flow:context\` (add developer context to \`context.md\`).
+## Roles
 
-## state.md schema
+- The developer drives every transition; the assistant recommends and never
+  auto-advances.
+- The main session talks to the developer, opens the gates, and changes state.
+  Subagents only build or read, then report back.
+- A step's \`Executor\` line says who builds it: \`delegate\` (a subagent on Sonnet),
+  \`delegate-light\` (on Haiku, for mechanical steps), or \`inline\` (the main session).
 
-Front matter fields:
+## Gates — make it prove it
 
-- \`phase\`: one of \`start | understand | design | explore | plan | execute | verify | ship | done\`
-- \`design_involved\`: \`unknown | true | false\`
-- \`proof_definition\`: project-defined proof (usually tests); confirm with the human
-- \`current_step\`: id of the step in progress, or \`null\`
-- \`steps\`: list of \`{ id, title, status }\`; status is \`todo | in-progress | proven | done\`
-
-Change \`state.md\` only through the flow's state script (\`state.js\`, shipped with the
-plugin): \`show\`, \`phase\`, \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`. It keeps
-the front matter valid, moves phases forward (back only with a reason — a regression),
-moves a step one status at a time with one step in progress, syncs each step spec's
-Status line, appends the navigation log, and rewrites "Where we are". The plugin blocks
-hand edits.
-
-## Navigation rules
-
-- **The developer drives transitions.** The assistant never auto-advances a phase.
-- Movement is **bidirectional**: advance, repeat the current phase, or regress.
-- A regression is appended to the navigation log *and* to \`decisions.md\` with its
-  reason — history is never rewritten.
-- On finishing, every skill updates \`state.md\` and recommends the next move.
-- Every phase reads its inputs from \`.specs/\`, so each phase (and each step) can start
-  in a fresh context; skills suggest it at handoff.
-- The main session talks to the developer, opens the gates, and writes \`state.md\`.
-  Subagents only build or read, then report back to it.
-- **Context** can be added anytime via \`/flow:context\`; the default moment is when
-  \`/flow:understand\` closes, where the developer fills gaps the ticket and code do not
-  cover. Every skill reads \`context.md\` at start.
-
-## Gate protocol — "make it prove it"
-
-- Proof is **raw evidence**, not prose: the actual command, its exit code, real test
-  output, or a screenshot path — recorded by the proof runner, not retyped. Numbers,
-  not opinions.
-- The assistant **never marks its own work as passing.** It presents evidence; the
-  human validates.
-- Evidence entries and logs recorded by the runner are **immutable**: the plugin's
-  guard blocks edits that remove or change them. A new result is a new run.
-- Advancing past a step is a human decision, recorded in the step's \`Gate\` section.
-
-## Principles
-
-Give it context · explore before build (surface options) · *you* architect, *it*
-types · work in small steps · don't trust it, make it prove it · own it.
+- Proof is raw evidence recorded by the proof runner — command, exit code, real
+  output — or a screenshot path. Numbers, not opinions.
+- The assistant never marks its own work as passing; the developer decides at the
+  step's \`Gate\`. Recorded evidence is immutable: a new result is a new run.
 
 ## Git & PR
 
-Commits and PR/MR creation are **suggested, never executed** by the flow. The
-package does not assume your VCS host or commit conventions. \`/flow:execute\`
-proposes a commit message; \`/flow:ship\` assembles a PR/MR draft from these specs and
-suggests the steps to ship. You run them, your way. Reading git (\`status\`, \`diff\`,
-\`log\`) is fine; nothing that writes.
+Suggested, never executed: \`/flow:execute\` drafts commit messages, \`/flow:ship\` a
+PR/MR draft. No VCS host or commit convention is assumed. Reading git is fine;
+nothing that writes.
+
+Principles: give it context · explore before build · you architect, it types · small
+steps · make it prove it · own it.
 `;
 
 const STATE_TEMPLATE = `---

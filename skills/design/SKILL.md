@@ -1,14 +1,11 @@
 ---
 name: design
 description: >
-  Use when design is involved (design_involved is true from /flow:understand), before
-  exploring, to analyze the Figma design against the ticket. Asks the developer for the
-  Figma URL with the specific node ids for the screens or components in scope, then
-  reads them via the bundled figma MCP — pulling design context, screenshots, and
-  variables — and saves the exports plus any developer-provided images into the ticket's
-  .specs assets/ folder. Records design notes in understanding.md, updates state.md, and
-  hands off to /flow:explore. Trigger on "analyze the design", "here is the Figma", "check
-  the design for AB-1234", or entering the design phase.
+  Use when design is involved, before exploring. Gets the Figma node URLs in scope
+  from the developer; the flow:design-reader subagent reads them, saves screenshots
+  and exports to assets/, and writes design notes tied to the acceptance criteria.
+  Trigger on "analyze the design", "here is the Figma", or "check the design for
+  AB-1234".
 ---
 
 # /flow:design

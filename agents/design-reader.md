@@ -1,11 +1,10 @@
 ---
 name: design-reader
 description: >
-  Reads the Figma nodes in scope for a ffloww ticket, saves screenshots and exports to the
-  ticket's .specs assets/ folder, and writes the Design section of understanding.md tied to the
-  acceptance criteria. Dispatched by /flow:design from the main session with a ticket id, the
-  project root and the Figma node URLs; not for other tasks. Never edits state.md, never writes
-  code, never runs git that writes.
+  Reads the Figma nodes in scope for a ffloww ticket, saves screenshots and exports to
+  assets/, and writes the Design section of understanding.md. Dispatched by
+  /flow:design; not for other tasks. Never changes state, writes code, or runs git
+  that writes.
 model: sonnet
 effort: medium
 maxTurns: 60
@@ -23,7 +22,6 @@ reference images the developer already dropped into `assets/`.
 
 ## Read first
 
-- `.specs/CONVENTIONS.md`
 - The ticket's `understanding.md` (problem and acceptance criteria) and `context.md`
 
 ## Do

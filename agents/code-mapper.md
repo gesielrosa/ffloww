@@ -1,11 +1,9 @@
 ---
 name: code-mapper
 description: >
-  Answers ONE codebase-mapping question for a ffloww ticket's explore phase — where a behavior
-  lives, how data and control flow through it, what tests and configs touch it, what prior art
-  exists — and returns a compact map with file:line references. Read-only. Dispatched by
-  /flow:explore from the main session, often several in parallel; not for other tasks. Never
-  proposes or decides a solution.
+  Answers ONE codebase-mapping question for a ffloww ticket's explore phase and
+  returns a compact file:line map. Read-only; never proposes a solution. Dispatched by
+  /flow:explore, often several in parallel; not for other tasks.
 model: haiku
 effort: high
 maxTurns: 40

@@ -1,15 +1,10 @@
 ---
 name: execute
 description: >
-  Use to build one planned step at a time. Implements only the current step's scope —
-  inline or delegated to the flow:step-executor agent on a cheaper model — runs its
-  proof through a bundled runner that records the raw evidence (command, exit code,
-  real output, log) in the step spec, never a prose summary and never self-graded.
-  Then opens the human gate: the developer reviews the evidence and approves, requests
-  changes, or regresses; only then is the step marked proven. On approval it suggests a
-  commit message but never commits, keeping the package repo- and platform-agnostic.
-  Updates state.md and recommends the next step or /flow:ship. Trigger on "execute the
-  next step", "build step 2", "implement AB-1234 step", or entering the execute phase.
+  Use to build one planned step at a time — inline or in a flow:step-executor subagent
+  — prove it through the proof runner (raw evidence, never self-graded), and stop at
+  the human gate. On approval it suggests a commit message but never commits. Trigger
+  on "execute the next step", "build step 2", or "implement AB-1234 step".
 ---
 
 # /flow:execute

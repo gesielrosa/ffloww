@@ -1,13 +1,11 @@
 ---
 name: explore
 description: >
-  Use after the ticket is understood (and design captured, if any), to explore the
-  codebase before planning. This is the divergent phase: map where the relevant code
-  lives and how it flows, then surface multiple viable options to solve the ticket —
-  not a single answer. Records the context map and options in the ticket's .specs
-  discoveries.md with file:line evidence, updates state.md, and hands off to /flow:plan
-  where the developer decides. Trigger on "explore the codebase", "what are the
-  options", "how could we solve AB-1234", or entering the explore phase.
+  Use after the ticket is understood, to explore the codebase before planning. Maps
+  the relevant code with parallel flow:code-mapper subagents and surfaces at least two
+  options with file:line evidence in discoveries.md — it diverges; the developer
+  decides in /flow:plan. Trigger on "explore the codebase", "what are the options", or
+  "how could we solve AB-1234".
 ---
 
 # /flow:explore

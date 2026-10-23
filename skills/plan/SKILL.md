@@ -1,13 +1,10 @@
 ---
 name: plan
 description: >
-  Use after exploring, to converge on a plan. The developer picks an approach from the
-  options in discoveries.md; this skill records it as an ADR in decisions.md, agrees
-  the project's proof strategy, and breaks the work into small, independently buildable
-  steps — creating one spec per step under steps/ and mirroring them into state.md. You
-  architect, it types: the design choice and the slicing are the developer's; the skill
-  drafts and records them. Hands off to /flow:execute. Trigger on "plan AB-1234", "make
-  a plan", "break this into steps", or entering the plan phase.
+  Use after exploring, to converge on a plan. Records the developer's chosen approach
+  as an ADR, agrees the proof strategy, and slices the work into small step specs,
+  each marked delegate, delegate-light, or inline. Trigger on "plan AB-1234", "make a
+  plan", or "break this into steps".
 ---
 
 # /flow:plan

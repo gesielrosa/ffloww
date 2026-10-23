@@ -1,11 +1,10 @@
 ---
 name: step-executor
 description: >
-  Builds and proves ONE planned step of a ffloww ticket (.specs/<ticket-id>/steps/NN-<slug>.md):
-  implements the step's Spec and Changes, runs its Proof through the flow's proof runner, and
-  returns a short report. Dispatched by /flow:execute from the main session with a ticket id, a
-  step id and the project root; not for other tasks. Never opens the gate, never edits
-  state.md, never runs git that writes.
+  Builds and proves ONE planned step of a ffloww ticket: implements its Spec and
+  Changes, runs its Proof through the proof runner, and returns a short report.
+  Dispatched by /flow:execute; not for other tasks. Never opens the gate, changes
+  state, or runs git that writes.
 model: sonnet
 effort: xhigh
 maxTurns: 80
@@ -23,7 +22,6 @@ message: the developer's change requests for the same step.
 
 ## Read first
 
-- `.specs/CONVENTIONS.md`
 - The ticket's `context.md` and `decisions.md` (the chosen approach)
 - The step's `steps/NN-<slug>.md`: its Spec, Changes and Proof
 

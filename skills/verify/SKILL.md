@@ -1,15 +1,11 @@
 ---
 name: verify
 description: >
-  Use to prove that work meets its requirements — on demand for one step, or as a final
-  check of the whole ticket against its acceptance criteria before shipping. Runs the
-  proof defined for the work (per proof_definition) without changing production code,
-  through a bundled runner that records the raw evidence (command, exit code, real
-  output, log) in the step spec or verification.md, and opens the human gate. It
-  proves, it does not fix: if the proof fails it reports and recommends regressing to
-  /flow:execute. Never self-grades. Updates state.md. Trigger on "verify step 2",
-  "prove this works", "check it against the acceptance criteria", or entering the
-  verify phase.
+  Use to prove that a step, or the whole ticket against its acceptance criteria, meets
+  its requirements before shipping. Runs the proof through the proof runner without
+  changing production code and opens the human gate; it proves, it does not fix.
+  Trigger on "verify step 2", "prove this works", or "check it against the acceptance
+  criteria".
 ---
 
 # /flow:verify

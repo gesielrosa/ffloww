@@ -1,13 +1,10 @@
 ---
 name: start
 description: >
-  Use when a developer begins work on a ticket, story, or bug and wants to start the
-  ffloww development flow — or to resume an existing one. Collects the ticket id (and
-  an optional title), scaffolds the ticket's durable per-ticket .specs record via the
-  bundled init_spec.js script, writes the shared .specs/CONVENTIONS.md contract,
-  orients from state.md, and recommends the next phase (/flow:understand). Trigger on
-  "start a ticket", "begin work on AB-1234", "kick off the flow", "start dev flow",
-  or "resume AB-1234".
+  Use when a developer begins or resumes work on a ticket, story, or bug in the ffloww
+  flow. Scaffolds the ticket's .specs/ record (and the shared CONVENTIONS.md), orients
+  from its state, and recommends the next phase. Trigger on "start a ticket", "begin
+  work on AB-1234", "kick off the flow", or "resume AB-1234".
 ---
 
 # /flow:start

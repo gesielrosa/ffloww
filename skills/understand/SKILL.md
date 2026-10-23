@@ -1,14 +1,11 @@
 ---
 name: understand
 description: >
-  Use after /flow:start, when the developer is ready to understand a ticket before
-  exploring or planning. Reads the work item from the bundled azure-devops MCP,
-  then captures the problem, scope and non-goals, and acceptance
-  criteria into the ticket's .specs understanding.md. Detects whether design is
-  involved and routes to /flow:design or /flow:explore. Updates state.md and never
-  fabricates acceptance criteria — it confirms gaps with the developer. Trigger on
-  "understand the ticket", "read AB-1234", "what does this ticket need", or entering
-  the understand phase.
+  Use after /flow:start to understand a ticket before exploring or planning. Reads the
+  work item from Azure DevOps and captures problem, scope, non-goals, and acceptance
+  criteria in understanding.md — confirming gaps with the developer, never inventing
+  criteria — and detects whether design is involved. Trigger on "understand the
+  ticket", "read AB-1234", or "what does this ticket need".
 ---
 
 # /flow:understand

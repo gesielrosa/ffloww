@@ -1,14 +1,10 @@
 ---
 name: ship
 description: >
-  Use when a ticket's steps are all done and verified, to prepare shipping. Assembles a
-  PR/MR description draft strictly from the ticket's specs — the problem from
-  understanding.md, the approach and trade-offs from decisions.md, the acceptance
-  criteria with their evidence, and a per-step summary — and saves it to the ticket's
-  .specs as pr.md. Then suggests the steps to ship (branch, push, open the PR) without
-  running git or creating anything, since the package does not assume your VCS host or
-  commit conventions. Updates state.md. Trigger on "open a PR", "ship AB-1234", "prepare
-  the MR", or entering the ship phase.
+  Use when all steps are done and verified, to prepare shipping. Assembles a PR/MR
+  draft (pr.md) strictly from the specs and suggests the branch, push, and PR steps —
+  without running git or assuming your VCS host. Trigger on "open a PR", "ship
+  AB-1234", or "prepare the MR".
 ---
 
 # /flow:ship

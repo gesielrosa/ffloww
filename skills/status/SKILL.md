@@ -1,13 +1,10 @@
 ---
 name: status
 description: >
-  Use anytime to see where a ticket's flow stands and what to do next. Reads the
-  ticket's .specs state.md and reports the current phase, step progress, proof status,
-  and recent navigation, then recommends the next skill to run (for example /flow:execute
-  for the next step, or /flow:ship when all steps are done). Read-only: it never changes
-  state, writes code, or advances the flow — it is the compass; the developer drives. If
-  no ticket is named, it lists the tickets under .specs and asks which. Trigger on "where
-  are we", "flow status", "what's next for AB-1234", or "status".
+  Use anytime to see where a ticket's flow stands and what to run next. Read-only:
+  reports phase, step progress, proof, and recent navigation from the state script and
+  recommends the next skill. Trigger on "where are we", "flow status", "what's next
+  for AB-1234", or "status".
 ---
 
 # /flow:status

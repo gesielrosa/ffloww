@@ -1,14 +1,10 @@
 ---
 name: help
 description: >
-  Use when the developer wants to understand how the ffloww flow works or has questions
-  about it — what the phases are, what each /flow:* skill does and when to use it, the
-  principles, how navigation and gates work, or how .specs/ keeps state. Explains the
-  flow in plain language and answers questions; if a ticket is active it can read
-  CONVENTIONS.md and state.md to tailor the answer. Read-only — it teaches, it never
-  changes state, writes code, or runs git. For "where am I right now" use /flow:status
-  instead. Trigger on "how does the flow work", "explain ffloww", "what does /flow:plan
-  do", "how do I use this", or "help with the flow".
+  Use when the developer wants to understand the ffloww flow — its phases, what each
+  /flow:* skill does, the principles, gates, navigation, or .specs/. Read-only; for
+  "where am I", use /flow:status. Trigger on "how does the flow work", "explain
+  ffloww", "what does /flow:plan do", or "help with the flow".
 ---
 
 # /flow:help
