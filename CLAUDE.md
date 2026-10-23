@@ -56,15 +56,16 @@ human converges and decides.**
 - **The main session decides; subagents type.** The main session (the developer's
   model, e.g. Opus) talks to the developer, opens gates, and owns `state.md`. Bounded,
   decision-free work runs in subagents pinned to cheaper models: `flow:step-executor`
-  builds `delegate` steps on Sonnet and `delegate-light` steps on Haiku (per-call
-  `model: haiku`, which overrides the frontmatter), `flow:design-reader` (Sonnet)
-  reads the Figma nodes, `flow:code-mapper` (Haiku, read-only) maps code for
-  `/flow:explore`. Their output is a lead the main session checks, never a verdict.
-  `/flow:plan` records who builds each step in the step's `Executor` line;
-  `/flow:execute` escalates one model per call (Haiku → Sonnet → Opus → inline) when a
+  (Sonnet, effort xhigh) builds `delegate` steps and `flow:step-executor-light`
+  (Haiku, effort high) builds `delegate-light` ones — same body, kept identical by
+  `tests/agents.test.js`; `flow:design-reader` (Sonnet) reads the Figma nodes;
+  `flow:code-mapper` (Haiku, read-only) maps code for `/flow:explore`. Their output is
+  a lead the main session checks, never a verdict. `/flow:plan` records who builds
+  each step in the step's `Executor` line; `/flow:execute` escalates one model per new
+  agent call (light → executor → executor with per-call `model: opus` → inline) when a
   delegated step stalls. Skills never set `model:` in their own frontmatter — that
-  switches the main session's model and rebuilds its prompt cache. Phases hand off with a `/clear` suggestion, since `.specs/` carries
-  everything forward.
+  switches the main session's model and rebuilds its prompt cache. Phases hand off
+  with a `/clear` suggestion, since `.specs/` carries everything forward.
 - **State changes through a script, never by hand.** `scripts/state.js` (`show`,
   `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with

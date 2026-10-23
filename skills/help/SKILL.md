@@ -73,8 +73,8 @@ judgment of "is this proven?" stay with the developer.
 State lives on disk, not just in the chat, so the work survives context resets and any
 skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
 `understanding.md`, `context.md`, `discoveries.md`, `decisions.md`, `plan.md`,
-`steps/NN-*.md`, `verification.md`, `evidence/` (full proof logs), and `assets/`. The shared contract is
-`.specs/CONVENTIONS.md`. `state.md` changes only through the flow's state script
+`steps/NN-*.md`, `verification.md`, `evidence/` (full proof logs), and `assets/`. The
+shared contract is `.specs/CONVENTIONS.md`. `state.md` changes only through the flow's state script
 (`state.js`), which checks every phase and step move and writes the navigation log.
 
 ## Common questions
@@ -88,9 +88,9 @@ skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
 - **How do I know what to run next?** `/flow:start` to begin, then `/flow:status` anytime.
 - **Does the AI commit or open PRs?** No — it suggests; you execute.
 - **Who writes the code?** `/flow:plan` marks each step `delegate`, `delegate-light`,
-  or `inline`. A delegated step is built by the `flow:step-executor` subagent — on
-  Sonnet, or on Haiku for mechanical `delegate-light` steps; the main session keeps the
-  conversation, the gate, and `state.md`. You can change any step.
+  or `inline`. A delegated step is built by an executor subagent — `flow:step-executor`
+  on Sonnet, or `flow:step-executor-light` on Haiku for mechanical steps; the main
+  session keeps the conversation, the gate, and `state.md`. You can change any step.
   Reading the Figma (`flow:design-reader`) and mapping the code (`flow:code-mapper`)
   also run in subagents, so their bulk stays out of your session.
 - **Can the AI rewrite the evidence?** No. The proof runner records it, and the

@@ -64,15 +64,16 @@ The convergent phase. You architect, it types.
 - Slices the work into small steps: one `steps/NN-<slug>.md` each (from
   `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`.
 - Marks who builds each step: `delegate` (a subagent on Sonnet; the spec must need no
-  decision), `delegate-light` (the same subagent on Haiku, for mechanical steps), or
+  decision), `delegate-light` (a lighter subagent on Haiku, for mechanical steps), or
   `inline` (the main session). You can change any of them.
 
 ## 5. Execute — `/flow:execute`
 
 Builds one step, proves it, and stops at the human gate.
 
-- Implements only the current step's scope. Small. A `delegate` step is built by the
-  `flow:step-executor` subagent on a cheaper model; the main session keeps the gate.
+- Implements only the current step's scope. Small. A delegated step is built by an
+  executor subagent on a cheaper model (Sonnet, or Haiku for `delegate-light`); the
+  main session keeps the gate.
 - Runs the step's proof through `run_proof.js`, which records the **raw evidence**
   (command, exit code, last lines, full log) in the step spec. Never self-graded.
 - Stops after three failing proof attempts and brings it to you: clarify the step,

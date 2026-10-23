@@ -46,8 +46,8 @@ the developer's choices; this skill drafts the ADR and the step specs from them.
    - `delegate` — a subagent on Sonnet builds it, so the spec must be buildable without
      a decision: the files to touch, the existing code to follow (`file:line`), and the
      exact proof commands.
-   - `delegate-light` — the same subagent on Haiku, for mechanical steps with nothing to
-     interpret: a rename or move, a config or copy change, a field or test case that
+   - `delegate-light` — a lighter subagent on Haiku, for mechanical steps with nothing
+     to interpret: a rename or move, a config or copy change, a field or test case that
      mirrors an existing one line for line, with a fast, deterministic proof. Not for
      new logic, changes across modules, or anything touching security, data, or
      concurrency.

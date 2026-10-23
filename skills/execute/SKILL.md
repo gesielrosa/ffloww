@@ -1,7 +1,7 @@
 ---
 name: execute
 description: >
-  Use to build one planned step at a time — inline or in a flow:step-executor subagent
+  Use to build one planned step at a time — inline or in a flow:step-executor* subagent
   — prove it through the proof runner (raw evidence, never self-graded), and stop at
   the human gate. On approval it suggests a commit message but never commits. Trigger
   on "execute the next step", "build step 2", or "implement AB-1234 step".
@@ -34,8 +34,8 @@ is the per-step loop. It works on a single step at a time and never advances its
 2. **Build only this step.** Implement the changes in the step's **Spec**/**Changes**,
    and nothing beyond its scope. Keep it small. Match the conventions of the
    surrounding code. You type; the developer reviews. The step's **Executor** line says
-   who builds: `delegate` and `delegate-light` run steps 2–3 in the
-   `flow:step-executor` agent (see **Delegated execution**); `inline` builds here.
+   who builds: `delegate` and `delegate-light` run steps 2–3 in an executor subagent
+   (see **Delegated execution**); `inline` builds here.
 
 3. **Prove it.** Run each command of the step's **Proof** (per `proof_definition`)
    through the plugin's proof runner:
@@ -72,17 +72,17 @@ is the per-step loop. It works on a single step at a time and never advances its
 
 ## Delegated execution
 
-When the step is `Executor: delegate` or `delegate-light` and the `flow:step-executor`
-agent is available, steps 2–3 run in it: the build's file reads and command output stay
-out of the main session's context, and the typing runs on a cheaper model. The main
-session keeps steps 1 and 4–6 — it alone talks to the developer and writes `state.md`.
+When the step is `Executor: delegate` or `delegate-light` and the executor agents are
+available, steps 2–3 run in one: the build's file reads and command output stay out of
+the main session's context, and the typing runs on a cheaper model. The main session
+keeps steps 1 and 4–6 — it alone talks to the developer and writes `state.md`.
 
-- **The model.** `delegate` runs on the agent's own model (Sonnet). `delegate-light`
-  runs on Haiku: pass `model: haiku` on the agent call.
+- **The agent.** `delegate` → `flow:step-executor` (Sonnet). `delegate-light` →
+  `flow:step-executor-light` (Haiku). Same instructions; each pins its model.
 - **No Executor set** (e.g. a step planned before the field existed): delegate a step
   whose Spec, Changes and Proof are complete enough to build without a decision. Build
-  inline instead: spikes and investigations, steps whose Spec leaves a choice open, and proofs
-  that need the developer during the step.
+  inline instead: spikes and investigations, steps whose Spec leaves a choice open,
+  and proofs that need the developer during the step.
 - **The brief.** The ticket id, the step id, and the project root; the agent reads the
   specs itself, so do not retell the plan. One agent at a time, and no edits in the
   main session while it runs.
@@ -94,8 +94,8 @@ session keeps steps 1 and 4–6 — it alone talks to the developer and writes `
 - **When it stops.** A question, a missing decision or a recommendation to regress goes
   to the developer; never answer in their place. After three failing proof attempts,
   decide with the developer: clarify the step and send it back, re-dispatch it one
-  model up in a new agent call — Haiku → the agent's own model (no `model`) →
-  `model: opus` — or build it inline. Log the escalation with
+  model up in a new agent call — `flow:step-executor-light` → `flow:step-executor` →
+  `flow:step-executor` with `model: opus` — or build it inline. Log the escalation with
   `state.js <ticket-id> log "<text>"`; a `delegate-light` step that needed more is a
   signal for the next plan.
 - **Changes requested at the gate.** Send them to the same agent, which keeps its

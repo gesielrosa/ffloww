@@ -58,10 +58,10 @@ recommends the next move on exit. None of them run `git`.
 ## `/flow:execute` — phase 5
 
 - **When:** to build a planned step.
-- **Does:** implements one step's scope — inline, or delegated to the
-  `flow:step-executor` subagent on a cheaper model; runs its proof through the bundled
-  `run_proof.js`, which records the raw evidence; opens the human gate; on approval
-  **suggests a commit** (never commits).
+- **Does:** implements one step's scope — inline, or delegated to an executor
+  subagent (`flow:step-executor` on Sonnet, `flow:step-executor-light` on Haiku); runs
+  its proof through the bundled `run_proof.js`, which records the raw evidence; opens
+  the human gate; on approval **suggests a commit** (never commits).
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
   `state.md`.
 - **Hands off to:** `/flow:execute` (next step) or `/flow:ship` (all done).
