@@ -37,7 +37,7 @@ function activeTickets(root) {
             const parts = [`${f.ticket || name} — ${f.title || name}`, `phase ${f.phase}`];
             if (f.steps.length) parts.push(`steps ${done}/${f.steps.length} done`);
             if (current) parts.push(`current ${current.id} (${current.status})`);
-            parts.push(`next: ${next.skill ? `${next.skill} — ${next.why}` : next.why}`);
+            parts.push(`next: ${next.skill ? `${next.skill} ${f.ticket || name} — ${next.why}` : next.why}`);
             tickets.push({ line: parts.join(' · '), mtime: fs.statSync(file).mtimeMs });
         } catch {
             // an unreadable state.md is skipped

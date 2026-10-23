@@ -28,7 +28,7 @@ test('active tickets are listed with their next move; done tickets are not', () 
     const out = JSON.parse(hook({ cwd: root, source: 'clear' }));
     assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
     const text = out.hookSpecificOutput.additionalContext;
-    assert.match(text, /AB-1 — AB-1 · phase execute · steps 0\/1 done · current 01 \(in-progress\) · next: \/flow:execute — continue step 01/);
+    assert.match(text, /AB-1 — AB-1 · phase execute · steps 0\/1 done · current 01 \(in-progress\) · next: \/flow:execute AB-1 — continue step 01/);
     assert.doesNotMatch(text, /AB-2/);
 });
 

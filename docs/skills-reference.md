@@ -1,8 +1,13 @@
 # Skills reference
 
-Every skill is independent and invocable. Each reads `.specs/CONVENTIONS.md`, the
-ticket's `state.md`, and its `context.md` before acting, then updates `state.md` and
-recommends the next move on exit. None of them run `git`.
+Every skill is independent. The phases, `/flow:start`, and `/flow:help` run only when
+you type them (`disable-model-invocation`): the assistant cannot start a phase by
+itself, and their descriptions cost no context until you call them. `/flow:status` and
+`/flow:context` also answer plain requests ("where are we?", "fyi, the API is rate
+limited"). Each phase reads `.specs/CONVENTIONS.md`, the ticket's `state.md`, and its
+`context.md` before acting, updates `state.md`, and ends by naming the next command:
+the `Next:` line `state.js` prints, ticket id included. None of them run git that
+writes.
 
 ---
 
@@ -10,8 +15,9 @@ recommends the next move on exit. None of them run `git`.
 
 - **When:** starting or resuming a ticket.
 - **Does:** collects the ticket id (+ optional title); runs `init_spec.js` to scaffold
-  `.specs/<ticket-id>/` and the repo-level `CONVENTIONS.md`; orients from `state.md`.
-  On an existing ticket it resumes and points to the current phase.
+  `.specs/<ticket-id>/` and the repo-level `CONVENTIONS.md` (refreshed while unedited);
+  orients from `state.md`. On an existing ticket it resumes and points to the current
+  phase.
 - **Writes:** the `.specs/` scaffold.
 - **Hands off to:** `/flow:understand` (new ticket) or the current-phase skill (resume).
 
@@ -51,8 +57,8 @@ recommends the next move on exit. None of them run `git`.
 - **Does:** records your chosen approach as an ADR; agrees the proof strategy; slices
   the work into small, provable steps; marks who builds each (`delegate` to a Sonnet
   subagent, `delegate-light` to a Haiku one, or `inline`).
-- **Writes:** `decisions.md`, `steps/NN-<slug>.md`; sets `proof_definition` and
-  `steps:` in `state.md`.
+- **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; sets
+  `proof_definition` and `steps:` in `state.md`.
 - **Hands off to:** `/flow:execute`.
 
 ## `/flow:execute` — phase 5
@@ -60,11 +66,13 @@ recommends the next move on exit. None of them run `git`.
 - **When:** to build a planned step.
 - **Does:** implements one step's scope — inline, or delegated to an executor
   subagent (`flow:step-executor` on Sonnet, `flow:step-executor-light` on Haiku); runs
-  its proof through the bundled `run_proof.js`, which records the raw evidence; opens
-  the human gate; on approval **suggests a commit** (never commits).
+  its proof through the bundled `run_proof.js`, which records the raw evidence; reviews
+  the change (`git status` and `git diff`, new files read in full); opens the human
+  gate; on approval **drafts a commit message** (never commits). A step starts once the
+  previous proven step is committed (`--reason` to start anyway).
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
   `state.md`.
-- **Hands off to:** `/flow:execute` (next step) or `/flow:ship` (all done).
+- **Hands off to:** `/flow:execute` (next step) or `/flow:verify` (all done).
 
 ## `/flow:verify` — phase 6
 
@@ -92,14 +100,15 @@ recommends the next move on exit. None of them run `git`.
 
 ## `/flow:status` — the compass
 
-- **When:** anytime, to see where a ticket stands.
+- **When:** anytime, to see where a ticket stands; also reached by asking in plain words.
 - **Does:** runs `state.js <ticket> show`; reports phase, step progress, proof status,
-  recent navigation; recommends the next skill the script computes. **Read-only** —
+  recent navigation; names the next command the script computes. **Read-only** —
   changes nothing.
 
 ## `/flow:context` — add context
 
-- **When:** anytime you have context the ticket and code don't carry.
+- **When:** anytime you have context the ticket and code don't carry; sharing it in
+  plain words reaches it too.
 - **Does:** appends to `context.md` (Links, Constraints, Out-of-ticket decisions,
   Gotchas, Related work). Append-only; routes to `decisions.md` if it changes a
   decision. Does not change phase, write code, or run git.

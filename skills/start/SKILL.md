@@ -1,66 +1,42 @@
 ---
 name: start
 description: >
-  Use when a developer begins or resumes work on a ticket, story, or bug in the ffloww
-  flow. Scaffolds the ticket's .specs/ record (and the shared CONVENTIONS.md), orients
-  from its state, and recommends the next phase. Trigger on "start a ticket", "begin
-  work on AB-1234", "kick off the flow", or "resume AB-1234".
+  Begin or resume a ticket: scaffold its .specs/ record and point to the next phase.
+disable-model-invocation: true
+argument-hint: "<ticket-id> [title]"
 ---
 
 # /flow:start
 
-Entry point for the ffloww development flow. It sets up a ticket's durable `.specs/`
-record and points to the first phase. It does **not** do the analysis itself.
-
-## Do not do the work here
-
-Do not read the ticket's contents, explore the codebase, or plan in this skill.
-`/flow:start` only scaffolds and orients. Understanding the ticket belongs to
-`/flow:understand`.
+Entry point of the flow: set up the ticket's durable `.specs/` record and point to the
+next phase. Reading the ticket itself starts in `/flow:understand`.
 
 ## Steps
 
-1. **Identify the project root.** Default to the current repository root (the
-   developer's project). Confirm only if ambiguous.
+1. **Collect the ticket id** (e.g. `AB-1234`) from the command's argument, or ask for it.
+   A title is optional: take it from the argument when given; otherwise the id serves as
+   the title.
 
-2. **Collect the ticket id.** Required (e.g. `AB-1234`). If the developer already
-   named it in the request, use that — do not re-ask. Then ask for a short optional
-   title; if none is given, the id is used as the title.
-
-3. **Run the bundled scaffolder.** Invoke the plugin's `init_spec.js` script:
+2. **Run the scaffolder** for the project root (the current repository root):
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/init_spec.js" <ticket-id> --root "<project-root>" --title "<title>"
    ```
 
-   The script is idempotent: on an existing ticket it overwrites nothing and reports
-   that it skipped. Pass `--title` only when a title was provided.
+   Pass `--title` only when a title was given. The script is idempotent: an existing
+   ticket keeps every file and is reported as skipped. It also keeps
+   `.specs/CONVENTIONS.md` current; relay any `[warn]` line it prints.
 
-4. **Read the contract and state.** Read `<project-root>/.specs/CONVENTIONS.md` (the
-   shared contract — always read it the first time you operate in a project so you
-   follow its navigation and gate rules), then read the ticket's state with the flow's
-   state script:
+3. **Read the contract and the state**: `.specs/CONVENTIONS.md`, then
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> show --root "<project-root>"
    ```
 
-5. **Orient and hand off.**
-   - **New ticket** — report what was created (the ticket folder and its files), then
-     recommend running `/flow:understand` next.
-   - **Existing ticket** (the script skipped it) — treat this as a *resume*: summarize
-     the state (current phase, step statuses, last navigation-log entries) and
-     recommend the move on its `Next:` line, the same way `/flow:status` would.
+4. **Orient.**
+   - **New ticket**: report the ticket folder and the files created.
+   - **Existing ticket** (skipped): this is a resume. Summarize the phase, the step
+     statuses, and the last navigation entries.
 
-## Handoff
-
-Recommend the next skill; **do not auto-advance**. Per the contract, the developer
-drives transitions. Offer to continue (e.g. "Run /flow:understand now?") and wait for
-the go-ahead. If the developer agrees, proceed to that skill; otherwise stop.
-
-## Guardrails
-
-- Never run `git` or create branches/PRs.
-- Never overwrite existing `.specs/` content — the script enforces this; respect it.
-- Keep state on disk: anything learned here that matters belongs in `state.md`, not
-  only in the conversation.
+   Then name the next command from the `Next:` line of the state output; the developer
+   runs it.

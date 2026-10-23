@@ -15,6 +15,8 @@
  *
  * The evidence is written by this script, not by the assistant, so it cannot be
  * paraphrased or invented. It records the exit code; it never grades the result.
+ * Secrets are masked before anything is written (lib/redact.js), since recorded
+ * evidence cannot be edited afterwards; the entry says how many were masked.
  *
  * Usage:
  *   node run_proof.js <ticket-id> <step-id|ticket> --cmd "<command>" [--label <text>] [--root <dir>] [--tail <n>] [--timeout <seconds>]
@@ -32,6 +34,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { headings, runHeading } = require('./lib/markdown');
+const { redact } = require('./lib/redact');
 
 const DEFAULT_TAIL = 40;
 
@@ -168,11 +171,12 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     const evidenceDir = path.join(ticketDir, 'evidence');
     fs.mkdirSync(evidenceDir, { recursive: true });
 
+    const shown = redact(cmd);
     const header = [
         '# ffloww proof run',
         `# ticket: ${ticket}`,
         `# target: ${target}`,
-        `# command: ${cmd}`,
+        `# command: ${shown.text}`,
         `# cwd: ${path.resolve(root)}`,
         `# started: ${isoStamp(started)}`,
         '',
@@ -196,7 +200,10 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     const finished = new Date();
     const seconds = ((finished - started) / 1000).toFixed(1);
 
-    const output = fs.readFileSync(logFile).subarray(Buffer.byteLength(header, 'utf8')).toString('utf8');
+    const masked = redact(fs.readFileSync(logFile).subarray(Buffer.byteLength(header, 'utf8')).toString('utf8'));
+    if (masked.count > 0) fs.writeFileSync(logFile, header + masked.text, 'utf8');
+    const output = masked.text;
+    const redacted = shown.count + masked.count;
     const lines = displayLines(output);
     const excerpt = lines.slice(-tail);
 
@@ -214,10 +221,11 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     const entry = [
         `### ${runHeading(isoStamp(started), label)}`,
         '',
-        `- Command: ${inlineCode(cmd)}`,
+        `- Command: ${inlineCode(shown.text)}`,
         `- Exit code: ${exit}`,
         `- Duration: ${seconds}s`,
         `- Log: ${inlineCode(logRel)} (${plural(lines.length, 'line')})`,
+        ...(redacted > 0 ? [`- Redacted: ${plural(redacted, 'secret')}`] : []),
         '',
         ...(excerpt.length === 0
             ? ['No output.']
@@ -225,7 +233,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     ];
     appendEvidence(found.file, entry);
 
-    return { specFile: found.file, logFile, exit, seconds, total: lines.length, excerpt };
+    return { specFile: found.file, logFile, exit, seconds, total: lines.length, excerpt, command: shown.text, redacted };
 }
 
 function parseArgs(argv) {
@@ -279,10 +287,11 @@ function main() {
 
     const root = path.resolve(args.root);
     console.log(`[ok] Evidence recorded in ${path.relative(root, run.specFile)}`);
-    console.log(`   Command:   ${args.cmd}`);
+    console.log(`   Command:   ${run.command}`);
     console.log(`   Exit code: ${run.exit}`);
     console.log(`   Duration:  ${run.seconds}s`);
     console.log(`   Log:       ${path.relative(root, run.logFile)} (${plural(run.total, 'line')})`);
+    if (run.redacted > 0) console.log(`   Redacted:  ${plural(run.redacted, 'secret')}`);
     console.log(`\n--- last ${run.excerpt.length} lines ---`);
     console.log(run.excerpt.join('\n'));
     // Exit 0 even when the proof failed — the exit code above is the result; grading is the human's.

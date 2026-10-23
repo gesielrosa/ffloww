@@ -1,46 +1,32 @@
 ---
 name: context
 description: >
-  Use anytime the developer wants to add context the ticket, design, and code do not
-  carry — links, constraints, out-of-ticket decisions, gotchas, related work. Appends
-  it to the ticket's context.md and changes nothing else. Trigger on "add context",
-  "here is some background", "note this constraint", or "fyi for AB-1234".
+  Append context the developer shares about a ffloww ticket (links, constraints, decisions
+  made outside the ticket, gotchas, related work) to its .specs context.md. Use when the
+  developer offers such background for a ticket in progress.
 ---
 
 # /flow:context
 
-Capture context that the ticket, the design, and the codebase do not carry — the
-developer's tacit knowledge that shapes the work. A cross-cutting utility: run it at any
-moment, not as a phase.
-
-## Before you start
-
-- Read `.specs/CONVENTIONS.md`. If no ticket is named, list the ticket folders under
-  `.specs/` and ask which — or use it directly if there is only one.
+Capture what the ticket, the design, and the codebase do not carry: the developer's tacit
+knowledge that shapes the work. A utility for any moment, not a phase: it appends to
+`context.md` (and notes a changed decision in `decisions.md`), and the phase stays as it
+is.
 
 ## Steps
 
-1. **Collect the context.** Ask the developer (or take what they offered) for anything
-   relevant that is not in the ticket or the code: links (Slack, docs, related PRs or
-   incidents, dashboards), hard constraints, out-of-ticket decisions, gotchas, related
-   work.
+1. **Find the ticket**: the one named; otherwise the only ticket folder under `.specs/`,
+   or list them and ask which.
 
-2. **Append to `context.md`.** Add it under the right section of
-   `.specs/<ticket-id>/context.md` (Links, Constraints, Out-of-ticket decisions,
-   Gotchas, Related work). Append-only — never rewrite or drop earlier context. Date new
-   entries.
+2. **Collect the context** the developer offered, or ask for it: links (Slack, docs,
+   related PRs or incidents, dashboards), hard constraints, out-of-ticket decisions,
+   gotchas, related work.
 
-3. **Route if it changes a decision.** If the context affects a choice already made, note
-   it in `decisions.md` too, and tell the developer it may warrant regressing to
+3. **Append to `context.md`** under the right section (Links, Constraints, Out-of-ticket
+   decisions, Gotchas, Related work), dated. Earlier entries stay as they are.
+
+4. **Route a changed decision.** When the context affects a choice already made, note it
+   in `decisions.md` too, and tell the developer it may warrant regressing to
    `/flow:plan`.
 
-## Handoff
-
-Confirm what was captured and return to wherever the developer was. Do not advance the
-flow yourself.
-
-## Guardrails
-
-- Append-only to `context.md`; never overwrite earlier context.
-- Do not change `phase`, write code, or run `git`.
-- This is an input channel, not a phase — it never decides or advances anything.
+Confirm what was captured, then return to wherever the developer was.

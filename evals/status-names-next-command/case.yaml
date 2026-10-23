@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: status-names-next-command
+description: A plain "where are we?" gets the ticket's phase, the step in progress, and the next command, and changes nothing.
+tags: [smoke, status]
+context:
+  scaffold_script: scaffold.sh

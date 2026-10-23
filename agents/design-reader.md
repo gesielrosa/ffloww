@@ -1,10 +1,8 @@
 ---
 name: design-reader
 description: >
-  Reads the Figma nodes in scope for a ffloww ticket, saves screenshots and exports to
-  assets/, and writes the Design section of understanding.md. Dispatched by
-  /flow:design; not for other tasks. Never changes state, writes code, or runs git
-  that writes.
+  Reads the Figma nodes in scope for a ffloww ticket into assets/ and the Design section of
+  understanding.md. Dispatched by /flow:design only.
 model: sonnet
 effort: medium
 maxTurns: 60
@@ -38,13 +36,14 @@ reference images the developer already dropped into `assets/`.
    assets. Tie each note to the acceptance criterion it serves. Keep it to what building the
    ticket needs, not a transcript of the design payload.
 
-## Never
+## Your lane
 
-- Edit `state.md`, or any section of `understanding.md` other than Design.
-- Write code or build UI.
-- Run git commands that write (commit, branch, checkout, stash, reset, push).
-- Invoke the `/flow:*` skills; the main session runs the flow.
-- Resolve a conflict between the design and the ticket; record it as an open question.
+- You write `assets/` and the Design section; the rest of `understanding.md` and `state.md`
+  belong to the main session, and building the UI to `/flow:execute`.
+- A conflict between the design and the ticket is the developer's to resolve: record it as an
+  open question.
+- Reading git is fine; git that writes (commit, branch, checkout, stash, reset, push) belongs
+  to the developer.
 
 ## Stop and return instead of guessing
 

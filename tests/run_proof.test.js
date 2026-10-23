@@ -51,3 +51,30 @@ test('bad input exits 1', () => {
     assert.equal(run('run_proof.js', ['AB-1', '99', '--root', root, '--cmd', 'true']).code, 1);
     assert.equal(run('run_proof.js', ['AB-1', '01', '--root', root]).code, 1);
 });
+
+test('secrets are masked in the entry, the log and the console before anything is written', () => {
+    const { root, dir } = project('AB-1', [['01', 'x']]);
+    const env = { ...process.env, DEPLOY_TOKEN: 'tok-1234567890abcdef' };
+    const cmd = 'echo "Authorization: Bearer abc123secretvalue"; echo "$DEPLOY_TOKEN"; echo password=hunter2hunter';
+    const result = run('run_proof.js', ['AB-1', '01', '--root', root, '--cmd', cmd], { env });
+    const spec = fs.readFileSync(path.join(dir, 'steps', '01-x.md'), 'utf8');
+    const [entry] = runEntries(spec);
+    const log = fs.readFileSync(path.join(dir, entry.match(/- Log: `(evidence\/[^`]+)`/)[1]), 'utf8');
+    for (const text of [entry, log, result.out]) {
+        assert.doesNotMatch(text, /abc123secretvalue|tok-1234567890abcdef|hunter2hunter/);
+    }
+    assert.match(entry, /Authorization: Bearer \[REDACTED\]/);
+    assert.match(entry, /^\[REDACTED:DEPLOY_TOKEN\]$/m);
+    assert.match(entry, /- Redacted: 5 secrets/);
+    assert.match(result.out, /Redacted: {2}5 secrets/);
+});
+
+test('references to secrets and ordinary output stay as they are', () => {
+    const { root, dir } = project('AB-1', [['01', 'x']]);
+    const cmd = 'echo "Authorization: Bearer $API_TOKEN"; echo "Tests: 12 passed, tokens: 1200"';
+    run('run_proof.js', ['AB-1', '01', '--root', root, '--cmd', cmd], { env: { ...process.env, API_TOKEN: '' } });
+    const [entry] = runEntries(fs.readFileSync(path.join(dir, 'steps', '01-x.md'), 'utf8'));
+    assert.match(entry, /- Command: `echo "Authorization: Bearer \$API_TOKEN"; echo "Tests: 12 passed, tokens: 1200"`/);
+    assert.match(entry, /^Tests: 12 passed, tokens: 1200$/m);
+    assert.doesNotMatch(entry, /Redacted/);
+});

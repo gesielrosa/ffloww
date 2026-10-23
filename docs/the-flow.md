@@ -1,9 +1,10 @@
 # The flow, phase by phase
 
-Each phase is an independent, invocable skill. It reads the shared contract
-(`.specs/CONVENTIONS.md`), the ticket's `state.md`, and its `context.md` before
-acting; does its work; writes its artifact; updates `state.md`; and recommends the
-next move. It never auto-advances — you drive transitions.
+Each phase is an independent skill that runs when you type its command. It reads the
+shared contract (`.specs/CONVENTIONS.md`), the ticket's `state.md`, and its
+`context.md` before acting; does its work; writes its artifact; updates `state.md`;
+and ends by naming the next command. You drive transitions: the assistant cannot start
+a phase by itself (each phase skill sets `disable-model-invocation`).
 
 ```
 /flow:start ─▶ understand ─▶ design? ─▶ explore ─▶ plan ─▶ execute ⇄ verify ─▶ ship
@@ -106,8 +107,8 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
 ## Anytime utilities
 
 - **`/flow:status`** — read-only compass. Reports the current phase, step progress, and
-  recommends the next skill. Changes nothing.
-- **`/flow:context`** — append developer context to `context.md` at any point. See
-  [the context channel](context-channel.md).
+  the next command. Changes nothing. Asking "where are we?" reaches it too.
+- **`/flow:context`** — append developer context to `context.md` at any point; sharing
+  it in plain words reaches it too. See [the context channel](context-channel.md).
 - **`/flow:help`** — explains the flow and answers questions about it, in plain language
   (read-only). For "where am I", use `/flow:status`.

@@ -27,7 +27,8 @@
  * Rules: phases move forward freely and between execute and verify; moving back is a
  * regression and needs --reason. A step moves one status forward at a time
  * (todo -> in-progress -> proven -> done); moving it back needs --reason. Only one step
- * is in progress at a time.
+ * is in progress at a time, and a step starts after the previous proven one is done
+ * (committed), so each step's diff stands alone; starting anyway needs --reason.
  */
 
 const fs = require('node:fs');
@@ -258,7 +259,7 @@ function whereWeAre(f) {
     const current = f.steps.find((s) => s.id === f.current_step);
     const progress = f.steps.length ? ` Steps: ${done} of ${f.steps.length} done` + (current ? `; current: ${current.id} — ${current.title} (${current.status}).` : '.') : '';
     const next = nextMove(f);
-    const nextText = next.skill ? `Next: run \`${next.skill}\` to ${next.why}.` : `Next: ${next.why}.`;
+    const nextText = next.skill ? `Next: run \`${next.skill} ${f.ticket}\` to ${next.why}.` : `Next: ${next.why}.`;
     return `Phase: **${f.phase}**.${progress}\n${nextText}`;
 }
 
@@ -272,7 +273,7 @@ function summary(f, nav) {
         ...(f.steps.length ? f.steps.map((s) => `  ${s.id} ${s.status.padEnd(11)} ${s.title}${s.id === f.current_step ? '  <- current' : ''}`) : ['  (none)']),
         'Recent navigation:',
         ...(nav.length ? nav.slice(-5).map((e) => `  - ${e}`) : ['  (none)']),
-        `Next: ${next.skill ? `${next.skill} — ${next.why}` : next.why}`,
+        `Next: ${next.skill ? `${next.skill} ${f.ticket} — ${next.why}` : next.why}`,
     ];
     return out.join('\n');
 }
@@ -352,6 +353,10 @@ function apply(state, ticketDir, command, args, opts) {
             if (delta < 0 && !opts.reason) throw new Error(`moving step ${id} back from ${from} to ${to} needs --reason`);
             const other = f.steps.find((s) => s.id !== id && s.status === 'in-progress');
             if (to === 'in-progress' && other) throw new Error(`step ${other.id} is in progress; one step at a time`);
+            const uncommitted = f.steps.find((s) => s.id !== id && s.status === 'proven');
+            if (to === 'in-progress' && uncommitted && !opts.reason) {
+                throw new Error(`step ${uncommitted.id} is proven but not done: commit it and mark it done first, or pass --reason to start step ${id} anyway`);
+            }
             step.status = to;
             if (to === 'in-progress') f.current_step = id;
             else if (to === 'done' && f.current_step === id) f.current_step = null;

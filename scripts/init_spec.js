@@ -5,7 +5,7 @@
  * init_spec.js — Scaffold a ticket's .specs/ folder for the ffloww dev flow.
  *
  * Creates, inside the TARGET project:
- *   .specs/CONVENTIONS.md              (shared contract; written once, never clobbered)
+ *   .specs/CONVENTIONS.md              (shared contract; kept current until someone edits it)
  *   .specs/<ticket-id>/state.md        (single source of truth for this ticket)
  *   .specs/<ticket-id>/understanding.md
  *   .specs/<ticket-id>/discoveries.md
@@ -16,15 +16,20 @@
  *
  * Usage:
  *   node init_spec.js <ticket-id> [--root <dir>] [--title <text>]
+ *   node init_spec.js --print-conventions
  *
  * Examples:
  *   node init_spec.js AB-1234
  *   node init_spec.js AB-1234 --root /path/to/project --title "Add export button"
  *
  * Idempotent: re-running for an existing ticket is a no-op (it will not overwrite
- * work). CONVENTIONS.md is created only if missing.
+ * work). CONVENTIONS.md carries a stamp with the hash of its body: while the body still
+ * matches the stamp (nobody edited it), a re-run refreshes it to this version of the
+ * flow; an edited file is kept as is, with a warning when it differs from the current
+ * contract (--print-conventions prints that contract).
  */
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -40,14 +45,14 @@ function today() {
 
 const CONVENTIONS_TEMPLATE = `# .specs — ffloww flow conventions
 
-The contract every \`/flow:*\` skill follows. Each skill reads it, the ticket's
-\`state.md\`, and its \`context.md\` before acting. Written once; safe to edit.
-Generated {date}.
+The contract the \`/flow:*\` commands follow. Each phase reads this file, the ticket's
+\`state.md\`, and its \`context.md\` before acting.
 
 ## The record
 
-\`.specs/<ticket-id>/\` is the flow's memory: state lives on disk, never only in the
-conversation, so any phase or step can start in a fresh context.
+\`.specs/<ticket-id>/\` is the flow's memory. Whatever shapes later work (an answer, a
+decision, a constraint) goes into the ticket's files as it happens, so any phase can
+start in a fresh context.
 
 - \`state.md\` — phase, steps, navigation log; the single source of truth
 - \`understanding.md\` — problem, scope, acceptance criteria, design notes
@@ -58,35 +63,44 @@ conversation, so any phase or step can start in a fresh context.
 
 Flow: start → understand → design (if any) → explore → plan → execute ⇄ verify → ship.
 
+## Commands and the ticket
+
+Each phase is a command the developer types: \`/flow:<phase> <ticket-id>\`. A phase ends
+by naming the next command (the \`Next:\` line the state script prints) and suggesting
+\`/clear\` before it, since the next phase reads everything from disk; the developer runs
+it when ready. The ticket id comes from the command's argument; without one, use the
+only ticket in progress under \`.specs/\`, or ask which.
+
 ## State
 
-Change \`state.md\` only through the flow's state script (\`state.js\`: \`show\`, \`phase\`,
+\`state.md\` changes only through the flow's state script (\`state.js\`: \`show\`, \`phase\`,
 \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand edits.
-Phases move forward freely; moving back is a regression and needs a reason, recorded
-in \`decisions.md\` too. A step moves \`todo → in-progress → proven → done\`, one at a
-time.
+Phases move forward freely; moving back is a regression and needs a reason, recorded in
+\`decisions.md\` too. A step moves \`todo → in-progress → proven → done\`, one at a time,
+and the next step starts once the previous one is committed.
 
 ## Roles
 
-- The developer drives every transition; the assistant recommends and never
-  auto-advances.
+- The developer decides: the approach, the slicing, and whether each proof holds.
 - The main session talks to the developer, opens the gates, and changes state.
-  Subagents only build or read, then report back.
+  Subagents build or read, then report back; a report is a lead to check.
 - A step's \`Executor\` line says who builds it: \`delegate\` (a subagent on Sonnet),
   \`delegate-light\` (on Haiku, for mechanical steps), or \`inline\` (the main session).
 
 ## Gates — make it prove it
 
-- Proof is raw evidence recorded by the proof runner — command, exit code, real
-  output — or a screenshot path. Numbers, not opinions.
-- The assistant never marks its own work as passing; the developer decides at the
-  step's \`Gate\`. Recorded evidence is immutable: a new result is a new run.
+- Proof is raw evidence recorded by the proof runner (\`run_proof.js\`): command, exit
+  code, real output; or a screenshot path. Numbers, not opinions.
+- The developer grades the evidence at the step's \`Gate\`; the assistant presents it
+  and records the decision. Recorded evidence is immutable: a new result is a new run.
+- Proofs read credentials from environment variables; the runner masks the secrets it
+  recognizes before recording.
 
 ## Git & PR
 
-Suggested, never executed: \`/flow:execute\` drafts commit messages, \`/flow:ship\` a
-PR/MR draft. No VCS host or commit convention is assumed. Reading git is fine;
-nothing that writes.
+Read git freely (\`status\`, \`diff\`, \`log\`). Commits, branches, pushes and PRs are the
+developer's: \`/flow:execute\` drafts commit messages and \`/flow:ship\` a PR/MR draft, in
+the developer's conventions, for whatever VCS host they use.
 
 Principles: give it context · explore before build · you architect, it types · small
 steps · make it prove it · own it.
@@ -107,8 +121,8 @@ steps: []
 
 ## Where we are
 
-Phase: **start**. Next: run \`/flow:understand\` to read the ticket and capture the
-problem and acceptance criteria.
+Phase: **start**.
+Next: run \`/flow:understand {ticket}\` to read the ticket and capture the problem and acceptance criteria.
 
 ## Navigation log
 
@@ -275,11 +289,40 @@ function writeFile(filePath, content, { overwrite = true } = {}) {
     return true;
 }
 
-/** Ensure .specs/CONVENTIONS.md exists (written once). */
+// First line of CONVENTIONS.md: the hash of the body as it was written.
+const STAMP = /^<!-- ffloww:conventions sha256:([0-9a-f]{16})\b[^\n]*-->\n/;
+
+/** Short sha256 of a text. */
+function digest(text) {
+    return crypto.createHash('sha256').update(text).digest('hex').slice(0, 16);
+}
+
+/** CONVENTIONS.md as written: the stamp line, then the contract. */
+function conventionsFile() {
+    const note = '/flow:start keeps this file current until it is edited; an edited file is kept as is.';
+    return `<!-- ffloww:conventions sha256:${digest(CONVENTIONS_TEMPLATE)} — ${note} -->\n${CONVENTIONS_TEMPLATE}`;
+}
+
+/** Write .specs/CONVENTIONS.md, or refresh it while nobody has edited it. */
 function ensureConventions(specsRoot) {
     const file = path.join(specsRoot, 'CONVENTIONS.md');
-    const written = writeFile(file, fill(CONVENTIONS_TEMPLATE, { date: today() }), { overwrite: false });
-    console.log(written ? '[ok] Created .specs/CONVENTIONS.md' : '[skip] .specs/CONVENTIONS.md already exists (kept)');
+    if (!fs.existsSync(file)) {
+        writeFile(file, conventionsFile());
+        console.log('[ok] Created .specs/CONVENTIONS.md');
+        return;
+    }
+    const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+    const stamp = text.match(STAMP);
+    const body = stamp ? text.slice(stamp[0].length) : text;
+    if (body === CONVENTIONS_TEMPLATE) {
+        console.log('[skip] .specs/CONVENTIONS.md is current');
+    } else if (stamp && digest(body) === stamp[1]) {
+        writeFile(file, conventionsFile());
+        console.log('[ok] Updated .specs/CONVENTIONS.md to this version of the flow');
+    } else {
+        const why = stamp ? 'has local edits' : 'predates this version of the flow';
+        console.log(`[warn] .specs/CONVENTIONS.md ${why}, so it was kept as is. The current contract: node "${__filename}" --print-conventions`);
+    }
 }
 
 /** Scaffold a ticket folder. Returns the ticket dir, or null on error/no-op. */
@@ -312,11 +355,12 @@ function initSpec(ticket, root, title) {
 }
 
 function parseArgs(argv) {
-    const out = { ticket: null, root: process.cwd(), title: '' };
+    const out = { ticket: null, root: process.cwd(), title: '', printConventions: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === '--root') out.root = argv[++i];
         else if (a === '--title') out.title = argv[++i];
+        else if (a === '--print-conventions') out.printConventions = true;
         else if (!a.startsWith('--') && out.ticket === null) out.ticket = a;
     }
     return out;
@@ -324,14 +368,19 @@ function parseArgs(argv) {
 
 function usage() {
     console.log('Usage: node init_spec.js <ticket-id> [--root <dir>] [--title <text>]');
+    console.log('       node init_spec.js --print-conventions');
     console.log('\nExamples:');
     console.log('  node init_spec.js AB-1234');
     console.log('  node init_spec.js AB-1234 --root /path/to/project --title "Add export button"');
 }
 
 function main() {
-    const { ticket, root, title } = parseArgs(process.argv.slice(2));
+    const { ticket, root, title, printConventions } = parseArgs(process.argv.slice(2));
 
+    if (printConventions) {
+        process.stdout.write(CONVENTIONS_TEMPLATE);
+        process.exit(0);
+    }
     if (!ticket) {
         usage();
         process.exit(1);
@@ -345,11 +394,13 @@ function main() {
     console.log(`   Project root: ${path.resolve(root)}`);
     console.log();
 
-    const result = initSpec(ticket, root, title);
+    initSpec(ticket, root, title);
 
-    console.log('\nNext: run `/flow:understand` to capture the problem and acceptance criteria.');
+    console.log(`\nNext: /flow:understand ${ticket} — capture the problem and acceptance criteria.`);
     // Exit 0 even on no-op (re-run) — only hard errors above exit non-zero.
     process.exit(0);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { CONVENTIONS_TEMPLATE, conventionsFile, digest };

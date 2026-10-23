@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: context-captures-background
+description: Background shared in plain words for a ticket lands in its context.md, and the phase stays where it was.
+tags: [smoke, context]
+context:
+  scaffold_script: scaffold.sh

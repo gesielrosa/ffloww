@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: start-names-next-command
+description: /flow:start scaffolds the ticket's record, stays in the start phase, and names /flow:understand with the ticket id.
+tags: [smoke, start]
+context:
+  scaffold_script: scaffold.sh

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: execute-stops-at-gate
+description: A delegate-light step is built by its executor subagent, proven through the runner, reviewed (new file included), and stopped at the human gate with no commit.
+tags: [heavy, execute]
+context:
+  scaffold_script: scaffold.sh

@@ -1,61 +1,51 @@
 ---
 name: understand
 description: >
-  Use after /flow:start to understand a ticket before exploring or planning. Reads the
-  work item from Azure DevOps and captures problem, scope, non-goals, and acceptance
-  criteria in understanding.md — confirming gaps with the developer, never inventing
-  criteria — and detects whether design is involved. Trigger on "understand the
-  ticket", "read AB-1234", or "what does this ticket need".
+  Read the ticket from Azure DevOps and capture its problem, scope, and acceptance criteria.
+disable-model-invocation: true
+argument-hint: "<ticket-id>"
 ---
 
 # /flow:understand
 
-Capture *what* must be built and *why*, before any code is explored. This phase
-reads the ticket and writes the ticket's `understanding.md`. It does not explore the
-codebase and it does not plan.
+Capture *what* must be built and *why*, before any code is explored. This phase writes
+`understanding.md`, and `context.md` when the developer adds context; exploring the code
+starts in `/flow:explore`.
 
 ## Before you start
 
-- The ticket must be scaffolded. If `.specs/<ticket-id>/` is missing, run
-  `/flow:start` first.
-- Read `.specs/CONVENTIONS.md`, the ticket's `.specs/<ticket-id>/state.md`, and its
-  `context.md` (anything the developer added earlier) to orient.
+Read `.specs/CONVENTIONS.md`, then the ticket's `state.md` and `context.md`. A ticket
+without a `.specs/<ticket-id>/` folder starts with `/flow:start <ticket-id>`: say so and
+stop.
 
 ## Steps
 
-1. **Locate the work item.** Take the ticket id from `state.md` and fetch it from the
-   bundled **azure-devops** MCP. If the id is a work-item number, get it directly
-   (e.g. the `wit_get_work_item` tool). If it is a code or name, search for
-   it first (e.g. `search_workitem` or a WIQL query) and confirm the match with the
-   developer.
+1. **Locate the work item** in the bundled **azure-devops** MCP: a work-item number
+   directly (e.g. `wit_get_work_item`); a code or name by searching first (e.g.
+   `search_workitem` or a WIQL query), then confirm the match with the developer.
 
 2. **Capture understanding** into `understanding.md`:
-   - **Ticket** — id, title, and the real work-item URL (link it; that is evidence).
-   - **Problem** — what is actually being asked; scope and explicit non-goals.
-   - **Acceptance criteria** — pull them from the work item. If the ticket has none or
-     they are ambiguous, draft candidates and **confirm them with the developer** —
-     never invent acceptance criteria silently. These drive the later proof.
-   - **Open questions** — anything to resolve before planning.
+   - **Ticket**: id, title, and the real work-item URL (the link is evidence).
+   - **Problem**: what is actually being asked; scope and explicit non-goals.
+   - **Acceptance criteria**: from the work item, since they drive the later proof.
+     Where the ticket has none, or they are ambiguous, draft candidates, mark them as
+     drafts, and confirm each one with the developer.
+   - **Open questions**: anything to resolve before planning.
 
-3. **Ask for extra context.** Present the draft understanding (problem + acceptance
-   criteria) and ask the developer for anything the ticket and the codebase do not
-   carry — links (Slack, docs, related PRs/incidents), hard constraints, out-of-ticket
-   decisions, gotchas, related work. Append what they give to `context.md`, then refine
-   the understanding with it. If they have nothing, move on.
+3. **Ask for extra context.** Present the draft (problem + acceptance criteria) and ask
+   for what the ticket and the codebase do not carry: links (Slack, docs, related PRs or
+   incidents), hard constraints, out-of-ticket decisions, gotchas, related work. Append
+   what the developer gives to `context.md` and refine the understanding with it.
 
-4. **Determine design involvement (actively).** Infer from the work — screens,
-   components, UI changes, visual wording — whether design is involved. Do not rely on a
-   Figma link being in the ticket; it often is not there. When there is a UI signal, or
-   when it is unclear, **ask the developer**: is there a design, and do they have a Figma
-   link or screenshots?
-   - If design is involved: record `design_involved` as `true` (step 5), capture whatever
-     references the developer gives (Figma URL, screenshots — they can drop files into
-     `assets/`) under the Design section, and plan to run `/flow:design` next, which pulls
-     the exact node ids and exports the assets.
-   - If not: write "No design involved" and record `design_involved` as `false`.
+4. **Determine design involvement.** Infer it from the work (screens, components, UI
+   changes, visual wording); a Figma link is often missing from the ticket. When there is
+   a UI signal, or it is unclear, ask the developer whether there is a design, and for its
+   Figma link or screenshots.
+   - Design involved: capture the references given (a Figma URL, screenshots dropped into
+     `assets/`) under the Design section; `/flow:design` reads the exact nodes next.
+   - No design: write "No design involved".
 
-5. **Update state** through the flow's state script, from the project root. It
-   validates the values and writes the navigation log:
+5. **Update state** through the state script, from the project root:
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set design_involved <true|false>
@@ -64,15 +54,6 @@ codebase and it does not plan.
 
 ## Handoff
 
-Summarize the problem and acceptance criteria back to the developer for a quick
-sanity check. Then recommend the next skill — `/flow:design` if design is involved,
-otherwise `/flow:explore` — and wait for the go-ahead. Do not auto-advance. The
-understanding is on disk, so suggest starting the next phase in a fresh context
-(`/clear` in Claude Code).
-
-## Guardrails
-
-- Do not explore the codebase or propose solutions here — that is `/flow:explore`.
-- Never fabricate or assume acceptance criteria; confirm gaps with the developer.
-- Keep everything on disk in `understanding.md` and `state.md`, not only in chat.
-- Never run `git`.
+Summarize the problem and acceptance criteria for a quick sanity check. Then name the
+next command from the `Next:` line of the state output, and suggest `/clear` before it:
+the understanding is on disk.

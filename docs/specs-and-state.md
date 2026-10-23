@@ -8,7 +8,7 @@ so the work survives context compaction and any skill can resume from it.
 
 ```
 .specs/
-  CONVENTIONS.md            # shared contract, written once per project
+  CONVENTIONS.md            # shared contract, kept current until edited
   <ticket-id>/
     state.md                # single source of truth (see below)
     understanding.md        # problem, scope, acceptance criteria (+ design notes)
@@ -30,10 +30,16 @@ idempotent — re-running on an existing ticket overwrites nothing.
 
 ## `CONVENTIONS.md` — the shared contract
 
-Written once per project and read by every skill at start. It is how independent
-skills stay consistent without referencing each other's files. It documents the state
-schema, the navigation rules, the gate protocol, the principles, and the git/PR
-policy. It is safe to edit to fit local conventions.
+Written into the project by `/flow:start` and read by every phase at start. It is how
+independent skills stay consistent without referencing each other's files, and the one
+home of the rules they share: the commands and how a phase ends, the state rules, the
+roles, the gate protocol, the git/PR policy, and the principles.
+
+Its first line is a stamp with the hash of its body. While the body still matches the
+stamp, `/flow:start` refreshes the file to the installed version of the flow. It is
+safe to edit to fit local conventions: an edited file is kept as is, and `/flow:start`
+warns when it differs from the current contract (`init_spec.js --print-conventions`
+prints that contract for a merge).
 
 ## `state.md` — the single source of truth
 
@@ -114,7 +120,12 @@ Opus → inline.
 retyped: it runs each proof command, saves the full output to `evidence/`, and appends
 the command, exit code, duration, last lines, and log path to the step — or, for a
 whole-ticket check, to `verification.md`, one entry per acceptance criterion. The
-record comes from the script, so the agent cannot paraphrase or invent it.
+record comes from the script, so the agent cannot paraphrase or invent it. Since a
+recorded entry cannot be edited afterwards, the runner masks secrets before it writes
+anything (`scripts/lib/redact.js`): the values of environment variables named like
+secrets (`*_TOKEN`, `*_PASSWORD`, `*_PAT`, …), auth headers, `key=value` credentials,
+credentials in URLs, private keys, and well-known token formats. The entry notes how
+many were masked. Proofs should read credentials from environment variables.
 
 ## Gates — "make it prove it"
 
@@ -134,7 +145,10 @@ A step is not done because the agent says so:
 
 ## Navigation — human-driven and bidirectional
 
-- You drive every transition. The agent recommends and proves; it never auto-advances.
+- You drive every transition. Each phase runs only when you type its command and ends
+  by naming the next one; the agent proves, and cannot start a phase by itself.
+- A step starts once the previous proven step is committed (`state.js` refuses
+  otherwise; `--reason` starts it anyway), so each step's change can be reviewed alone.
 - You can **advance**, **repeat** the current phase, or **regress** to an earlier one.
 - A regression is appended to the navigation log *and* to `decisions.md` with its
   reason. History is never rewritten.

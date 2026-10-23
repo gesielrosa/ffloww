@@ -61,6 +61,19 @@ test('steps move one status at a time, one in progress, and sync the spec', () =
     assert.equal(parseState(read()).fields.steps[0].title, 'Add the exporter');
 });
 
+test('the next step starts once the proven one is committed, or with a reason', () => {
+    const { state, read } = setup();
+    state('add-step', '01', 'One');
+    state('add-step', '02', 'Two');
+    state('step', '01', 'in-progress');
+    state('step', '01', 'proven');
+    const early = state('step', '02', 'in-progress');
+    assert.equal(early.code, 1);
+    assert.match(early.out, /step 01 is proven but not done: commit it/);
+    assert.equal(state('step', '02', 'in-progress', '--reason', 'one commit for both').code, 0);
+    assert.match(read(), /step 02: todo → in-progress: one commit for both/);
+});
+
 test('remove-step only for todo steps, with a reason', () => {
     const { state, read } = setup();
     state('add-step', '01', 'One');
@@ -86,7 +99,7 @@ test('show reports the next move', () => {
     const { state } = setup();
     state('phase', 'understand');
     state('set', 'design_involved', 'true');
-    assert.match(state('show').out, /Next: \/flow:design/);
+    assert.match(state('show').out, /Next: \/flow:design AB-1 — /);
     const json = JSON.parse(state('show', '--json').out);
     assert.equal(json.next.skill, '/flow:design');
 });
@@ -97,7 +110,7 @@ test('Where we are is regenerated and the log keeps history', () => {
     state('set', 'design_involved', 'false');
     state('log', 'context added by the developer');
     const text = read();
-    assert.match(text, /## Where we are\n\nPhase: \*\*understand\*\*\.\nNext: run `\/flow:explore`/);
+    assert.match(text, /## Where we are\n\nPhase: \*\*understand\*\*\.\nNext: run `\/flow:explore AB-1`/);
     assert.match(text, /flow initialized \(phase: start\)\n- \d{4}-\d{2}-\d{2} — start → understand\n- \d{4}-\d{2}-\d{2} — context added by the developer\n$/);
 });
 

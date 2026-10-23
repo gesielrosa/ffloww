@@ -10,9 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `ffloww` is a **Claude Code plugin**, named `flow`, and the marketplace that publishes
 it (also `ffloww`). It does not ship application code — it ships *agent context*: a set
-of invocable **`/flow:*` skills**, three subagents, two scripts, and two MCP servers
-that, once installed, replicate a ticket-to-PR development flow in the consuming
-project.
+of **`/flow:*` skills**, four subagents, the flow's scripts and hooks, and two MCP
+servers that, once installed, replicate a ticket-to-PR development flow in the
+consuming project.
 
 The flow it encodes (and the human/AI contract behind it):
 
@@ -37,18 +37,30 @@ human converges and decides.**
   `state.md` (current phase, step statuses, gate state, navigation log),
   `understanding.md`, `context.md`, `discoveries.md`, `decisions.md` (ADR), `plan.md`,
   `steps/NN-*.md`, `verification.md`, `evidence/` (proof logs), and `assets/`.
-- **`.specs/CONVENTIONS.md`** is a shared contract written once into the target
-  project by the scaffolding script (state schema + gate protocol + principles +
-  navigation rules). Every skill reads it + the ticket's `state.md` at start. This
-  is how independent skills stay DRY without referencing each other's files.
-- **Skills are independent and invocable** (`/flow:start`, `/flow:understand`,
-  `/flow:design`, `/flow:explore`, `/flow:plan`, `/flow:execute`, `/flow:verify`,
-  `/flow:ship`, plus utilities `/flow:status`, `/flow:context`, `/flow:help`).
-  Skills name each other by their `/flow:<name>` command. `/flow:status` reads
-  `state.md` and recommends the next skill; `/flow:context` appends developer
-  context; `/flow:help` explains the flow; each phase skill also updates state and
-  suggests the next move on exit. Skills never read `docs/` — help and explainer
-  skills must be self-contained.
+- **`.specs/CONVENTIONS.md`** is the shared contract the scaffolding script writes into
+  the target project: commands and how a phase ends, state rules, roles, gate protocol,
+  git/PR policy, principles. It is the one home of the rules every phase shares, so a
+  skill states only what is particular to its phase. Every phase reads it + the
+  ticket's `state.md` at start. Its first line stamps the hash of its body: while the
+  body still matches, `init_spec.js` refreshes it to the plugin's current template;
+  an edited file is kept, with a warning (`--print-conventions` prints the template).
+- **Skills are independent; phases run only when the developer types them.**
+  `/flow:start`, the phases (`/flow:understand`, `/flow:design`, `/flow:explore`,
+  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`) and `/flow:help` set
+  `disable-model-invocation: true`: their descriptions cost no context in any session,
+  and neither the model nor a subagent can start a phase (the Skill tool refuses), so
+  "the developer drives transitions" is enforced by the harness. Their descriptions are
+  one-line, human-facing. `/flow:status` and `/flow:context` stay model-invoked, so
+  plain requests reach them; their descriptions carry one trigger per branch.
+  `tests/skills.test.js` pins this split. Each phase ends by naming the next command
+  from the `Next:` line `state.js` prints (ticket id included), so the mapping lives
+  only in `nextMove()`. Skills never read `docs/` — help and explainer skills must be
+  self-contained. `claude plugin details` still counts user-invoked descriptions as
+  always-on; measure with a headless `claude -p` listing instead.
+- **Instructions are written positively, once.** A rule shared by every phase lives in
+  `CONVENTIONS.md`; a rule a hook or script enforces is stated as the lane it protects,
+  not as a prohibition; skills dispatch agents by naming the tool (`Call the Agent tool
+  with subagent_type flow:<name>`).
 - **Shared scripts live once, at the plugin root.** `scripts/init_spec.js` and
   `scripts/run_proof.js` are called from skill and agent text as
   `node "${CLAUDE_PLUGIN_ROOT}/scripts/<name>.js"` — Claude Code substitutes the
@@ -70,13 +82,18 @@ human converges and decides.**
   `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with
   `--reason`, logged as a regression; execute ⇄ verify is free), steps move one status
-  at a time with one in progress, step specs' Status lines stay in sync, the navigation
-  log is appended, and "Where we are" is regenerated. `nextMove()` in it is the single
-  source of the "what's next" mapping that `/flow:status` reports.
+  at a time with one in progress, and a step starts only once the previous proven step
+  is done, i.e. committed (`--reason` overrides), so each step's diff stands alone.
+  Step specs' Status lines stay in sync, the navigation log is appended, and "Where we
+  are" is regenerated. `nextMove()` in it is the single source of the "what's next"
+  mapping that every phase's handoff, `/flow:status`, and the SessionStart hook report.
 - **Evidence is recorded by a script, not retyped.** `run_proof.js` runs each proof
   command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
   exit code, and last lines to the step spec (or, for the target `ticket`, to
-  `verification.md`).
+  `verification.md`). Recorded evidence cannot be edited afterwards, so the runner masks
+  secrets first (`scripts/lib/redact.js`: secret-named env var values, auth headers,
+  `key=value` credentials, URL credentials, private keys, known token formats) and the
+  entry notes the count.
 - **A cleared session resumes from disk.** A `SessionStart` hook
   (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
@@ -107,8 +124,10 @@ ffloww/
   agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
   scripts/                 # init_spec.js, state.js, run_proof.js, guard.js, session_start.js
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
+    lib/redact.js          # secret masking for run_proof.js
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
   tests/                   # node --test tests/*.test.js (no dependencies)
+  evals/                   # claude plugin eval cases: behavior of the commands (see evals/README.md)
   .mcp.json                # bundled MCP servers: azure-devops, figma
   docs/                    # product docs (concept, the flow, specs & state, install, reference)
   README.md  CLAUDE.md
@@ -121,7 +140,8 @@ maintainers and readers; plugins do not load them as context.
 ## Plugin dev loop
 
 ```bash
-node --test tests/*.test.js         # scripts: state.js, run_proof.js, guard.js, session_start.js
+node --test tests/*.test.js         # scripts, plus the skill/agent contracts (skills, agents tests)
+claude plugin eval . --scaffold --trust-plugin --ablation none --model sonnet --no-publish --allow-tools Bash Edit Write
 claude plugin validate .            # plugin.json + marketplace.json
 claude plugin validate ./skills --strict && claude plugin validate ./agents --strict
 claude --plugin-dir .               # load this working copy for a session; /reload-plugins after edits
@@ -129,9 +149,11 @@ claude --plugin-dir . plugin details flow   # component inventory + projected to
 claude plugin tag .                 # release tag flow--v<version> (checks plugin.json vs marketplace)
 ```
 
-`claude plugin validate . --strict` always reports one warning — `CLAUDE.md` at the
-plugin root is not loaded as context — which is expected here. For a headless smoke
-test, run a skill in a scratch git repo:
+`claude plugin validate . --strict` always reports the warning that `CLAUDE.md` at the
+plugin root is not loaded as context, which is expected here; its plugin-directory
+checks also flag the missing icon and privacy policy URL. Change a skill's behavior
+with the evals before and after (`evals/README.md` shows how to compare two versions).
+For a headless smoke test, run a skill in a scratch git repo:
 `claude -p "/flow:start TEST-1" --plugin-dir <this repo> --strict-mcp-config --model haiku --allowedTools "Bash(node *)"`.
 
 Release: bump `version` in `.claude-plugin/plugin.json` — consumers on a pinned
@@ -148,5 +170,6 @@ accounts, never through the plugin. In a session their tools are named
 
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
 runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
-script, and the `delegate-light` (Haiku) executor tier. Next: an end-to-end run on a
-real ticket, and an independent diff reviewer before the gate.
+script, the `delegate-light` (Haiku) executor tier, user-invoked phases, secret
+masking in the runner, a self-refreshing `CONVENTIONS.md`, and the eval suite. Next: an
+end-to-end run on a real ticket, and an independent diff reviewer before the gate.
