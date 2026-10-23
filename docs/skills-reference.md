@@ -49,8 +49,8 @@ recommends the next move on exit. None of them run `git`.
 
 - **When:** after exploring, to converge.
 - **Does:** records your chosen approach as an ADR; agrees the proof strategy; slices
-  the work into small, provable steps; marks who builds each (`delegate` to a subagent
-  or `inline`).
+  the work into small, provable steps; marks who builds each (`delegate` to a Sonnet
+  subagent, `delegate-light` to a Haiku one, or `inline`).
 - **Writes:** `decisions.md`, `steps/NN-<slug>.md`; sets `proof_definition` and
   `steps:` in `state.md`.
 - **Hands off to:** `/flow:execute`.

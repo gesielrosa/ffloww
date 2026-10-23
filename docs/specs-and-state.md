@@ -102,10 +102,12 @@ output from running the proof), and **Gate** (the human decision). `/flow:plan` 
 Executor/Spec/Changes/Proof; `/flow:execute` and `/flow:verify` fill Evidence and Gate.
 
 **Executor** says who builds the step: `delegate` hands it to the `flow:step-executor`
-subagent, which runs on a cheaper model and keeps the build's file reads and command
-output out of the main session; `inline` keeps it in the main session (spikes, steps
-that leave a choice open, proofs that need you during the step). You can flip it when
-you approve the plan.
+subagent on Sonnet, which keeps the build's file reads and command output out of the
+main session; `delegate-light` hands it to the same subagent on Haiku, for mechanical
+steps (a rename, a config change, a case that mirrors an existing one); `inline` keeps
+it in the main session (spikes, steps that leave a choice open, proofs that need you
+during the step). You can change it when you approve the plan. A delegated step that
+fails its proof three times moves one model up: Haiku → Sonnet → Opus → inline.
 
 **Evidence** is recorded by the plugin's proof runner (`scripts/run_proof.js`), not
 retyped: it runs each proof command, saves the full output to `evidence/`, and appends

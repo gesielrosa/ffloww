@@ -56,13 +56,14 @@ human converges and decides.**
 - **The main session decides; subagents type.** The main session (the developer's
   model, e.g. Opus) talks to the developer, opens gates, and owns `state.md`. Bounded,
   decision-free work runs in subagents pinned to cheaper models: `flow:step-executor`
-  (Sonnet) builds `delegate` steps, `flow:design-reader` (Sonnet) reads the Figma
-  nodes, `flow:code-mapper` (Haiku, read-only) maps code for `/flow:explore`. Their
-  output is a lead the main session checks, never a verdict. `/flow:plan` records who
-  builds each step in the step's `Executor` line; `/flow:execute` escalates to a more
-  capable model per call when a delegated step stalls. Skills never set `model:` in
-  their own frontmatter — that switches the main session's model and rebuilds its
-  prompt cache. Phases hand off with a `/clear` suggestion, since `.specs/` carries
+  builds `delegate` steps on Sonnet and `delegate-light` steps on Haiku (per-call
+  `model: haiku`, which overrides the frontmatter), `flow:design-reader` (Sonnet)
+  reads the Figma nodes, `flow:code-mapper` (Haiku, read-only) maps code for
+  `/flow:explore`. Their output is a lead the main session checks, never a verdict.
+  `/flow:plan` records who builds each step in the step's `Executor` line;
+  `/flow:execute` escalates one model per call (Haiku → Sonnet → Opus → inline) when a
+  delegated step stalls. Skills never set `model:` in their own frontmatter — that
+  switches the main session's model and rebuilds its prompt cache. Phases hand off with a `/clear` suggestion, since `.specs/` carries
   everything forward.
 - **State changes through a script, never by hand.** `scripts/state.js` (`show`,
   `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
@@ -141,5 +142,5 @@ accounts, never through the plugin. In a session their tools are named
 
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
 runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
-script. Next: an end-to-end run on a real ticket, a `delegate-light` (Haiku) executor
-tier for trivial steps, and an independent diff reviewer before the gate.
+script, and the `delegate-light` (Haiku) executor tier. Next: an end-to-end run on a
+real ticket, and an independent diff reviewer before the gate.

@@ -59,8 +59,9 @@ Per ticket:
 - \`decisions.md\` — ADR log: chosen approach, trade-offs, regression reasons
 - \`plan.md\` — the step breakdown
 - \`steps/NN-<slug>.md\` — one spec per step (copy from \`steps/_TEMPLATE.md\`); its
-  \`Executor\` line says who builds it: \`delegate\` (a subagent on a cheaper model) or
-  \`inline\` (the main session)
+  \`Executor\` line says who builds it: \`delegate\` (a subagent on Sonnet),
+  \`delegate-light\` (the same subagent on Haiku, for mechanical steps), or \`inline\`
+  (the main session)
 - \`verification.md\` — whole-ticket check, one evidence entry per acceptance criterion
 - \`evidence/\` — full proof logs, written by the proof runner
 - \`assets/\` — Figma exports, screenshots, images used as reference
@@ -263,7 +264,7 @@ const PLAN_TEMPLATE = `# Plan — {ticket}
 const STEP_TEMPLATE = `# Step <n> — <title>
 
 - Status: todo <!-- todo | in-progress | proven | done -->
-- Executor: <!-- delegate (a subagent on a cheaper model) | inline (the main session); set by /flow:plan -->
+- Executor: <!-- delegate (subagent on Sonnet) | delegate-light (subagent on Haiku, mechanical steps) | inline (main session); set by /flow:plan -->
 - Spec: <!-- what this step delivers; its scope boundary -->
 
 ## Changes

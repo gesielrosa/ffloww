@@ -45,13 +45,21 @@ the developer's choices; this skill drafts the ADR and the step specs from them.
    replace the `<n>`/`<title>` placeholders, and fill the **Spec**, **Changes**, and
    **Proof** sections. Leave **Evidence** and **Gate** for `/flow:execute`.
 
-4. **Choose who builds each step.** Set each step's **Executor** line. `delegate` hands
-   the step to a subagent on a cheaper model, so its spec must be buildable without a
-   decision: the files to touch, the existing code to follow (`file:line`), and the
-   exact proof commands. `inline` keeps it in the main session: spikes and
-   investigations, steps that leave a choice open, and proofs that need the developer
-   during the step. Aim for `delegate` by writing complete specs; the developer can flip
-   any step when approving the plan.
+4. **Choose who builds each step.** Set each step's **Executor** line to one of:
+   - `delegate` — a subagent on Sonnet builds it, so the spec must be buildable without
+     a decision: the files to touch, the existing code to follow (`file:line`), and the
+     exact proof commands.
+   - `delegate-light` — the same subagent on Haiku, for mechanical steps with nothing to
+     interpret: a rename or move, a config or copy change, a field or test case that
+     mirrors an existing one line for line, with a fast, deterministic proof. Not for
+     new logic, changes across modules, or anything touching security, data, or
+     concurrency.
+   - `inline` — the main session builds it: spikes and investigations, steps that leave
+     a choice open, and proofs that need the developer during the step.
+
+   Aim for `delegate` or `delegate-light` by writing complete specs; when unsure
+   between the two, choose `delegate`. The developer can change any step when
+   approving the plan.
 
 5. **Mirror into state** through the state script: set the phase, then add one entry
    per step, ids matching the NN files. It writes the navigation log; `/flow:execute`

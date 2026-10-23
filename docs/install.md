@@ -43,7 +43,8 @@ itself.
 - **Skills** — `/flow:start`, `/flow:understand`, `/flow:design`, `/flow:explore`,
   `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`, and the utilities
   `/flow:status`, `/flow:context`, `/flow:help`.
-- **Subagents** — `flow:step-executor` (Sonnet) builds delegated steps,
+- **Subagents** — `flow:step-executor` builds delegated steps (Sonnet, or Haiku for
+  `delegate-light` steps),
   `flow:design-reader` (Sonnet) reads the Figma nodes, `flow:code-mapper` (Haiku,
   read-only) maps code during exploration. Their models are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way

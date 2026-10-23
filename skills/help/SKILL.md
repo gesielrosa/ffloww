@@ -91,9 +91,10 @@ skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
   `/flow:understand` closes.
 - **How do I know what to run next?** `/flow:start` to begin, then `/flow:status` anytime.
 - **Does the AI commit or open PRs?** No — it suggests; you execute.
-- **Who writes the code?** `/flow:plan` marks each step `delegate` or `inline`. A
-  delegated step is built by the `flow:step-executor` subagent on a cheaper model; the
-  main session keeps the conversation, the gate, and `state.md`. You can flip any step.
+- **Who writes the code?** `/flow:plan` marks each step `delegate`, `delegate-light`,
+  or `inline`. A delegated step is built by the `flow:step-executor` subagent — on
+  Sonnet, or on Haiku for mechanical `delegate-light` steps; the main session keeps the
+  conversation, the gate, and `state.md`. You can change any step.
   Reading the Figma (`flow:design-reader`) and mapping the code (`flow:code-mapper`)
   also run in subagents, so their bulk stays out of your session.
 - **Can the AI rewrite the evidence?** No. The proof runner records it, and the

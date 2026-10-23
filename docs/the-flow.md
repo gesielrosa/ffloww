@@ -63,8 +63,9 @@ The convergent phase. You architect, it types.
   `state.md` as `proof_definition`.
 - Slices the work into small steps: one `steps/NN-<slug>.md` each (from
   `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`.
-- Marks who builds each step: `delegate` (a subagent on a cheaper model; the spec must
-  need no decision) or `inline` (the main session). You can flip any of them.
+- Marks who builds each step: `delegate` (a subagent on Sonnet; the spec must need no
+  decision), `delegate-light` (the same subagent on Haiku, for mechanical steps), or
+  `inline` (the main session). You can change any of them.
 
 ## 5. Execute — `/flow:execute`
 
