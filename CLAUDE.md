@@ -76,6 +76,11 @@ human converges and decides.**
   command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
   exit code, and last lines to the step spec (or, for the target `ticket`, to
   `verification.md`).
+- **A cleared session resumes from disk.** A `SessionStart` hook
+  (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
+  next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
+  nothing in a project without `.specs/`, so the `/clear` the flow suggests between
+  phases costs no re-orientation.
 - **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
   runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
   session it denies edits to `evidence/` logs, edits that would remove or change a
@@ -99,9 +104,9 @@ ffloww/
     marketplace.json   # marketplace "ffloww", listing this repo ("./") as plugin "flow"
   skills/<name>/SKILL.md   # one skill per phase/utility → /flow:<name> (lean, <500 lines)
   agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
-  scripts/                 # init_spec.js, state.js, run_proof.js, guard.js — shared by skills, agents, hooks
+  scripts/                 # init_spec.js, state.js, run_proof.js, guard.js, session_start.js
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
-  hooks/hooks.json         # PreToolUse → guard.js
+  hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
   tests/                   # node --test tests/*.test.js (no dependencies)
   .mcp.json                # bundled MCP servers: azure-devops, figma
   docs/                    # product docs (concept, the flow, specs & state, install, reference)
@@ -115,7 +120,7 @@ maintainers and readers; plugins do not load them as context.
 ## Plugin dev loop
 
 ```bash
-node --test tests/*.test.js         # scripts: state.js, run_proof.js, guard.js
+node --test tests/*.test.js         # scripts: state.js, run_proof.js, guard.js, session_start.js
 claude plugin validate .            # plugin.json + marketplace.json
 claude plugin validate ./skills --strict && claude plugin validate ./agents --strict
 claude --plugin-dir .               # load this working copy for a session; /reload-plugins after edits

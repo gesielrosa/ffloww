@@ -102,4 +102,5 @@ skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
   hand edits to `state.md`. The flow's subagents are also blocked from git writes and a
   step's gate.
 - **Why does it suggest `/clear` between phases?** Everything a phase needs is on disk in
-  `.specs/`, so a fresh context costs nothing in knowledge and saves tokens.
+  `.specs/`, so a fresh context costs nothing in knowledge and saves tokens. A new or
+  cleared session is told which tickets are in progress and their next move.

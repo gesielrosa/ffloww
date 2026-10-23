@@ -65,7 +65,8 @@ State never lives only in the model's context. Each ticket gets a folder in the
     assets/               # Figma exports, screenshots
 ```
 
-It survives context compaction and lets any skill resume from disk.
+It survives context compaction and lets any skill resume from disk; a new or cleared
+session is told which tickets are in progress and what comes next.
 
 ## Install
 

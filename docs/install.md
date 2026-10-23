@@ -49,6 +49,9 @@ itself.
   read-only) maps code during exploration. Their models are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way
   `state.md` changes; `run_proof.js` runs proofs and records their evidence.
+- **A resume hook** — at session start, after `/clear`, and after compaction,
+  `scripts/session_start.js` adds one line per ticket in progress (phase, step,
+  next move) to the session. In a project without `.specs/` it adds nothing.
 - **A guard hook** — `scripts/guard.js` runs before every Bash, Edit, and Write call
   while the plugin is enabled. It acts only on `.specs/` files and on the flow's
   subagents: evidence stays immutable, `state.md` changes only through `state.js`, and
