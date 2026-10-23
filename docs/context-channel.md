@@ -22,25 +22,25 @@ start** — so context added at any point is picked up by the next phase.
 
 Two entry points:
 
-1. **The default moment — at the end of `flow-understand`.** After the agent drafts the
+1. **The default moment — at the end of `/flow:understand`.** After the agent drafts the
    understanding (problem + acceptance criteria), it presents it and asks you for
    anything the ticket and code don't carry. You fill the gaps; the understanding is
    refined with what you add. This is the prime moment because it is the latest "early"
    point that still feeds explore, plan, and execute.
 
-2. **Anytime — via `flow-context`.** When you remember a gotcha mid-execution, get a new
-   link during planning, or learn of a constraint late, run `flow-context`. It appends
+2. **Anytime — via `/flow:context`.** When you remember a gotcha mid-execution, get a new
+   link during planning, or learn of a constraint late, run `/flow:context`. It appends
    to `context.md` without changing the phase, writing code, or running git.
 
 In short: *you're invited to give context when the understanding closes, and you can
-add more at any moment with `flow-context`.*
+add more at any moment with `/flow:context`.*
 
 ## How it flows through the work
 
 - `context.md` is **append-only** — new context is added, earlier context is never
   rewritten or dropped. Date your entries.
 - If a piece of context affects a decision already made, it is also recorded in
-  `decisions.md`, and may warrant regressing to `flow-plan`.
+  `decisions.md`, and may warrant regressing to `/flow:plan`.
 - Because every phase reads `context.md` first, late context still shapes the work that
   follows it.
 

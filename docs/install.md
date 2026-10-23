@@ -1,112 +1,93 @@
 # Install & configure
 
-ffloww is an APM package, consumed as a dependency of your project. You need the
-[APM CLI](https://github.com/microsoft/apm) installed.
+ffloww is a Claude Code plugin named **`flow`**. The `gesielrosa/ffloww` repository is
+both the plugin and its marketplace (also named `ffloww`).
 
-## Add the dependency
+## Requirements
 
-In your project's `apm.yml`:
+- Claude Code (the one-step install below needs 2.1.275 or later).
+- Node.js on the `PATH` — the flow's scripts (`init_spec.js`, `run_proof.js`) run with
+  `node`, and the Azure DevOps MCP server starts with `npx`.
 
-```yaml
-dependencies:
-  apm:
-    - gesielrosa/ffloww#v0.1.0     # pin to a released tag
+## Install
+
+In a Claude Code session, in one step:
+
+```text
+/plugin install flow --marketplace gesielrosa/ffloww
 ```
 
-Then:
+Or add the marketplace first, then install:
+
+```text
+/plugin marketplace add gesielrosa/ffloww
+/plugin install flow@ffloww
+```
+
+From the shell:
 
 ```bash
-apm install
+claude plugin marketplace add gesielrosa/ffloww
+claude plugin install flow@ffloww --scope project   # or --scope user
 ```
 
-Or in one step:
+### For a team
+
+Install with `--scope project`: Claude Code records the plugin in the repository's
+`.claude/settings.json`. Commit that file. Each teammate adds the marketplace and runs
+the same install command once — the committed entry does not download the plugin by
+itself.
+
+## What you get
+
+- **Skills** — `/flow:start`, `/flow:understand`, `/flow:design`, `/flow:explore`,
+  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`, and the utilities
+  `/flow:status`, `/flow:context`, `/flow:help`.
+- **Subagents** — `flow:step-executor` (Sonnet) builds delegated steps,
+  `flow:design-reader` (Sonnet) reads the Figma nodes, `flow:code-mapper` (Haiku,
+  read-only) maps code during exploration. Their models are pinned in their definitions.
+- **Scripts** — `init_spec.js` scaffolds `.specs/`; `run_proof.js` runs proofs and
+  records their evidence.
+- **MCP servers** — `azure-devops` and `figma` (below).
+
+## MCP servers
+
+The plugin starts two MCP servers while it is enabled:
+
+- **azure-devops** — used by `/flow:understand` to read the work item. It runs
+  `npx -y @azure-devops/mcp <organization>`; set `AZURE_DEVOPS_ORG` in your environment
+  to your organization (it defaults to `HAL-LMKSRVST`). Sign in with a Microsoft account
+  that can access the organization when prompted.
+- **figma** — used by `/flow:design`. The remote Figma MCP server
+  (`https://mcp.figma.com/mcp`); authenticate it from `/mcp`.
+
+Credentials stay in your environment and your accounts, never in the plugin. If you do
+not use one of them, turn it off in `/mcp`: the design phase is conditional, and the
+rest of the flow runs without Figma. The tools appear as
+`mcp__plugin_flow_<server>__<tool>`.
+
+## Update
 
 ```bash
-apm install gesielrosa/ffloww#v0.1.0
+claude plugin update flow@ffloww
 ```
 
-Installing the whole package gives you **all** the `flow-*` skills. APM pins the exact
-commit and content hash in `apm.lock.yaml` — commit that file so every contributor
-installs the same bytes.
-
-## Where the skills land
-
-APM deploys to the harnesses you target (`targets:` in your `apm.yml`, or auto-detected):
-
-- **Claude Code** → `.claude/skills/flow-*/`
-- **Copilot / Cursor / Codex / Gemini / OpenCode** → `.agents/skills/flow-*/`
-
-The `flow-start` skill ships its `scripts/init_spec.js` alongside it, so scaffolding
-works wherever the skill is deployed.
-
-## MCP servers (important)
-
-ffloww bundles two MCP servers — **azure-devops** (used by `flow-understand`) and
-**figma** (used by `flow-design`). They are *self-defined*, so when you install ffloww
-as a dependency they reach you as **transitive** MCP servers, which APM blocks by
-default. Two ways to accept them:
-
-```bash
-# Option A: trust transitive MCP for this install
-apm install --trust-transitive-mcp
-
-# Option B: re-declare them in your own apm.yml (explicit and reviewable)
-```
-
-```yaml
-# Option B — your apm.yml
-dependencies:
-  mcp:
-    - name: azure-devops
-      registry: false
-      transport: stdio
-      command: npx
-      args: ["-y", "@azure-devops/mcp", "<your-org>"]
-    - name: figma
-      registry: false
-      transport: http
-      url: https://mcp.figma.com/mcp
-```
-
-### Credentials
-
-Provide credentials via environment variables in your own environment — **never in
-`apm.yml`**:
-
-- **Azure DevOps** — a Personal Access Token with work-item read access.
-- **Figma** — authenticate per the Figma MCP's flow.
-
-If you do not use one of the integrations, you can skip its MCP server: the design
-phase is conditional, and the rest of the flow runs without Figma.
-
-## Targets
-
-Pin targets for reproducibility:
-
-```yaml
-# your apm.yml
-targets:
-  - claude
-  - copilot
-```
-
-Without `targets:`, APM auto-detects harnesses present in your repo.
+Then run `/reload-plugins` in an open session. Auto-update is off by default for
+marketplaces other than Anthropic's.
 
 ## Verify the install
 
-```bash
-apm install --dry-run     # resolve and print the plan; no writes
-apm view ffloww           # inspect installed package metadata
-apm audit                 # scan for hidden Unicode + lockfile drift
-```
+- `/plugin` lists `flow` as enabled.
+- `/agents` lists `flow:step-executor`, `flow:design-reader`, and `flow:code-mapper`.
+- `claude plugin details flow` shows the components and their projected token cost.
 
-After installing, the skills are discoverable by your agent. Start with `flow-start`
-on a ticket — see [the flow](the-flow.md).
+Start with `/flow:start` on a ticket — see [the flow](the-flow.md).
 
 ## Troubleshooting
 
-- **Install paused on a transitive MCP server.** Expected — use
-  `--trust-transitive-mcp` or re-declare the server (above).
-- **`azure-devops` calls fail.** Check the PAT env var and its scopes.
-- **Skills not picked up.** Confirm they landed under your harness's skills directory
-  and that your harness scans it (`.claude/skills/` or `.agents/skills/`).
+- **Skills or agents missing.** Check `/plugin` that `flow` is enabled, then run
+  `/reload-plugins`.
+- **`azure-devops` calls fail.** Check `AZURE_DEVOPS_ORG` and that you signed in with
+  an account that can access it.
+- **`node` not found when scaffolding or proving.** Install Node.js and make sure it is
+  on the `PATH` of the shell Claude Code uses.

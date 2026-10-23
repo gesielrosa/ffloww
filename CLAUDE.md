@@ -8,10 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-`ffloww` is an **APM (Agent Package Manager) producer package**. It does not ship
-application code — it ships *agent context*: a set of installable **`flow-*`
-skills** plus two MCP servers that, once installed in a target project, replicate
-a ticket-to-PR development flow.
+`ffloww` is a **Claude Code plugin**, named `flow`, and the marketplace that publishes
+it (also `ffloww`). It does not ship application code — it ships *agent context*: a set
+of invocable **`/flow:*` skills**, three subagents, two scripts, and two MCP servers
+that, once installed, replicate a ticket-to-PR development flow in the consuming
+project.
 
 The flow it encodes (and the human/AI contract behind it):
 
@@ -34,24 +35,41 @@ human converges and decides.**
   Each ticket gets a `.specs/<ticket-id>/` folder (in the *consuming* project) that
   is the single source of truth and survives context compaction:
   `state.md` (current phase, step statuses, gate state, navigation log),
-  `understanding.md`, `discoveries.md`, `decisions.md` (ADR), `plan.md`,
-  `steps/NN-*.md`, and `assets/` (Figma exports, screenshots).
+  `understanding.md`, `context.md`, `discoveries.md`, `decisions.md` (ADR), `plan.md`,
+  `steps/NN-*.md`, `verification.md`, `evidence/` (proof logs), and `assets/`.
 - **`.specs/CONVENTIONS.md`** is a shared contract written once into the target
   project by the scaffolding script (state schema + gate protocol + principles +
   navigation rules). Every skill reads it + the ticket's `state.md` at start. This
   is how independent skills stay DRY without referencing each other's files.
-- **Skills are independent and invocable** (`flow-start`, `flow-understand`,
-  `flow-design`, `flow-explore`, `flow-plan`, `flow-execute`, `flow-verify`,
-  `flow-ship`, plus utilities `flow-status`, `flow-context`, `flow-help`).
-  `flow-status` reads `state.md` and recommends the next skill; `flow-context`
-  appends developer context; `flow-help` explains the flow; each phase skill also
-  updates state and suggests the next move on exit. Help/explainer skills must be
-  self-contained — only `.apm/` ships to consumers, not `docs/`.
-- **Navigation is human-driven and bidirectional.** The AI never auto-advances a
-  phase. It recommends and proves; the developer chooses advance / repeat / regress.
-  Regression is a logged entry, not lost history.
-- **Git and PR steps are suggested, never executed.** `flow-execute` proposes a
-  commit (draft message); `flow-ship` assembles a PR draft from the specs and
+- **Skills are independent and invocable** (`/flow:start`, `/flow:understand`,
+  `/flow:design`, `/flow:explore`, `/flow:plan`, `/flow:execute`, `/flow:verify`,
+  `/flow:ship`, plus utilities `/flow:status`, `/flow:context`, `/flow:help`).
+  Skills name each other by their `/flow:<name>` command. `/flow:status` reads
+  `state.md` and recommends the next skill; `/flow:context` appends developer
+  context; `/flow:help` explains the flow; each phase skill also updates state and
+  suggests the next move on exit. Skills never read `docs/` — help and explainer
+  skills must be self-contained.
+- **Shared scripts live once, at the plugin root.** `scripts/init_spec.js` and
+  `scripts/run_proof.js` are called from skill and agent text as
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/<name>.js"` — Claude Code substitutes the
+  variable in skill and agent bodies. Node only, Windows-safe, no dependencies.
+- **The main session decides; subagents type.** The main session (the developer's
+  model, e.g. Opus) talks to the developer, opens gates, and owns `state.md`. Bounded,
+  decision-free work runs in subagents pinned to cheaper models: `flow:step-executor`
+  (Sonnet) builds `delegate` steps, `flow:design-reader` (Sonnet) reads the Figma
+  nodes, `flow:code-mapper` (Haiku, read-only) maps code for `/flow:explore`. Their
+  output is a lead the main session checks, never a verdict. `/flow:plan` records who
+  builds each step in the step's `Executor` line; `/flow:execute` escalates to a more
+  capable model per call when a delegated step stalls. Skills never set `model:` in
+  their own frontmatter — that switches the main session's model and rebuilds its
+  prompt cache. Phases hand off with a `/clear` suggestion, since `.specs/` carries
+  everything forward.
+- **Evidence is recorded by a script, not retyped.** `run_proof.js` runs each proof
+  command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
+  exit code, and last lines to the step spec (or, for the target `ticket`, to
+  `verification.md`).
+- **Git and PR steps are suggested, never executed.** `/flow:execute` proposes a
+  commit (draft message); `/flow:ship` assembles a PR draft from the specs and
   suggests the push/PR sequence. The package does not assume GitHub/GitLab/Azure or
   any commit convention — that keeps it repo- and platform-agnostic.
 
@@ -59,49 +77,49 @@ human converges and decides.**
 
 ```
 ffloww/
-  apm.yml            # package manifest: name/version, targets, includes, MCP deps
-  apm.lock.yaml      # generated by `apm install` — commit it
-  .apm/              # AUTHORING SOURCE TREE — all primitives live here
-    skills/
-      flow-<name>/
-        SKILL.md         # entry point (lean; <500 lines, progressive disclosure)
-        scripts/         # e.g. init_spec.js (scaffolds .specs/) — Node, Windows-safe
-        references/      # phase/protocol detail, loaded on demand
-        assets/          # templates copied into output
-  docs/              # vendored APM documentation (Astro+Starlight) — REFERENCE ONLY
+  .claude-plugin/
+    plugin.json        # plugin manifest: name "flow", version, metadata
+    marketplace.json   # marketplace "ffloww", listing this repo ("./") as plugin "flow"
+  skills/<name>/SKILL.md   # one skill per phase/utility → /flow:<name> (lean, <500 lines)
+  agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
+  scripts/                 # init_spec.js, run_proof.js — shared by skills and agents
+  .mcp.json                # bundled MCP servers: azure-devops, figma
+  docs/                    # product docs (concept, the flow, specs & state, install, reference)
+  README.md  CLAUDE.md
 ```
 
-`.apm/` is APM's source tree. Author every primitive **once** under `.apm/`; APM
-routes it per target (`claude` → `.claude/skills/<name>/`, `copilot`/others →
-`.agents/skills/<name>/`). Never hand-edit compiled output under `.claude/` etc.
+The whole repository is the plugin: Claude Code loads `skills/`, `agents/`, and
+`.mcp.json` from the root. `CLAUDE.md` and `docs/` are for maintainers and readers;
+plugins do not load them as context.
 
-## APM producer dev loop
+## Plugin dev loop
 
 ```bash
-apm compile --validate     # syntax-check authored primitives
-apm install                # resolve deps + deploy primitives locally to test
-apm view ffloww            # inspect installed package metadata
-apm audit                  # scan for hidden Unicode + lockfile drift
-apm pack                   # bundle to ./build/ for distribution
-apm install ./build/ffloww # verify the bundle in a scratch project
+claude plugin validate .            # plugin.json + marketplace.json
+claude plugin validate ./skills --strict && claude plugin validate ./agents --strict
+claude --plugin-dir .               # load this working copy for a session; /reload-plugins after edits
+claude --plugin-dir . plugin details flow   # component inventory + projected token cost
+claude plugin tag .                 # release tag flow--v<version> (checks plugin.json vs marketplace)
 ```
 
-Gotcha: the bundled MCP servers (`azure-devops`, `figma`) are *self-defined*
-(`registry: false`), so to a consumer they are **transitive** and APM blocks them
-by default — installing requires `apm install ffloww... --trust-transitive-mcp`.
-Secrets (Azure PAT, Figma auth) are supplied by the consumer via env vars, never in
-`apm.yml`.
+`claude plugin validate . --strict` always reports one warning — `CLAUDE.md` at the
+plugin root is not loaded as context — which is expected here. For a headless smoke
+test, run a skill in a scratch git repo:
+`claude -p "/flow:start TEST-1" --plugin-dir <this repo> --strict-mcp-config --model haiku --allowedTools "Bash(node *)"`.
 
-## `docs/` — vendored reference, not product code
+Release: bump `version` in `.claude-plugin/plugin.json` — consumers on a pinned
+version stay on it until it changes — then tag.
 
-`docs/` is APM's own documentation site (Astro + Starlight), kept for reference on
-how to author/pack/publish packages. Source pages are under `docs/src/content/docs/`
-(e.g. `producer/author-primitives/skills.md`, `reference/manifest-schema.md`). It
-builds independently (`cd docs && npm install && npm run dev`) and is unrelated to
-the `ffloww` package itself.
+## MCP servers
+
+`.mcp.json` declares `azure-devops` (`npx -y @azure-devops/mcp ${AZURE_DEVOPS_ORG:-…}`)
+and `figma` (remote http). Consumers supply auth through their own environment and
+accounts, never through the plugin. In a session their tools are named
+`mcp__plugin_flow_<server>__<tool>`.
 
 ## Build status
 
-Under active construction in small slices. Done: repo foundations (manifest, docs
-relocation). Next: spec scaffolding (`init_spec.js` + `.specs/` templates), then the
-`flow-*` skills one at a time.
+Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
+runner, and the Claude Code plugin packaging (replacing APM). Next: deterministic
+guardrails through plugin hooks (no git writes, immutable evidence), and
+`state.js`/`status.js` for state updates without hand-editing YAML.

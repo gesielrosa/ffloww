@@ -17,13 +17,15 @@ so the work survives context compaction and any skill can resume from it.
     decisions.md            # ADR log: chosen approach, trade-offs, regression reasons
     plan.md                 # the step breakdown
     steps/
-      _TEMPLATE.md          # template flow-plan copies per step
-      NN-<slug>.md          # one spec per step: spec, changes, proof, evidence, gate
+      _TEMPLATE.md          # template /flow:plan copies per step
+      NN-<slug>.md          # one spec per step: executor, spec, changes, proof, evidence, gate
+    verification.md         # whole-ticket check, one entry per acceptance criterion
+    evidence/               # full proof logs, written by the proof runner
     assets/                 # Figma exports, screenshots, reference images
-    pr.md                   # PR/MR draft (created by flow-ship)
+    pr.md                   # PR/MR draft (created by /flow:ship)
 ```
 
-`flow-start` scaffolds all of this by running `init_spec.js`. The scaffolder is
+`/flow:start` scaffolds all of this by running `init_spec.js`. The scaffolder is
 idempotent — re-running on an existing ticket overwrites nothing.
 
 ## `CONVENTIONS.md` — the shared contract
@@ -63,18 +65,30 @@ steps:
 Field meanings:
 
 - **`phase`** — the current phase. Skills set it as they run.
-- **`design_involved`** — set by `flow-understand`. Gates whether `flow-design` runs.
-- **`proof_definition`** — what counts as proof for this work; set in `flow-plan`.
+- **`design_involved`** — set by `/flow:understand`. Gates whether `/flow:design` runs.
+- **`proof_definition`** — what counts as proof for this work; set in `/flow:plan`.
 - **`current_step`** — the step being worked, or `null`.
 - **`steps`** — one entry per planned step, with a status that advances
   `todo → in-progress → proven → done`.
 
 ## Step specs
 
-Each step has its own file with five parts: **Spec** (what it delivers), **Changes**
-(what to touch), **Proof** (how to prove it), **Evidence** (raw output, pasted after
-running the proof), and **Gate** (the human decision). `flow-plan` fills Spec/Changes/
-Proof; `flow-execute` and `flow-verify` fill Evidence and Gate.
+Each step has its own file with an **Executor** line and five parts: **Spec** (what it
+delivers), **Changes** (what to touch), **Proof** (how to prove it), **Evidence** (raw
+output from running the proof), and **Gate** (the human decision). `/flow:plan` fills
+Executor/Spec/Changes/Proof; `/flow:execute` and `/flow:verify` fill Evidence and Gate.
+
+**Executor** says who builds the step: `delegate` hands it to the `flow:step-executor`
+subagent, which runs on a cheaper model and keeps the build's file reads and command
+output out of the main session; `inline` keeps it in the main session (spikes, steps
+that leave a choice open, proofs that need you during the step). You can flip it when
+you approve the plan.
+
+**Evidence** is recorded by the plugin's proof runner (`scripts/run_proof.js`), not
+retyped: it runs each proof command, saves the full output to `evidence/`, and appends
+the command, exit code, duration, last lines, and log path to the step — or, for a
+whole-ticket check, to `verification.md`, one entry per acceptance criterion. The
+record comes from the script, so the agent cannot paraphrase or invent it.
 
 ## Gates — "make it prove it"
 
@@ -92,7 +106,7 @@ A step is not done because the agent says so:
 - You can **advance**, **repeat** the current phase, or **regress** to an earlier one.
 - A regression is appended to the navigation log *and* to `decisions.md` with its
   reason. History is never rewritten.
-- Run `flow-status` anytime to see where you are and what to run next.
+- Run `/flow:status` anytime to see where you are and what to run next.
 
 ## Versioning `.specs/`
 

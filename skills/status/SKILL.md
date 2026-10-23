@@ -1,16 +1,16 @@
 ---
-name: flow-status
+name: status
 description: >
   Use anytime to see where a ticket's flow stands and what to do next. Reads the
   ticket's .specs state.md and reports the current phase, step progress, proof status,
-  and recent navigation, then recommends the next skill to run (for example flow-execute
-  for the next step, or flow-ship when all steps are done). Read-only: it never changes
+  and recent navigation, then recommends the next skill to run (for example /flow:execute
+  for the next step, or /flow:ship when all steps are done). Read-only: it never changes
   state, writes code, or advances the flow — it is the compass; the developer drives. If
   no ticket is named, it lists the tickets under .specs and asks which. Trigger on "where
   are we", "flow status", "what's next for AB-1234", or "status".
 ---
 
-# flow-status
+# /flow:status
 
 The compass for the flow. Read where a ticket stands and recommend the next move. It is
 **read-only**: it never changes state, writes code, or advances the flow.
@@ -33,13 +33,13 @@ The compass for the flow. Read where a ticket stands and recommend the next move
    last couple of navigation entries.
 
 4. **Recommend the next move.** Map the state to the right skill and suggest it:
-   - phase `start` → `flow-understand`
-   - phase `understand`, `design_involved: true` → `flow-design`; else `flow-explore`
-   - phase `design` → `flow-explore`
-   - phase `explore` → `flow-plan`
-   - phase `plan`, or steps still `todo`/`in-progress` → `flow-execute` (next step)
-   - a step needs proving → `flow-verify`
-   - all steps `done` → `flow-ship`
+   - phase `start` → `/flow:understand`
+   - phase `understand`, `design_involved: true` → `/flow:design`; else `/flow:explore`
+   - phase `design` → `/flow:explore`
+   - phase `explore` → `/flow:plan`
+   - phase `plan`, or steps still `todo`/`in-progress` → `/flow:execute` (next step)
+   - a step needs proving → `/flow:verify`
+   - all steps `done` → `/flow:ship`
 
    Offer to run it and wait for the go-ahead.
 

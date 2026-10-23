@@ -1,0 +1,20 @@
+{
+  "name": "flow",
+  "displayName": "ffloww",
+  "version": "0.2.0",
+  "description": "Ticket-to-PR development flow for Claude Code: /flow:* skills that walk a developer through understand -> design -> explore -> plan -> execute -> verify -> ship, keeping .specs/ as the durable, auditable record. The main session decides with the developer; bounded work runs in subagents on cheaper models; evidence is recorded by a script, never self-graded. Git and PR steps are suggested, never executed.",
+  "author": {
+    "name": "gesielrosa"
+  },
+  "homepage": "https://github.com/gesielrosa/ffloww",
+  "repository": "https://github.com/gesielrosa/ffloww",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "dev-flow",
+    "specs",
+    "spec-driven",
+    "azure-devops",
+    "figma"
+  ]
+}

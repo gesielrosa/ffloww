@@ -1,0 +1,14 @@
+{
+  "name": "ffloww",
+  "description": "The ffloww ticket-to-PR development flow for Claude Code.",
+  "owner": {
+    "name": "gesielrosa"
+  },
+  "plugins": [
+    {
+      "name": "flow",
+      "source": "./",
+      "description": "Ticket-to-PR development flow: /flow:* skills, model-routed subagents, and a .specs/ record."
+    }
+  ]
+}

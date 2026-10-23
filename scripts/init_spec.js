@@ -40,7 +40,7 @@ function today() {
 
 const CONVENTIONS_TEMPLATE = `# .specs — ffloww flow conventions
 
-Shared contract for the ffloww development flow. Every \`flow-*\` skill reads this
+Shared contract for the ffloww development flow. Every \`/flow:*\` skill reads this
 file, the ticket's \`state.md\`, and the ticket's \`context.md\` before acting. Written
 once per project; safe to edit to fit local conventions. Generated {date}.
 
@@ -58,24 +58,28 @@ Per ticket:
 - \`discoveries.md\` — exploration findings and the options considered
 - \`decisions.md\` — ADR log: chosen approach, trade-offs, regression reasons
 - \`plan.md\` — the step breakdown
-- \`steps/NN-<slug>.md\` — one spec per step (copy from \`steps/_TEMPLATE.md\`)
+- \`steps/NN-<slug>.md\` — one spec per step (copy from \`steps/_TEMPLATE.md\`); its
+  \`Executor\` line says who builds it: \`delegate\` (a subagent on a cheaper model) or
+  \`inline\` (the main session)
+- \`verification.md\` — whole-ticket check, one evidence entry per acceptance criterion
+- \`evidence/\` — full proof logs, written by the proof runner
 - \`assets/\` — Figma exports, screenshots, images used as reference
 
 ## The flow
 
 | Phase | Skill | Produces |
 | --- | --- | --- |
-| start | \`flow-start\` | this scaffold |
-| understand | \`flow-understand\` | \`understanding.md\` (+ acceptance criteria) |
-| design *(if any)* | \`flow-design\` | \`assets/\` + design notes |
-| explore | \`flow-explore\` | \`discoveries.md\` (options) |
-| plan | \`flow-plan\` | \`decisions.md\` + \`steps/NN-*.md\` |
-| execute | \`flow-execute\` | code for one step + proof + commit *suggestion* |
-| verify | \`flow-verify\` | raw evidence for a step |
-| ship | \`flow-ship\` | PR/MR draft built from these specs |
+| start | \`/flow:start\` | this scaffold |
+| understand | \`/flow:understand\` | \`understanding.md\` (+ acceptance criteria) |
+| design *(if any)* | \`/flow:design\` | \`assets/\` + design notes |
+| explore | \`/flow:explore\` | \`discoveries.md\` (options) |
+| plan | \`/flow:plan\` | \`decisions.md\` + \`steps/NN-*.md\` |
+| execute | \`/flow:execute\` | code for one step + proof + commit *suggestion* |
+| verify | \`/flow:verify\` | raw evidence for a step |
+| ship | \`/flow:ship\` | PR/MR draft built from these specs |
 
-Two utility skills run anytime, outside the phases: \`flow-status\` (see where you are
-and what to run next) and \`flow-context\` (add developer context to \`context.md\`).
+Two utility skills run anytime, outside the phases: \`/flow:status\` (see where you are
+and what to run next) and \`/flow:context\` (add developer context to \`context.md\`).
 
 ## state.md schema
 
@@ -94,14 +98,19 @@ Front matter fields:
 - A regression is appended to the navigation log *and* to \`decisions.md\` with its
   reason — history is never rewritten.
 - On finishing, every skill updates \`state.md\` and recommends the next move.
-- **Context** can be added anytime via \`flow-context\`; the default moment is when
-  \`flow-understand\` closes, where the developer fills gaps the ticket and code do not
+- Every phase reads its inputs from \`.specs/\`, so each phase (and each step) can start
+  in a fresh context; skills suggest it at handoff.
+- The main session talks to the developer, opens the gates, and writes \`state.md\`.
+  Subagents only build or read, then report back to it.
+- **Context** can be added anytime via \`/flow:context\`; the default moment is when
+  \`/flow:understand\` closes, where the developer fills gaps the ticket and code do not
   cover. Every skill reads \`context.md\` at start.
 
 ## Gate protocol — "make it prove it"
 
 - Proof is **raw evidence**, not prose: the actual command, its exit code, real test
-  output, or a screenshot path. Numbers, not opinions.
+  output, or a screenshot path — recorded by the proof runner, not retyped. Numbers,
+  not opinions.
 - The assistant **never marks its own work as passing.** It presents evidence; the
   human validates.
 - Advancing past a step is a human decision, recorded in the step's \`Gate\` section.
@@ -114,9 +123,10 @@ types · work in small steps · don't trust it, make it prove it · own it.
 ## Git & PR
 
 Commits and PR/MR creation are **suggested, never executed** by the flow. The
-package does not assume your VCS host or commit conventions. \`flow-execute\`
-proposes a commit message; \`flow-ship\` assembles a PR/MR draft from these specs and
-suggests the steps to ship. You run them, your way.
+package does not assume your VCS host or commit conventions. \`/flow:execute\`
+proposes a commit message; \`/flow:ship\` assembles a PR/MR draft from these specs and
+suggests the steps to ship. You run them, your way. Reading git (\`status\`, \`diff\`,
+\`log\`) is fine; nothing that writes.
 `;
 
 const STATE_TEMPLATE = `---
@@ -134,7 +144,7 @@ steps: []
 
 ## Where we are
 
-Phase: **start**. Next: run \`flow-understand\` to read the ticket and capture the
+Phase: **start**. Next: run \`/flow:understand\` to read the ticket and capture the
 problem and acceptance criteria.
 
 ## Navigation log
@@ -240,24 +250,26 @@ const PLAN_TEMPLATE = `# Plan — {ticket}
 <!-- How each step and the whole are proven. Project-defined; confirm with a human. -->
 `;
 
-// Step template keeps <n>/<title> placeholders for flow-plan to fill per step.
+// Step template keeps <n>/<title> placeholders for /flow:plan to fill per step.
 const STEP_TEMPLATE = `# Step <n> — <title>
 
 - Status: todo <!-- todo | in-progress | proven | done -->
+- Executor: <!-- delegate (a subagent on a cheaper model) | inline (the main session); set by /flow:plan -->
 - Spec: <!-- what this step delivers; its scope boundary -->
 
 ## Changes
 
-<!-- Files/areas to touch. Keep the step small. -->
+<!-- Files/areas to touch, and the existing code to follow (file:line). Keep the step small. -->
 
 ## Proof
 
-<!-- The project-defined proof for THIS step: test names, command, expected output. -->
+<!-- The project-defined proof for THIS step: the exact commands, test names, expected output. -->
 
 ## Evidence
 
-<!-- RAW output pasted after running the proof: command + exit code + test output, or
-     a screenshot path. Numbers, not opinions. The human reviews this before the gate. -->
+<!-- RAW entries recorded by the proof runner (command + exit code + last lines + log
+     under evidence/), or a screenshot path. Numbers, not opinions. The human reviews
+     this before the gate. -->
 
 ## Gate
 
@@ -268,7 +280,7 @@ const CONTEXT_TEMPLATE = `# Context — {ticket}
 
 > Extra context the developer provides that is NOT in the ticket, the design, or the
 > codebase — tacit knowledge that shapes the work. Captured at the end of
-> \`flow-understand\`, and addable anytime with \`flow-context\`. Every skill reads this
+> \`/flow:understand\`, and addable anytime with \`/flow:context\`. Every skill reads this
 > at start. Append-only; date new entries.
 
 ## Links
@@ -370,7 +382,7 @@ function main() {
 
     const result = initSpec(ticket, root, title);
 
-    console.log('\nNext: run `flow-understand` to capture the problem and acceptance criteria.');
+    console.log('\nNext: run `/flow:understand` to capture the problem and acceptance criteria.');
     // Exit 0 even on no-op (re-run) — only hard errors above exit non-zero.
     process.exit(0);
 }

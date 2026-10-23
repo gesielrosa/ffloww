@@ -1,17 +1,17 @@
 ---
-name: flow-context
+name: context
 description: >
   Use anytime the developer wants to add context the ticket, design, and codebase do
   not carry — links (Slack, docs, related PRs or incidents), hard constraints,
   out-of-ticket decisions, gotchas, or related work. Appends what they provide to the
   ticket's .specs context.md, which every phase reads at start. Append-only and
   otherwise read-only: it does not change phase, write code, or run git. The natural
-  first moment is when flow-understand closes, but it can run at any point in the flow.
-  Trigger on "add context", "flow-context", "here is some background", "note this
+  first moment is when /flow:understand closes, but it can run at any point in the flow.
+  Trigger on "add context", "/flow:context", "here is some background", "note this
   constraint", or "fyi for AB-1234".
 ---
 
-# flow-context
+# /flow:context
 
 Capture context that the ticket, the design, and the codebase do not carry — the
 developer's tacit knowledge that shapes the work. A cross-cutting utility: run it at any
@@ -36,7 +36,7 @@ moment, not as a phase.
 
 3. **Route if it changes a decision.** If the context affects a choice already made, note
    it in `decisions.md` too, and tell the developer it may warrant regressing to
-   `flow-plan`.
+   `/flow:plan`.
 
 ## Handoff
 

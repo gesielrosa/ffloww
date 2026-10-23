@@ -1,5 +1,5 @@
 ---
-name: flow-ship
+name: ship
 description: >
   Use when a ticket's steps are all done and verified, to prepare shipping. Assembles a
   PR/MR description draft strictly from the ticket's specs — the problem from
@@ -11,7 +11,7 @@ description: >
   the MR", or entering the ship phase.
 ---
 
-# flow-ship
+# /flow:ship
 
 Prepare to ship: turn the ticket's specs into a PR/MR draft, and suggest the steps to
 ship it. It **suggests, it does not execute**: no `git`, no branches, no PRs. The
@@ -20,9 +20,10 @@ package does not assume your VCS host or commit conventions — you ship your wa
 ## Before you start
 
 - All steps should be `done` and the whole-ticket proof approved. If not, recommend
-  `flow-execute` / `flow-verify` first — do not ship unproven work.
+  `/flow:execute` / `/flow:verify` first — do not ship unproven work.
 - Read `.specs/CONVENTIONS.md`, the ticket's `state.md`, `understanding.md`,
-  `context.md`, `decisions.md`, `plan.md`, and the `steps/` specs (with their evidence).
+  `context.md`, `decisions.md`, `plan.md`, the `steps/` specs (with their evidence), and
+  `verification.md` if a whole-ticket check was run.
 
 ## Steps
 

@@ -1,17 +1,17 @@
 ---
-name: flow-understand
+name: understand
 description: >
-  Use after flow-start, when the developer is ready to understand a ticket before
+  Use after /flow:start, when the developer is ready to understand a ticket before
   exploring or planning. Reads the work item from the bundled azure-devops MCP,
   then captures the problem, scope and non-goals, and acceptance
   criteria into the ticket's .specs understanding.md. Detects whether design is
-  involved and routes to flow-design or flow-explore. Updates state.md and never
+  involved and routes to /flow:design or /flow:explore. Updates state.md and never
   fabricates acceptance criteria — it confirms gaps with the developer. Trigger on
   "understand the ticket", "read AB-1234", "what does this ticket need", or entering
   the understand phase.
 ---
 
-# flow-understand
+# /flow:understand
 
 Capture *what* must be built and *why*, before any code is explored. This phase
 reads the ticket and writes the ticket's `understanding.md`. It does not explore the
@@ -20,7 +20,7 @@ codebase and it does not plan.
 ## Before you start
 
 - The ticket must be scaffolded. If `.specs/<ticket-id>/` is missing, run
-  `flow-start` first.
+  `/flow:start` first.
 - Read `.specs/CONVENTIONS.md`, the ticket's `.specs/<ticket-id>/state.md`, and its
   `context.md` (anything the developer added earlier) to orient.
 
@@ -53,7 +53,7 @@ codebase and it does not plan.
    link or screenshots?
    - If design is involved: set `design_involved: true` in `state.md`, capture whatever
      references the developer gives (Figma URL, screenshots — they can drop files into
-     `assets/`) under the Design section, and plan to run `flow-design` next, which pulls
+     `assets/`) under the Design section, and plan to run `/flow:design` next, which pulls
      the exact node ids and exports the assets.
    - If not: write "No design involved" and set `design_involved: false`.
 
@@ -63,12 +63,14 @@ codebase and it does not plan.
 ## Handoff
 
 Summarize the problem and acceptance criteria back to the developer for a quick
-sanity check. Then recommend the next skill — `flow-design` if design is involved,
-otherwise `flow-explore` — and wait for the go-ahead. Do not auto-advance.
+sanity check. Then recommend the next skill — `/flow:design` if design is involved,
+otherwise `/flow:explore` — and wait for the go-ahead. Do not auto-advance. The
+understanding is on disk, so suggest starting the next phase in a fresh context
+(`/clear` in Claude Code).
 
 ## Guardrails
 
-- Do not explore the codebase or propose solutions here — that is `flow-explore`.
+- Do not explore the codebase or propose solutions here — that is `/flow:explore`.
 - Never fabricate or assume acceptance criteria; confirm gaps with the developer.
 - Keep everything on disk in `understanding.md` and `state.md`, not only in chat.
 - Never run `git`.

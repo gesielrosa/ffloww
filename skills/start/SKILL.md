@@ -1,16 +1,16 @@
 ---
-name: flow-start
+name: start
 description: >
   Use when a developer begins work on a ticket, story, or bug and wants to start the
   ffloww development flow — or to resume an existing one. Collects the ticket id (and
   an optional title), scaffolds the ticket's durable per-ticket .specs record via the
   bundled init_spec.js script, writes the shared .specs/CONVENTIONS.md contract,
-  orients from state.md, and recommends the next phase (flow-understand). Trigger on
+  orients from state.md, and recommends the next phase (/flow:understand). Trigger on
   "start a ticket", "begin work on AB-1234", "kick off the flow", "start dev flow",
   or "resume AB-1234".
 ---
 
-# flow-start
+# /flow:start
 
 Entry point for the ffloww development flow. It sets up a ticket's durable `.specs/`
 record and points to the first phase. It does **not** do the analysis itself.
@@ -18,8 +18,8 @@ record and points to the first phase. It does **not** do the analysis itself.
 ## Do not do the work here
 
 Do not read the ticket's contents, explore the codebase, or plan in this skill.
-`flow-start` only scaffolds and orients. Understanding the ticket belongs to
-`flow-understand`.
+`/flow:start` only scaffolds and orients. Understanding the ticket belongs to
+`/flow:understand`.
 
 ## Steps
 
@@ -30,11 +30,10 @@ Do not read the ticket's contents, explore the codebase, or plan in this skill.
    named it in the request, use that — do not re-ask. Then ask for a short optional
    title; if none is given, the id is used as the title.
 
-3. **Run the bundled scaffolder.** Invoke the `init_spec.js` script that ships in
-   this skill's own `scripts/` directory, using its absolute path:
+3. **Run the bundled scaffolder.** Invoke the plugin's `init_spec.js` script:
 
    ```bash
-   node "<path-to-this-skill>/scripts/init_spec.js" <ticket-id> --root "<project-root>" --title "<title>"
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/init_spec.js" <ticket-id> --root "<project-root>" --title "<title>"
    ```
 
    The script is idempotent: on an existing ticket it overwrites nothing and reports
@@ -47,15 +46,15 @@ Do not read the ticket's contents, explore the codebase, or plan in this skill.
 
 5. **Orient and hand off.**
    - **New ticket** — report what was created (the ticket folder and its files), then
-     recommend running `flow-understand` next.
+     recommend running `/flow:understand` next.
    - **Existing ticket** (the script skipped it) — treat this as a *resume*: summarize
      `state.md` (current phase, step statuses, last navigation-log entries) and
-     recommend the skill for the current phase, the same way `flow-status` would.
+     recommend the skill for the current phase, the same way `/flow:status` would.
 
 ## Handoff
 
 Recommend the next skill; **do not auto-advance**. Per the contract, the developer
-drives transitions. Offer to continue (e.g. "Run flow-understand now?") and wait for
+drives transitions. Offer to continue (e.g. "Run /flow:understand now?") and wait for
 the go-ahead. If the developer agrees, proceed to that skill; otherwise stop.
 
 ## Guardrails

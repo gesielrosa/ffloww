@@ -1,12 +1,12 @@
 # ffloww
 
-**A ticket-to-PR development flow, as installable AI skills.**
+**A ticket-to-PR development flow, as a Claude Code plugin.**
 
-ffloww is an [APM](https://github.com/microsoft/apm) package — a set of invocable
-`flow-*` skills (plus the Azure DevOps and Figma MCP servers) that walk a developer
-and an AI agent through the same disciplined path on every ticket: **understand →
-design → explore → plan → execute → verify → ship**, keeping a durable, auditable
-record in `.specs/`.
+ffloww is a Claude Code plugin, `flow` — a set of invocable `/flow:*` skills, three
+subagents on cheaper models, and the Azure DevOps and Figma MCP servers — that walk
+a developer and an AI agent through the same disciplined path on every ticket:
+**understand → design → explore → plan → execute → verify → ship**, keeping a
+durable, auditable record in `.specs/`.
 
 The constant behind every step:
 
@@ -19,17 +19,17 @@ of "is this proven?" are not.
 
 | Phase | Skill | What happens |
 |---|---|---|
-| 1. Understand | `flow-understand` | Read the ticket; capture problem + acceptance criteria |
-| 2. Design *(if any)* | `flow-design` | Analyze the Figma against the ticket; save to `assets/` |
-| 3. Explore | `flow-explore` | Map the code; surface options (diverge) |
-| 4. Plan | `flow-plan` | Decide the approach (ADR); break into small steps |
-| 5. Execute | `flow-execute` | Build one step; prove it; human gate; suggest a commit |
-| 6. Verify | `flow-verify` | Prove a step or the whole ticket with raw evidence |
-| 7. Ship | `flow-ship` | Assemble a PR/MR draft from the specs (suggest, don't run) |
+| 1. Understand | `/flow:understand` | Read the ticket; capture problem + acceptance criteria |
+| 2. Design *(if any)* | `/flow:design` | Analyze the Figma against the ticket; save to `assets/` |
+| 3. Explore | `/flow:explore` | Map the code; surface options (diverge) |
+| 4. Plan | `/flow:plan` | Decide the approach (ADR); break into small steps |
+| 5. Execute | `/flow:execute` | Build one step; prove it; human gate; suggest a commit |
+| 6. Verify | `/flow:verify` | Prove a step or the whole ticket with raw evidence |
+| 7. Ship | `/flow:ship` | Assemble a PR/MR draft from the specs (suggest, don't run) |
 
-- **Entry:** `flow-start` begins (or resumes) a ticket and scaffolds its `.specs/` record.
-- **Anytime utilities:** `flow-status` (the compass — where am I, what's next),
-  `flow-context` (add context the ticket and code don't carry), and `flow-help`
+- **Entry:** `/flow:start` begins (or resumes) a ticket and scaffolds its `.specs/` record.
+- **Anytime utilities:** `/flow:status` (the compass — where am I, what's next),
+  `/flow:context` (add context the ticket and code don't carry), and `/flow:help`
   (explain the flow and answer questions).
 
 Navigation is **human-driven and bidirectional**: the AI recommends and proves; you
@@ -60,6 +60,8 @@ State never lives only in the model's context. Each ticket gets a folder in the
     decisions.md          # ADR: chosen approach + trade-offs
     plan.md               # the step breakdown
     steps/NN-*.md         # one spec per step, with proof + evidence
+    verification.md       # whole-ticket check against the acceptance criteria
+    evidence/             # full proof logs, written by the proof runner
     assets/               # Figma exports, screenshots
 ```
 
@@ -67,35 +69,32 @@ It survives context compaction and lets any skill resume from disk.
 
 ## Install
 
-ffloww is consumed as an APM dependency. In your project's `apm.yml`:
+In a Claude Code session:
 
-```yaml
-dependencies:
-  apm:
-    - gesielrosa/ffloww#v0.1.0
+```text
+/plugin install flow --marketplace gesielrosa/ffloww
 ```
+
+Or from the shell, recorded for the whole team in `.claude/settings.json`:
 
 ```bash
-apm install
+claude plugin marketplace add gesielrosa/ffloww
+claude plugin install flow@ffloww --scope project
 ```
 
-This deploys the `flow-*` skills into your harness (`.claude/skills/` for Claude
-Code, `.agents/skills/` for the others).
-
-**MCP servers.** ffloww bundles the `azure-devops` and `figma` MCP servers. Because
-they are self-defined, they reach you as *transitive* dependencies — APM asks you to
-re-declare them in your own `apm.yml`, or to install with `--trust-transitive-mcp`.
-Provide their credentials via environment variables (Azure DevOps PAT, Figma auth),
-never in `apm.yml`. See [Install & configure](docs/install.md).
+**MCP servers.** The plugin starts the `azure-devops` and `figma` MCP servers. Set
+`AZURE_DEVOPS_ORG` to your Azure DevOps organization and authenticate Figma from
+`/mcp`; credentials stay in your environment and accounts. Requires Node.js on the
+`PATH`. See [Install & configure](docs/install.md).
 
 ## Documentation
 
 - [Concept & principles](docs/concept.md) — the human/AI contract behind the flow.
 - [The flow, phase by phase](docs/the-flow.md) — what each phase does and why.
 - [Specs & state](docs/specs-and-state.md) — `.specs/`, `state.md`, gates, navigation.
-- [The context channel](docs/context-channel.md) — `context.md` and `flow-context`.
-- [Install & configure](docs/install.md) — dependency install, MCP, targets.
-- [Skills reference](docs/skills-reference.md) — every `flow-*` skill in detail.
+- [The context channel](docs/context-channel.md) — `context.md` and `/flow:context`.
+- [Install & configure](docs/install.md) — plugin install, team setup, MCP servers.
+- [Skills reference](docs/skills-reference.md) — every `/flow:*` skill in detail.
 
 ## License
 
