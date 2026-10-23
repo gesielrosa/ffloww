@@ -95,5 +95,8 @@ skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
   main session keeps the conversation, the gate, and `state.md`. You can flip any step.
   Reading the Figma (`flow:design-reader`) and mapping the code (`flow:code-mapper`)
   also run in subagents, so their bulk stays out of your session.
+- **Can the AI rewrite the evidence?** No. The proof runner records it, and the
+  plugin's guard hook blocks edits that remove or change a recorded entry or log. The
+  flow's subagents are also blocked from git writes, `state.md`, and a step's gate.
 - **Why does it suggest `/clear` between phases?** Everything a phase needs is on disk in
   `.specs/`, so a fresh context costs nothing in knowledge and saves tokens.

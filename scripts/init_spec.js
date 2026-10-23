@@ -113,6 +113,8 @@ Front matter fields:
   not opinions.
 - The assistant **never marks its own work as passing.** It presents evidence; the
   human validates.
+- Evidence entries and logs recorded by the runner are **immutable**: the plugin's
+  guard blocks edits that remove or change them. A new result is a new run.
 - Advancing past a step is a human decision, recorded in the step's \`Gate\` section.
 
 ## Principles

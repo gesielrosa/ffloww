@@ -99,6 +99,11 @@ A step is not done because the agent says so:
 - The agent **never marks its own work as passing.** It presents evidence; you
   validate it.
 - Advancing past a step is **your** decision, recorded in the step's Gate section.
+- These rules are **enforced in code**, not only asked for. The plugin's `PreToolUse`
+  hook (`scripts/guard.js`) blocks, in any session, edits to the proof logs under
+  `evidence/` and any edit that would remove or change an evidence entry the runner
+  recorded. In the flow's subagents it also blocks git commands that write, edits to
+  `state.md`, and changes to a step's Status/Executor lines or Gate section.
 
 ## Navigation — human-driven and bidirectional
 

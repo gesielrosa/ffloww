@@ -48,6 +48,10 @@ itself.
   read-only) maps code during exploration. Their models are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `run_proof.js` runs proofs and
   records their evidence.
+- **A guard hook** — `scripts/guard.js` runs before every Bash, Edit, and Write call
+  while the plugin is enabled. It acts only on `.specs/` files and on the flow's
+  subagents: evidence stays immutable, and subagents cannot run git that writes, edit
+  `state.md`, or change a step's gate. Everything else passes untouched.
 - **MCP servers** — `azure-devops` and `figma` (below).
 
 ## MCP servers

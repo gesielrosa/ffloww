@@ -31,6 +31,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { headings, runHeading } = require('./lib/markdown');
 
 const DEFAULT_TAIL = 40;
 
@@ -129,26 +130,6 @@ function createLog(dir, base, header) {
     }
 }
 
-/** Markdown headings outside fenced code blocks, as { index, level, text }. */
-function headings(lines) {
-    const found = [];
-    let fence = null;
-    lines.forEach((line, index) => {
-        const marker = line.match(/^\s{0,3}(`{3,}|~{3,})/);
-        if (fence) {
-            if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && line.trim() === marker[1]) fence = null;
-            return;
-        }
-        if (marker) {
-            fence = marker[1];
-            return;
-        }
-        const heading = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
-        if (heading) found.push({ index, level: heading[1].length, text: heading[2] });
-    });
-    return found;
-}
-
 /** Insert an entry at the end of the spec's Evidence section (created if missing). */
 function appendEvidence(specFile, entryLines) {
     const content = fs.readFileSync(specFile, 'utf8');
@@ -231,7 +212,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     const excerptText = excerpt.join('\n');
     const fence = fenceFor(excerptText);
     const entry = [
-        `### Run ${isoStamp(started)}${label ? ` — ${label}` : ''}`,
+        `### ${runHeading(isoStamp(started), label)}`,
         '',
         `- Command: ${inlineCode(cmd)}`,
         `- Exit code: ${exit}`,

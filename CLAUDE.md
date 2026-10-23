@@ -68,6 +68,14 @@ human converges and decides.**
   command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
   exit code, and last lines to the step spec (or, for the target `ticket`, to
   `verification.md`).
+- **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
+  runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
+  session it denies edits to `evidence/` logs and edits that would remove or change a
+  `### Run` entry. In the flow's subagents (hook input `agent_type` = `flow:<name>`) it
+  also denies git commands that write, edits to `state.md`, and changes to a step's
+  Status/Executor lines or Gate section. The main session's git rule stays an
+  instruction, because plugin hooks run in every session, flow or not. The guard fails
+  open on bad input or internal errors.
 - **Git and PR steps are suggested, never executed.** `/flow:execute` proposes a
   commit (draft message); `/flow:ship` assembles a PR draft from the specs and
   suggests the push/PR sequence. The package does not assume GitHub/GitLab/Azure or
@@ -82,15 +90,17 @@ ffloww/
     marketplace.json   # marketplace "ffloww", listing this repo ("./") as plugin "flow"
   skills/<name>/SKILL.md   # one skill per phase/utility → /flow:<name> (lean, <500 lines)
   agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
-  scripts/                 # init_spec.js, run_proof.js — shared by skills and agents
+  scripts/                 # init_spec.js, run_proof.js, guard.js — shared by skills, agents, hooks
+    lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
+  hooks/hooks.json         # PreToolUse → guard.js
   .mcp.json                # bundled MCP servers: azure-devops, figma
   docs/                    # product docs (concept, the flow, specs & state, install, reference)
   README.md  CLAUDE.md
 ```
 
-The whole repository is the plugin: Claude Code loads `skills/`, `agents/`, and
-`.mcp.json` from the root. `CLAUDE.md` and `docs/` are for maintainers and readers;
-plugins do not load them as context.
+The whole repository is the plugin: Claude Code loads `skills/`, `agents/`,
+`hooks/hooks.json`, and `.mcp.json` from the root. `CLAUDE.md` and `docs/` are for
+maintainers and readers; plugins do not load them as context.
 
 ## Plugin dev loop
 
@@ -120,6 +130,5 @@ accounts, never through the plugin. In a session their tools are named
 ## Build status
 
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
-runner, and the Claude Code plugin packaging (replacing APM). Next: deterministic
-guardrails through plugin hooks (no git writes, immutable evidence), and
+runner, the Claude Code plugin packaging (replacing APM), and the guard hook. Next:
 `state.js`/`status.js` for state updates without hand-editing YAML.
