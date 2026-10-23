@@ -91,6 +91,13 @@ Front matter fields:
 - \`current_step\`: id of the step in progress, or \`null\`
 - \`steps\`: list of \`{ id, title, status }\`; status is \`todo | in-progress | proven | done\`
 
+Change \`state.md\` only through the flow's state script (\`state.js\`, shipped with the
+plugin): \`show\`, \`phase\`, \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`. It keeps
+the front matter valid, moves phases forward (back only with a reason — a regression),
+moves a step one status at a time with one step in progress, syncs each step spec's
+Status line, appends the navigation log, and rewrites "Where we are". The plugin blocks
+hand edits.
+
 ## Navigation rules
 
 - **The developer drives transitions.** The assistant never auto-advances a phase.
@@ -132,8 +139,8 @@ suggests the steps to ship. You run them, your way. Reading git (\`status\`, \`d
 `;
 
 const STATE_TEMPLATE = `---
-ticket: "{ticket}"
-title: "{title}"
+ticket: {ticketYaml}
+title: {titleYaml}
 created: "{date}"
 phase: start
 design_involved: unknown
@@ -334,6 +341,8 @@ function initSpec(ticket, root, title) {
     }
 
     const vars = { ticket, title: title || ticket, date: today() };
+    // Front-matter values are JSON strings, which YAML reads as double-quoted scalars.
+    Object.assign(vars, { ticketYaml: JSON.stringify(vars.ticket), titleYaml: JSON.stringify(vars.title) });
 
     writeFile(path.join(ticketDir, 'state.md'), fill(STATE_TEMPLATE, vars));
     writeFile(path.join(ticketDir, 'understanding.md'), fill(UNDERSTANDING_TEMPLATE, vars));

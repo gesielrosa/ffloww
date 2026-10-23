@@ -41,15 +41,19 @@ Do not read the ticket's contents, explore the codebase, or plan in this skill.
 
 4. **Read the contract and state.** Read `<project-root>/.specs/CONVENTIONS.md` (the
    shared contract — always read it the first time you operate in a project so you
-   follow its navigation and gate rules) and the ticket's
-   `<project-root>/.specs/<ticket-id>/state.md`.
+   follow its navigation and gate rules), then read the ticket's state with the flow's
+   state script:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> show --root "<project-root>"
+   ```
 
 5. **Orient and hand off.**
    - **New ticket** — report what was created (the ticket folder and its files), then
      recommend running `/flow:understand` next.
    - **Existing ticket** (the script skipped it) — treat this as a *resume*: summarize
-     `state.md` (current phase, step statuses, last navigation-log entries) and
-     recommend the skill for the current phase, the same way `/flow:status` would.
+     the state (current phase, step statuses, last navigation-log entries) and
+     recommend the move on its `Next:` line, the same way `/flow:status` would.
 
 ## Handoff
 

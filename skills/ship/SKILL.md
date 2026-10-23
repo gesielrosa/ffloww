@@ -46,8 +46,12 @@ package does not assume your VCS host or commit conventions — you ship your wa
    developer runs. State clearly that conventions (host, branch/commit style) are
    theirs. Do not run any of it.
 
-4. **Update state.** Set `phase: ship` in `state.md` and append a navigation-log entry.
-   Once the developer confirms it is shipped, set `phase: done`.
+4. **Update state** through the flow's state script, from the project root; once the
+   developer confirms it is shipped, move to `done` the same way:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase ship
+   ```
 
 ## Handoff
 

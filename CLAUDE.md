@@ -64,16 +64,24 @@ human converges and decides.**
   their own frontmatter — that switches the main session's model and rebuilds its
   prompt cache. Phases hand off with a `/clear` suggestion, since `.specs/` carries
   everything forward.
+- **State changes through a script, never by hand.** `scripts/state.js` (`show`,
+  `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
+  `state.md`: canonical YAML front matter, phase moves forward (back only with
+  `--reason`, logged as a regression; execute ⇄ verify is free), steps move one status
+  at a time with one in progress, step specs' Status lines stay in sync, the navigation
+  log is appended, and "Where we are" is regenerated. `nextMove()` in it is the single
+  source of the "what's next" mapping that `/flow:status` reports.
 - **Evidence is recorded by a script, not retyped.** `run_proof.js` runs each proof
   command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
   exit code, and last lines to the step spec (or, for the target `ticket`, to
   `verification.md`).
 - **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
   runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
-  session it denies edits to `evidence/` logs and edits that would remove or change a
-  `### Run` entry. In the flow's subagents (hook input `agent_type` = `flow:<name>`) it
-  also denies git commands that write, edits to `state.md`, and changes to a step's
-  Status/Executor lines or Gate section. The main session's git rule stays an
+  session it denies edits to `evidence/` logs, edits that would remove or change a
+  `### Run` entry, hand edits to `state.md`, and hand changes to a step's Status line.
+  In the flow's subagents (hook input `agent_type` = `flow:<name>`) it also denies git
+  commands that write, `state.js` commands other than `show`, and changes to a step's
+  Executor line or Gate section. The main session's git rule stays an
   instruction, because plugin hooks run in every session, flow or not. The guard fails
   open on bad input or internal errors.
 - **Git and PR steps are suggested, never executed.** `/flow:execute` proposes a
@@ -90,9 +98,10 @@ ffloww/
     marketplace.json   # marketplace "ffloww", listing this repo ("./") as plugin "flow"
   skills/<name>/SKILL.md   # one skill per phase/utility → /flow:<name> (lean, <500 lines)
   agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
-  scripts/                 # init_spec.js, run_proof.js, guard.js — shared by skills, agents, hooks
+  scripts/                 # init_spec.js, state.js, run_proof.js, guard.js — shared by skills, agents, hooks
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
   hooks/hooks.json         # PreToolUse → guard.js
+  tests/                   # node --test tests/*.test.js (no dependencies)
   .mcp.json                # bundled MCP servers: azure-devops, figma
   docs/                    # product docs (concept, the flow, specs & state, install, reference)
   README.md  CLAUDE.md
@@ -105,6 +114,7 @@ maintainers and readers; plugins do not load them as context.
 ## Plugin dev loop
 
 ```bash
+node --test tests/*.test.js         # scripts: state.js, run_proof.js, guard.js
 claude plugin validate .            # plugin.json + marketplace.json
 claude plugin validate ./skills --strict && claude plugin validate ./agents --strict
 claude --plugin-dir .               # load this working copy for a session; /reload-plugins after edits
@@ -130,5 +140,6 @@ accounts, never through the plugin. In a session their tools are named
 ## Build status
 
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
-runner, the Claude Code plugin packaging (replacing APM), and the guard hook. Next:
-`state.js`/`status.js` for state updates without hand-editing YAML.
+runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
+script. Next: an end-to-end run on a real ticket, a `delegate-light` (Haiku) executor
+tier for trivial steps, and an independent diff reviewer before the gate.

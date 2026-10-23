@@ -51,14 +51,19 @@ codebase and it does not plan.
    Figma link being in the ticket; it often is not there. When there is a UI signal, or
    when it is unclear, **ask the developer**: is there a design, and do they have a Figma
    link or screenshots?
-   - If design is involved: set `design_involved: true` in `state.md`, capture whatever
+   - If design is involved: record `design_involved` as `true` (step 5), capture whatever
      references the developer gives (Figma URL, screenshots — they can drop files into
      `assets/`) under the Design section, and plan to run `/flow:design` next, which pulls
      the exact node ids and exports the assets.
-   - If not: write "No design involved" and set `design_involved: false`.
+   - If not: write "No design involved" and record `design_involved` as `false`.
 
-5. **Update state.** In `state.md`: set `phase: understand`, set `design_involved`,
-   and append a navigation-log entry.
+5. **Update state** through the flow's state script, from the project root. It
+   validates the values and writes the navigation log:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set design_involved <true|false>
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase understand
+   ```
 
 ## Handoff
 

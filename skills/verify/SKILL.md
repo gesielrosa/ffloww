@@ -7,8 +7,9 @@ description: >
   through a bundled runner that records the raw evidence (command, exit code, real
   output, log) in the step spec or verification.md, and opens the human gate. It
   proves, it does not fix: if the proof fails it reports and recommends regressing to
-  /flow:execute. Never self-grades. Updates state.md. Trigger on "verify step 2", "prove this works", "check
-  it against the acceptance criteria", or entering the verify phase.
+  /flow:execute. Never self-grades. Updates state.md. Trigger on "verify step 2",
+  "prove this works", "check it against the acceptance criteria", or entering the
+  verify phase.
 ---
 
 # /flow:verify
@@ -53,13 +54,19 @@ If something is wrong, the fix belongs to `/flow:execute`.
    screenshot path, or is listed as needing the developer. Numbers, not opinions; never
    mark it passing yourself.
    - If the proof fails, stop and report it. Recommend regressing to `/flow:execute` to
-     fix the step (log the reason in the navigation log).
+     fix the step (record it with `state.js <ticket-id> log "<what failed>"`).
 
 3. **Open the human gate.** Present the evidence and ask the developer to validate it.
    Record their decision (who + when) in the **Gate** section of the step or of
-   `verification.md`. Only on approval set the step's status to `proven`.
+   `verification.md`. Only on approval move the step forward with
+   `state.js <ticket-id> step <step-id> proven`.
 
-4. **Update state.** Keep `state.md` current and append a navigation-log entry.
+4. **Update state** through the flow's state script, from the project root. A
+   whole-ticket check is the verify phase; a single step leaves the phase as it is:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase verify
+   ```
 
 ## Handoff
 

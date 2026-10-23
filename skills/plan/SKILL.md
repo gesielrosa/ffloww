@@ -32,8 +32,12 @@ the developer's choices; this skill drafts the ADR and the step specs from them.
 
 2. **Agree the proof strategy.** Decide what counts as proof for this work — it is
    project-defined (often tests, sometimes a command's output or a screenshot). Ask
-   the developer if it is not already clear. Record it in `state.md` as
-   `proof_definition`.
+   the developer if it is not already clear. Record it through the flow's state
+   script, from the project root:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set proof_definition "<the proof>"
+   ```
 
 3. **Break into small steps.** Slice the work into steps that are each small,
    independently buildable, and independently provable (roughly one commit each). For
@@ -49,11 +53,15 @@ the developer's choices; this skill drafts the ADR and the step specs from them.
    during the step. Aim for `delegate` by writing complete specs; the developer can flip
    any step when approving the plan.
 
-5. **Mirror into state.** In `state.md`: set `phase: plan`, write the proof strategy
-   into `proof_definition`, and populate `steps:` with one
-   `{ id, title, status: todo }` entry per step (ids matching the NN files). Append a
-   navigation-log entry. Leave `current_step: null` — `/flow:execute` sets it when work
-   starts.
+5. **Mirror into state** through the state script: set the phase, then add one entry
+   per step, ids matching the NN files. It writes the navigation log; `/flow:execute`
+   sets the current step when work starts. On a re-plan, `remove-step <id> --reason
+   "<why>"` drops a step that is still `todo`.
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase plan
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> add-step 01 "<step title>"
+   ```
 
 ## Handoff
 
@@ -61,8 +69,9 @@ Present the plan back — the decision, the proof strategy, and the ordered step
 who builds each — for the developer's approval. Then recommend `/flow:execute` for the
 first step and wait for the go-ahead. The plan is on disk, so suggest starting
 execution in a fresh context (`/clear` in Claude Code). If the developer wants to
-revisit exploration or understanding, that is a regression: log it in the navigation
-log and in `decisions.md` with the reason.
+revisit exploration or understanding, that is a regression: record the reason in
+`decisions.md` and move back with `state.js <ticket-id> phase <earlier phase> --reason
+"<why>"`.
 
 ## Guardrails
 

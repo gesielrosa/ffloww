@@ -93,8 +93,9 @@ recommends the next move on exit. None of them run `git`.
 ## `/flow:status` — the compass
 
 - **When:** anytime, to see where a ticket stands.
-- **Does:** reads `state.md`; reports phase, step progress, proof status, recent
-  navigation; recommends the next skill. **Read-only** — changes nothing.
+- **Does:** runs `state.js <ticket> show`; reports phase, step progress, proof status,
+  recent navigation; recommends the next skill the script computes. **Read-only** —
+  changes nothing.
 
 ## `/flow:context` — add context
 

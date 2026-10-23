@@ -51,8 +51,12 @@ reference, not a guess.
 4. **Note constraints and gotchas.** Existing patterns to follow, prior art, landmines
    — anything that would shape the choice.
 
-5. **Update state.** Set `phase: explore` in `state.md` and append a navigation-log
-   entry. Save everything to `discoveries.md`.
+5. **Update state.** Save everything to `discoveries.md`, then set the phase through
+   the flow's state script, from the project root; it writes the navigation log:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase explore
+   ```
 
 ## Handoff
 

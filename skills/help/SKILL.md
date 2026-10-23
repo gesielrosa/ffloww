@@ -78,7 +78,8 @@ State lives on disk, not just in the chat, so the work survives context resets a
 skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
 `understanding.md`, `context.md`, `discoveries.md`, `decisions.md`, `plan.md`,
 `steps/NN-*.md`, `verification.md`, `evidence/` (full proof logs), and `assets/`. The shared contract is
-`.specs/CONVENTIONS.md`.
+`.specs/CONVENTIONS.md`. `state.md` changes only through the flow's state script
+(`state.js`), which checks every phase and step move and writes the navigation log.
 
 ## Common questions
 
@@ -96,7 +97,8 @@ skill can resume. Per ticket: `state.md` (phase, steps, navigation log),
   Reading the Figma (`flow:design-reader`) and mapping the code (`flow:code-mapper`)
   also run in subagents, so their bulk stays out of your session.
 - **Can the AI rewrite the evidence?** No. The proof runner records it, and the
-  plugin's guard hook blocks edits that remove or change a recorded entry or log. The
-  flow's subagents are also blocked from git writes, `state.md`, and a step's gate.
+  plugin's guard hook blocks edits that remove or change a recorded entry or log, and
+  hand edits to `state.md`. The flow's subagents are also blocked from git writes and a
+  step's gate.
 - **Why does it suggest `/clear` between phases?** Everything a phase needs is on disk in
   `.specs/`, so a fresh context costs nothing in knowledge and saves tokens.

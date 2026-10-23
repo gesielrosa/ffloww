@@ -9,13 +9,15 @@
  *   In any session (main or subagent):
  *     - Edit/Write of a proof log under .specs/<ticket-id>/evidence/ — logs are written
  *       only by run_proof.js;
+ *     - Edit/Write of a ticket's state.md — it changes only through state.js;
  *     - an Edit/Write of a step spec or verification.md that would remove or change an
- *       evidence entry run_proof.js recorded ("### Run <timestamp>").
+ *       evidence entry run_proof.js recorded ("### Run <timestamp>"), or change a step's
+ *       existing Status line (state.js keeps it in sync).
  *
  *   In the flow's subagents (agent_type "flow:<name>"):
  *     - git commands that write — only read-only git (status, diff, log, ...) runs;
- *     - Edit/Write of a ticket's state.md;
- *     - changes to a step's Status or Executor line, or to its Gate section.
+ *     - state.js commands other than show;
+ *     - changes to a step's Executor line or its Gate section.
  *
  * The main session's git rule stays an instruction, not a block: plugin hooks run in
  * every session, flow or not, and the developer may want commits outside the flow.
@@ -68,6 +70,23 @@ function gitCalls(command) {
         calls.push({ sub: match[2], args });
     }
     return calls;
+}
+
+/** True when the command runs state.js with a command other than `show`. */
+function mutatingState(command) {
+    const at = command.search(/state\.js["']?(\s|$)/);
+    if (at === -1) return false;
+    const tokens = command.slice(at).split(/[;&|\n]/)[0].split(/\s+/).slice(1).map((t) => t.replace(/^['"]|['"]$/g, ''));
+    const words = [];
+    for (let i = 0; i < tokens.length; i++) {
+        if (['--root', '--reason', '--note'].includes(tokens[i])) i++;
+        else if (tokens[i] && !tokens[i].startsWith('--')) words.push(tokens[i]);
+    }
+    return words.length >= 2 && words[1] !== 'show';
+}
+
+function stateCommand() {
+    return `node "${process.env.CLAUDE_PLUGIN_ROOT || '${CLAUDE_PLUGIN_ROOT}'}/scripts/state.js" <ticket-id> <command>`;
 }
 
 function writingGit(command) {
@@ -123,10 +142,14 @@ function check(event) {
     const agent = typeof event.agent_type === 'string' && event.agent_type.startsWith('flow:') ? event.agent_type : null;
 
     if (tool === 'Bash' && agent) {
-        const call = writingGit(String(input.command || ''));
+        const command = String(input.command || '');
+        const call = writingGit(command);
         if (call) {
             return `ffloww guard: ${agent} runs read-only git only (status, diff, log, show, ...); \`git ${call.sub}\` writes. ` +
                 'Leave commits and branches to the developer and report back to the main session.';
+        }
+        if (mutatingState(command)) {
+            return `ffloww guard: ${agent} reads state with \`state.js <ticket-id> show\` only; the main session updates it.`;
         }
         return null;
     }
@@ -139,8 +162,9 @@ function check(event) {
         return 'ffloww guard: proof logs under evidence/ are written only by run_proof.js and cannot be edited. ' +
             'Run the proof again through the runner to record a new result.';
     }
-    if (agent && where.rel === 'state.md') {
-        return `ffloww guard: ${agent} does not edit state.md; the main session owns it. Report back instead.`;
+    if (where.rel === 'state.md') {
+        return `ffloww guard: state.md changes only through the flow's state script: ${stateCommand()} ` +
+            '(show | phase | set | add-step | remove-step | step | log). It validates transitions and writes the navigation log.';
     }
 
     const isStep = /^steps\/[^/]+\.md$/.test(where.rel) && path.basename(where.rel) !== '_TEMPLATE.md';
@@ -155,11 +179,15 @@ function check(event) {
             'Evidence entries are immutable; record a new run through the runner instead.';
     }
 
-    if (agent && isStep) {
+    if (isStep) {
         const before = gateFields(change.before);
         const after = gateFields(change.after);
-        if (before.status.join('\n') !== after.status.join('\n') || (before.gate !== null && before.gate !== after.gate)) {
-            return `ffloww guard: ${agent} does not change a step's Status or Executor line or its Gate section; ` +
+        const status = (fields) => fields.status.filter((line) => line.startsWith('- Status:')).map((line) => line.split(/\s+/)[2]);
+        if (status(before).length && status(before).join() !== status(after).join()) {
+            return `ffloww guard: a step's Status changes only through the state script, which keeps state.md in sync: ${stateCommand()} → step <id> <status>.`;
+        }
+        if (agent && (before.status.join('\n') !== after.status.join('\n') || (before.gate !== null && before.gate !== after.gate))) {
+            return `ffloww guard: ${agent} does not change a step's Executor line or its Gate section; ` +
                 'the main session and the developer decide those.';
         }
     }
@@ -188,4 +216,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { check, gitCalls, writingGit };
+module.exports = { check, gitCalls, writingGit, mutatingState };

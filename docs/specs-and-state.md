@@ -44,27 +44,50 @@ Parseable front matter plus a human-readable navigation log:
 ticket: "AB-1234"
 title: "Add CSV export to reports"
 created: "2026-06-19"
-phase: execute            # start|understand|design|explore|plan|execute|verify|ship|done
-design_involved: true     # unknown | true | false
+phase: execute
+design_involved: true
 proof_definition: "pnpm test + screenshot of the modal"
 current_step: "02"
 steps:
-  - id: "01"; title: "..."; status: done       # todo | in-progress | proven | done
-  - id: "02"; title: "..."; status: in-progress
+  - { id: "01", title: "Add the CSV exporter", status: done }
+  - { id: "02", title: "Wire the export button", status: in-progress }
 ---
 
+# AB-1234 — Add CSV export to reports
+
 ## Where we are
-...
+
+Phase: **execute**. Steps: 1 of 2 done; current: 02 — Wire the export button (in-progress).
+Next: run `/flow:execute` to continue step 02 — Wire the export button (in progress).
 
 ## Navigation log
-- understand → explore (design skipped: no figma)
-- explore → plan
-- (regression) execute → plan: step 02 proof failed, approach changed — see decisions.md
+
+- 2026-06-19 — flow initialized (phase: start)
+- 2026-06-19 — start → understand
+- 2026-06-20 — explore → plan
+- 2026-06-21 — step 02: todo → in-progress
+- 2026-06-22 — (regression) execute → plan: step 02 proof failed, approach changed
 ```
+
+### The state script
+
+`state.md` changes only through the plugin's `scripts/state.js` — the guard hook blocks
+hand edits. Skills call it; you can too:
+
+```bash
+node state.js AB-1234 show                 # where we are, and the next move
+node state.js AB-1234 phase plan           # forward moves are free
+node state.js AB-1234 phase explore --reason "missed a caller"   # back = regression
+node state.js AB-1234 add-step 03 "Add the download link"
+node state.js AB-1234 step 03 in-progress  # one status at a time, one step in progress
+```
+
+It keeps the front matter valid YAML, checks every phase and step move, syncs each step
+spec's Status line, appends the navigation log, and rewrites "Where we are".
 
 Field meanings:
 
-- **`phase`** — the current phase. Skills set it as they run.
+- **`phase`** — the current phase. Skills set it as they run, through `state.js`.
 - **`design_involved`** — set by `/flow:understand`. Gates whether `/flow:design` runs.
 - **`proof_definition`** — what counts as proof for this work; set in `/flow:plan`.
 - **`current_step`** — the step being worked, or `null`.
@@ -101,9 +124,10 @@ A step is not done because the agent says so:
 - Advancing past a step is **your** decision, recorded in the step's Gate section.
 - These rules are **enforced in code**, not only asked for. The plugin's `PreToolUse`
   hook (`scripts/guard.js`) blocks, in any session, edits to the proof logs under
-  `evidence/` and any edit that would remove or change an evidence entry the runner
-  recorded. In the flow's subagents it also blocks git commands that write, edits to
-  `state.md`, and changes to a step's Status/Executor lines or Gate section.
+  `evidence/`, any edit that would remove or change an evidence entry the runner
+  recorded, hand edits to `state.md`, and hand changes to a step's Status line. In the
+  flow's subagents it also blocks git commands that write, `state.js` commands other
+  than `show`, and changes to a step's Executor line or Gate section.
 
 ## Navigation — human-driven and bidirectional
 

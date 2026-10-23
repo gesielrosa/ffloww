@@ -51,8 +51,12 @@ involved (`design_involved: true` in `state.md`).
    screenshots you need to discuss it with the developer. A note that a screenshot
    contradicts goes back to the same agent, which keeps its context.
 
-4. **Update state.** Set `phase: design` in `state.md` (keep `design_involved: true`)
-   and append a navigation-log entry.
+4. **Update state** through the flow's state script, from the project root; it writes
+   the navigation log:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase design
+   ```
 
 ## Handoff
 
