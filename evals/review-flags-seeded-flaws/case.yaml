@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: review-flags-seeded-flaws
+description: flow:diff-reviewer reads a step's uncommitted change cold and reports, by axis, the flaws seeded in it (missing and out-of-scope behavior, a misnamed function, a tautological test, an untested criterion, an existing test edited to fit).
+tags: [heavy, review]
+context:
+  scaffold_script: scaffold.sh

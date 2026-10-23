@@ -52,19 +52,30 @@ and stop.
    proof that is not a command (a screenshot) is saved to the path the Proof names, and
    you add an Evidence entry with that path. Every result you report is one the runner
    recorded.
+   - A Proof that asks for a red run before the change (a bug's reproduction) runs first,
+     before the build, with `--label "red: before the fix"`; that run is not an attempt.
    - A failing proof is the loop: fix and re-run, for up to three attempts, then take it
      to the developer. If the chosen approach turns out wrong, stop and recommend
      regressing to `/flow:plan` (record the reason in `decisions.md`; the move is
      `state.js <ticket-id> phase plan --reason "<why>"`).
 
-4. **Review the change** against the step's Spec and Changes: `git status --porcelain`
-   lists every changed and new file, `git diff` shows the changes to tracked files, and
-   each new (untracked) file is read in full, since `git diff` leaves it out.
+4. **Review the change in a fresh context.** Call the Agent tool with subagent_type
+   `flow:diff-reviewer`, passing the ticket id, the step id and the project root. It
+   reads the change cold and reports cited findings on three axes: Spec (missing, scope,
+   wrong), Proof (tautological, internal, untested) and Standards. Each finding is a lead:
+   open its cited lines before you take it to the gate. One review per step: after
+   changes requested at the gate, check the new change against the findings it answers,
+   and review again only when the developer asks.
+   - A `delegate-light` step, a mechanical mirror of existing code, is reviewed here
+     instead, against its Spec and Changes: `git status --porcelain` lists every changed
+     and new file, `git diff HEAD` shows the changes to tracked files, and each new file
+     is read in full, since `git diff` leaves it out.
 
 5. **Open the human gate.** A passing proof readies the step for the gate; the
-   developer's approval is what makes it `proven`. Present the evidence and the change,
-   and ask the developer to validate them: approve / request changes / regress. Record
-   the decision (who + when) in the step's **Gate** section. On approval, run
+   developer's approval is what makes it `proven`. Present the evidence, the changed
+   files (`git status --porcelain`), and the review findings you confirmed, by axis, and
+   ask the developer to validate them: approve / request changes / regress. Record the
+   decision (who + when) in the step's **Gate** section. On approval, run
    `state.js <ticket-id> step <step-id> proven`.
 
 6. **Draft the commit.** On approval, propose a commit message for this step in the
@@ -89,10 +100,11 @@ it alone talks to the developer and writes `state.md`.
 - **The brief.** The ticket id, the step id, and the project root; the agent reads the
   specs itself, so the plan needs no retelling. One agent at a time, and the main session
   leaves the code alone while it runs.
-- **Check the work, not the report.** Read the step's Evidence entries and review the
-  change as in step 4. The runner wrote the evidence, so re-run a proof (through the
-  runner) only when an entry has no log under `evidence/` or disagrees with the diff. A
-  report that disagrees with the evidence or the diff goes back to the agent.
+- **Check the work, not the report.** Read the step's Evidence entries and compare the
+  agent's file list with `git status --porcelain`; the review in step 4 reads the change
+  itself. The runner wrote the evidence, so re-run a proof (through the runner) only when
+  an entry has no log under `evidence/` or disagrees with the change. A report that
+  disagrees with the evidence or the change goes back to the agent.
 - **When it stops.** A question, a missing decision, or a recommendation to regress goes
   to the developer, who answers it. After three failing proof attempts, decide with the
   developer: clarify the step and send it back, re-dispatch it one model up in a new

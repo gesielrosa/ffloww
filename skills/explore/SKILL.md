@@ -10,7 +10,8 @@ argument-hint: "<ticket-id>"
 
 The divergent phase: build a broad picture of the relevant code and surface *options*.
 Choosing among them happens in `/flow:plan`, and it is the developer's call. This phase
-writes only `discoveries.md`.
+writes `discoveries.md`; a bug adds its reproduction under `repro/` and probes that are
+gone before the phase ends.
 
 ## Before you start
 
@@ -23,6 +24,10 @@ command is `/flow:understand <ticket-id>`: say so and stop.
 Diverge before converging: understand the full context, then lay out more than one
 viable way forward, keeping the first idea as one option among several. Every claim
 about the code rests on a `file:line` reference you have read.
+
+A ticket whose type in `understanding.md` is **Bug** is explored from a red reproduction
+first: read [BUG.md](BUG.md) and follow it alongside the mapping, before surfacing
+options.
 
 ## Steps
 

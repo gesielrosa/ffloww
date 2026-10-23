@@ -42,9 +42,10 @@ itself.
 
 - **Skills** — `/flow:start`, `/flow:understand`, `/flow:design`, `/flow:explore`,
   `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`, and the utilities
-  `/flow:status`, `/flow:context`, `/flow:help`.
+  `/flow:status`, `/flow:context`, `/flow:retro`, `/flow:help`.
 - **Subagents** — `flow:step-executor` (Sonnet) and `flow:step-executor-light`
-  (Haiku) build delegated steps, `flow:design-reader` (Sonnet) reads the Figma nodes,
+  (Haiku) build delegated steps, `flow:diff-reviewer` (Sonnet, read-only) reviews each
+  step's change before its gate, `flow:design-reader` (Sonnet) reads the Figma nodes,
   and `flow:code-mapper` (Haiku, read-only) maps code during exploration. Their models
   are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way
@@ -88,7 +89,7 @@ marketplaces other than Anthropic's.
 
 - `/plugin` lists `flow` as enabled.
 - `/agents` lists `flow:step-executor`, `flow:step-executor-light`,
-  `flow:design-reader`, and `flow:code-mapper`.
+  `flow:diff-reviewer`, `flow:design-reader`, and `flow:code-mapper`.
 - `claude plugin details flow` shows the components and their projected token cost.
 
 Start with `/flow:start` on a ticket — see [the flow](the-flow.md).

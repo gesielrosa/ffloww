@@ -104,6 +104,14 @@ test('show reports the next move', () => {
     assert.equal(json.next.skill, '/flow:design');
 });
 
+test('a shipped ticket points to the optional retro', () => {
+    const { state } = setup();
+    for (const phase of ['understand', 'explore', 'plan', 'execute', 'verify', 'ship']) state('phase', phase);
+    assert.match(state('show').out, /Next: ship it your way, then mark the phase done/);
+    state('phase', 'done');
+    assert.match(state('show').out, /Next: \/flow:retro AB-1 — look back at the record/);
+});
+
 test('Where we are is regenerated and the log keeps history', () => {
     const { state, read } = setup();
     state('phase', 'understand');

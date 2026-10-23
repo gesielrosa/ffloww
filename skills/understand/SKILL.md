@@ -25,8 +25,10 @@ stop.
    `search_workitem` or a WIQL query), then confirm the match with the developer.
 
 2. **Capture understanding** into `understanding.md`:
-   - **Ticket**: id, title, and the real work-item URL (the link is evidence).
-   - **Problem**: what is actually being asked; scope and explicit non-goals.
+   - **Ticket**: id, title, the work item's type (Bug, User Story, Task…), and the real
+     work-item URL (the link is evidence).
+   - **Problem**: what is actually being asked; scope and explicit non-goals. For a Bug,
+     the symptom as reported: what happens, what was expected, the steps to reproduce.
    - **Acceptance criteria**: from the work item, since they drive the later proof.
      Where the ticket has none, or they are ambiguous, draft candidates, mark them as
      drafts, and confirm each one with the developer.

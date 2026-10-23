@@ -46,8 +46,10 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`,
    For each step, copy `steps/_TEMPLATE.md` to `steps/NN-<slug>.md` (NN = 01, 02, …),
    replace the `<n>`/`<title>` placeholders, and fill **Spec**, **Changes**, and
    **Proof**, whose commands each exit non-zero exactly when the step fails its
-   criterion; **Evidence** and **Gate** belong to `/flow:execute`. Then fill `plan.md`:
-   the approach in a paragraph, the ordered steps with the acceptance criteria each one
+   criterion; **Evidence** and **Gate** belong to `/flow:execute`. For a bug, the fixing
+   step's Proof is the reproduction from `discoveries.md`, made a regression test where a
+   seam reaches the bug, run red before the fix and green after. Then fill `plan.md`: the
+   approach in a paragraph, the ordered steps with the acceptance criteria each one
    proves, and the proof strategy.
 
 4. **Choose who builds each step.** Set each step's **Executor** line to one of:

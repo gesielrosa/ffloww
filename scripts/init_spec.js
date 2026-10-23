@@ -145,11 +145,13 @@ const UNDERSTANDING_TEMPLATE = `# Understanding — {ticket}
 
 - ID: {ticket}
 - Title: {title}
+- Type: <!-- the work item's type: Bug, User Story, Task… -->
 - Link: <!-- work item URL -->
 
 ## Problem
 
-<!-- What is actually being asked? Scope and explicit non-goals. -->
+<!-- What is actually being asked? Scope and explicit non-goals. For a Bug: the symptom as
+     reported (what happens, what was expected, the steps to reproduce). -->
 
 ## Acceptance criteria
 

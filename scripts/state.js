@@ -250,7 +250,7 @@ function nextMove(f) {
         case 'ship':
             return { skill: null, why: 'ship it your way, then mark the phase done' };
         default:
-            return { skill: null, why: 'nothing left — the ticket is done' };
+            return { skill: '/flow:retro', why: 'look back at the record for changes that make the next ticket go better (optional)' };
     }
 }
 

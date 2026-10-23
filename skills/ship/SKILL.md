@@ -52,3 +52,5 @@ and `verification.md` when a whole-ticket check was run.
 ## Handoff
 
 Hand the developer the `pr.md` draft and the suggested commands; they ship it their way.
+Once they confirm it shipped and the phase is `done`, name the optional next command
+from the `Next:` line of the state output.

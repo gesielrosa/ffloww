@@ -10,7 +10,8 @@ a phase by itself (each phase skill sets `disable-model-invocation`).
 /flow:start ─▶ understand ─▶ design? ─▶ explore ─▶ plan ─▶ execute ⇄ verify ─▶ ship
                     ▲                                         │
                     └──────── regress (logged) ◀─────────────┘
-   /flow:status (compass) and /flow:context (add context) run anytime.
+   /flow:status (compass) and /flow:context (add context) run anytime;
+   /flow:retro looks back once the ticket is done.
 ```
 
 ## Entry — `/flow:start`
@@ -57,6 +58,11 @@ The divergent phase. Build breadth, then options — not a decision.
   `file:line` evidence. The mapping fans out to parallel `flow:code-mapper` subagents
   (Haiku, read-only); the main session confirms the cited lines it builds options on.
 - Lays out **at least two viable approaches**, each with pros/cons and risk/effort.
+- A **Bug** is explored from a **red reproduction** first: one command that fails on
+  the reported symptom, kept under `.specs/<ticket-id>/repro/` and shrunk to its
+  smallest red case; then three to five ranked, falsifiable hypotheses, tested with
+  probes that are removed before the phase ends. The options are fixes for the
+  confirmed cause, and the reproduction is their proof: red now, green after.
 - Records everything in `discoveries.md`. The choice happens next, and it is yours.
 
 ## 4. Plan — `/flow:plan`
@@ -89,8 +95,15 @@ Builds one step, proves it, and stops at the human gate.
   (command, exit code, last lines, full log) in the step spec. Never self-graded.
 - Stops after three failing proof attempts and brings it to you: clarify the step,
   re-run it on a more capable model, or build it inline.
-- **Human gate:** you validate the evidence and decide approve / changes / regress.
-  Only on approval does the step become `proven`.
+- **Independent review:** before the gate, `flow:diff-reviewer` (Sonnet, read-only)
+  reads the step's change in a fresh context, so the author never reviews itself, and
+  reports cited findings on three axes kept apart: **Spec** (missing, out of scope,
+  wrong), **Proof** (a tautological test, a test of internals, an untested criterion),
+  and **Standards** (the project's documented rules, then a baseline of code smells).
+  The main session checks each finding it brings you; one review per step, never a loop
+  until clean. Mechanical `delegate-light` steps are reviewed by the main session.
+- **Human gate:** you validate the evidence and the findings, and decide approve /
+  changes / regress. Only on approval does the step become `proven`.
 - On approval it **suggests a commit message** — it never commits. You commit your
   way; then the step is `done`.
 
@@ -123,5 +136,9 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
   the next command. Changes nothing. Asking "where are we?" reaches it too.
 - **`/flow:context`** — append developer context to `context.md` at any point; sharing
   it in plain words reaches it too. See [the context channel](context-channel.md).
+- **`/flow:retro`** — after shipping, reads the ticket's record (regressions,
+  escalations, failed proof runs, review findings, gate changes) and proposes changes to
+  the environment: automated checks for mechanical mistakes, `CLAUDE.md` lines for
+  judgement calls. Writes `retro.md`; you pick what to apply.
 - **`/flow:help`** — explains the flow and answers questions about it, in plain language
   (read-only). For "where am I", use `/flow:status`.

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `ffloww` is a **Claude Code plugin**, named `flow`, and the marketplace that publishes
 it (also `ffloww`). It does not ship application code — it ships *agent context*: a set
-of **`/flow:*` skills**, four subagents, the flow's scripts and hooks, and two MCP
+of **`/flow:*` skills**, five subagents, the flow's scripts and hooks, and two MCP
 servers that, once installed, replicate a ticket-to-PR development flow in the
 consuming project.
 
@@ -46,7 +46,8 @@ human converges and decides.**
   an edited file is kept, with a warning (`--print-conventions` prints the template).
 - **Skills are independent; phases run only when the developer types them.**
   `/flow:start`, the phases (`/flow:understand`, `/flow:design`, `/flow:explore`,
-  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`) and `/flow:help` set
+  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`), `/flow:retro` and
+  `/flow:help` set
   `disable-model-invocation: true`: their descriptions cost no context in any session,
   and neither the model nor a subagent can start a phase (the Skill tool refuses), so
   "the developer drives transitions" is enforced by the harness. Their descriptions are
@@ -70,7 +71,10 @@ human converges and decides.**
   decision-free work runs in subagents pinned to cheaper models: `flow:step-executor`
   (Sonnet, effort xhigh) builds `delegate` steps and `flow:step-executor-light`
   (Haiku, effort high) builds `delegate-light` ones — same body, kept identical by
-  `tests/agents.test.js`; `flow:design-reader` (Sonnet) reads the Figma nodes;
+  `tests/agents.test.js`; `flow:diff-reviewer` (Sonnet, read-only) reviews each
+  step's change in a fresh context before its gate, on three axes kept apart (Spec,
+  Proof, Standards, with a code-smell baseline where the project documents nothing), so
+  the author never reviews itself; `flow:design-reader` (Sonnet) reads the Figma nodes;
   `flow:code-mapper` (Haiku, read-only) maps code for `/flow:explore`. Their output is
   a lead the main session checks, never a verdict. `/flow:plan` records who builds
   each step in the step's `Executor` line; `/flow:execute` escalates one model per new
@@ -172,5 +176,5 @@ accounts, never through the plugin. In a session their tools are named
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
 runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
 script, the `delegate-light` (Haiku) executor tier, user-invoked phases, secret
-masking in the runner, a self-refreshing `CONVENTIONS.md`, and the eval suite. Next: an
-end-to-end run on a real ticket, and an independent diff reviewer before the gate.
+masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, and the
+independent diff reviewer before the gate. Next: an end-to-end run on a real ticket.

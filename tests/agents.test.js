@@ -22,3 +22,10 @@ test('each executor tier pins its model', () => {
     assert.equal(agent('step-executor-light').field('model'), 'haiku');
     assert.equal(agent('step-executor-light').field('tools'), agent('step-executor').field('tools'));
 });
+
+test('the readers cannot edit: the reviewer and the mapper have no Edit or Write tool', () => {
+    for (const name of ['diff-reviewer', 'code-mapper']) {
+        const tools = agent(name).field('tools').split(/,\s*/);
+        assert.ok(!tools.includes('Edit') && !tools.includes('Write') && !tools.includes('MultiEdit'), `${name}: ${tools}`);
+    }
+});

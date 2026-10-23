@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: explore-reproduces-bug
+description: For a Bug ticket, /flow:explore builds a red reproduction under .specs/<ticket>/repro/, ranks falsifiable hypotheses, and offers fixes proven by the reproduction turning green, leaving the code as it was.
+tags: [explore, bug]
+context:
+  scaffold_script: scaffold.sh

@@ -12,6 +12,9 @@ the files left behind.
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
+| `review-flags-seeded-flaws` | `flow:diff-reviewer` reads a step's change cold and names, by axis, at least five of the seven flaws seeded in it (tag `heavy`) |
+| `explore-reproduces-bug` | for a Bug ticket, `/flow:explore` builds a red reproduction under `repro/`, ranks hypotheses, and offers fixes proven by the reproduction turning green, leaving the code and no probes behind |
+| `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 
 Run from the repository root:
 
@@ -35,3 +38,8 @@ git ignores.
 `plan-slices-vertically/scaffold.sh` is generated: it writes the invoice-tool fixture and
 INV-42's `.specs` at the explore phase with heredocs, from the rehearsal run that found
 the horizontal slicing. Edit it as a fixture, not by hand-tuning the plan it leads to.
+`review-flags-seeded-flaws/scaffold.sh` is generated the same way: the fixture with
+TEST-3's step in progress, committed, then an uncommitted change carrying the seven flaws
+its `findings` grader lists. So are `explore-reproduces-bug` (a seeded `--to` bug, with
+the test that covered it removed) and `retro-reads-the-record` (the rehearsal's own
+INV-42 record, shipped).
