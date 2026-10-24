@@ -62,14 +62,23 @@ start in a fresh context.
 - \`verification.md\` — whole-ticket check · \`evidence/\` — proof logs · \`assets/\` — design exports
 
 Flow: start → understand → design (if any) → explore → plan → execute ⇄ verify → ship.
+Short route: start → understand → design (if any) → plan → execute → ship.
 
 ## Commands and the ticket
 
-Each phase is a command the developer types: \`/flow:<phase> <ticket-id>\`. A phase ends
-by naming the next command (the \`Next:\` line the state script prints) and suggesting
-\`/clear\` before it, since the next phase reads everything from disk; the developer runs
-it when ready. The ticket id comes from the command's argument; without one, use the
-only ticket in progress under \`.specs/\`, or ask which.
+Each phase is a command the developer types: \`/flow:<phase> <ticket-id>\`, and the
+developer runs the next one when ready. The ticket id comes from the command's argument;
+without one, use the only ticket in progress under \`.specs/\`, or ask which.
+
+## Phase boundaries
+
+A phase ends once whatever the developer said that shapes later work is in the ticket's
+files. It then names the next command (the \`Next:\` line the state script prints) and
+advises on the session:
+- up to the plan (understand, design, explore), the next phase builds on this
+  conversation, so it continues in this session unless the session has grown long;
+- from the plan on (plan → execute, step to step, verify → ship), each phase works from
+  self-contained specs, so \`/clear\` comes first.
 
 ## State
 
@@ -80,6 +89,10 @@ Phases move forward freely; moving back is a regression and needs a reason, reco
 \`→ done\` (committed), one at a time, and the next step starts once the previous one is
 committed. Before the gate, a step's proof passes or fails; only the developer's
 approval makes it \`proven\`.
+
+A small, clear change can take the **short route**, when the developer chooses it
+(\`state.js set route short\`): the plan maps the change itself instead of a separate
+explore, and the last step's gate leads to ship, without a whole-ticket verify.
 
 ## Roles
 
@@ -119,6 +132,7 @@ title: {titleYaml}
 created: "{date}"
 phase: start
 design_involved: unknown
+route: full
 proof_definition: ""
 current_step: null
 steps: []
@@ -208,10 +222,9 @@ const DECISIONS_TEMPLATE = `# Decisions — {ticket}
 
 - Date: {date}
 - Status: proposed <!-- proposed | accepted | superseded by Dn -->
-- Context: <!-- what forced a choice -->
-- Decision: <!-- the approach chosen -->
-- Trade-offs: <!-- what we gave up; options rejected and why (link discoveries.md) -->
-- Consequences: <!-- impact on the plan and steps -->
+
+<!-- The context, the decision and why, in one to three sentences. Add "Rejected:" (the
+     options not taken, and why) and "Consequences:" only when there was a real trade-off. -->
 `;
 
 const PLAN_TEMPLATE = `# Plan — {ticket}

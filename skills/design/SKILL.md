@@ -46,5 +46,6 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`, and
 ## Handoff
 
 Summarize what the design requires. Then name the next command from the `Next:` line of
-the state output, and suggest `/clear` before it: the notes and assets are on disk, and
-the design payloads need not follow.
+the state output. When you opened screenshots in this session, suggest `/clear` before
+it: images weigh on the context, and the notes and assets are on disk. Otherwise it runs
+in this session.

@@ -52,6 +52,7 @@ title: "Add CSV export to reports"
 created: "2026-06-19"
 phase: execute
 design_involved: true
+route: full
 proof_definition: "pnpm test + screenshot of the modal"
 current_step: "02"
 steps:
@@ -64,7 +65,7 @@ steps:
 ## Where we are
 
 Phase: **execute**. Steps: 1 of 2 done; current: 02 — Wire the export button (in-progress).
-Next: run `/flow:execute` to continue step 02 — Wire the export button (in progress).
+Next: run `/flow:execute AB-1234` to continue step 02 — Wire the export button (in progress).
 
 ## Navigation log
 
@@ -95,6 +96,10 @@ Field meanings:
 
 - **`phase`** — the current phase. Skills set it as they run, through `state.js`.
 - **`design_involved`** — set by `/flow:understand`. Gates whether `/flow:design` runs.
+- **`route`** — `full` (the default) or `short`. `/flow:understand` offers the short
+  route for a small, clear change and you choose it: the plan maps the change itself
+  instead of a separate explore, and the last step's gate leads to ship, without a
+  whole-ticket verify. `/flow:ship` still checks every criterion has evidence.
 - **`proof_definition`** — what counts as proof for this work; set in `/flow:plan`.
 - **`current_step`** — the step being worked, or `null`.
 - **`steps`** — one entry per planned step, with a status that advances

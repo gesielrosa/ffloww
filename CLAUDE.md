@@ -80,8 +80,14 @@ human converges and decides.**
   each step in the step's `Executor` line; `/flow:execute` escalates one model per new
   agent call (light → executor → executor with per-call `model: opus` → inline) when a
   delegated step stalls. Skills never set `model:` in their own frontmatter — that
-  switches the main session's model and rebuilds its prompt cache. Phases hand off
-  with a `/clear` suggestion, since `.specs/` carries everything forward.
+  switches the main session's model and rebuilds its prompt cache.
+- **Phase boundaries follow what the next phase reads.** A phase ends once whatever the
+  developer said that shapes later work is on disk. Up to the plan (understand, design,
+  explore) the next phase builds on the conversation, so it continues in the same
+  session unless that has grown long (design suggests `/clear` after opening
+  screenshots). From the plan on (each step, verify, ship) phases work from
+  self-contained specs, so they hand off with a `/clear` suggestion. The rule lives in
+  `CONVENTIONS.md`; each handoff states its own case.
 - **State changes through a script, never by hand.** `scripts/state.js` (`show`,
   `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with
@@ -91,6 +97,10 @@ human converges and decides.**
   Step specs' Status lines stay in sync, the navigation log is appended, and "Where we
   are" is regenerated. `nextMove()` in it is the single source of the "what's next"
   mapping that every phase's handoff, `/flow:status`, and the SessionStart hook report.
+  It follows the ticket's `route`: `full` by default, or `short`, which the developer
+  chooses for a small, clear change (offered by `/flow:understand`): understand →
+  design? → plan → execute → ship, with the plan mapping the change itself and no
+  whole-ticket verify.
 - **Evidence is recorded by a script, not retyped.** `run_proof.js` runs each proof
   command, saves the full log under `.specs/<ticket-id>/evidence/`, and appends command,
   exit code, and last lines to the step spec (or, for the target `ticket`, to
@@ -102,8 +112,8 @@ human converges and decides.**
 - **A cleared session resumes from disk.** A `SessionStart` hook
   (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
-  nothing in a project without `.specs/`, so the `/clear` the flow suggests between
-  phases costs no re-orientation.
+  nothing in a project without `.specs/`, so the `/clear` the flow suggests from the
+  plan on costs no re-orientation.
 - **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
   runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
   session it denies edits to `evidence/` logs, edits that would remove or change a

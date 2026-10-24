@@ -112,6 +112,28 @@ test('a shipped ticket points to the optional retro', () => {
     assert.match(state('show').out, /Next: \/flow:retro AB-1 — look back at the record/);
 });
 
+test('the short route skips explore and the whole-ticket verify; the full route keeps both', () => {
+    const routes = {};
+    for (const route of ['full', 'short']) {
+        const { state, read } = setup();
+        state('phase', 'understand');
+        state('set', 'design_involved', 'false');
+        assert.equal(state('set', 'route', route).code, 0);
+        const afterUnderstand = state('show').out;
+        state('phase', 'plan');
+        state('add-step', '01', 'One');
+        state('phase', 'execute');
+        for (const status of ['in-progress', 'proven', 'done']) state('step', '01', status);
+        routes[route] = { afterUnderstand, afterSteps: state('show').out, file: read() };
+    }
+    assert.match(routes.full.afterUnderstand, /Next: \/flow:explore AB-1/);
+    assert.match(routes.full.afterSteps, /Next: \/flow:verify AB-1/);
+    assert.match(routes.short.afterUnderstand, /route: short[\s\S]*Next: \/flow:plan AB-1 — map the small change/);
+    assert.match(routes.short.afterSteps, /Next: \/flow:ship AB-1/);
+    assert.match(routes.short.file, /^route: short$/m);
+    assert.equal(setup().state('set', 'route', 'shortest').code, 1);
+});
+
 test('Where we are is regenerated and the log keeps history', () => {
     const { state, read } = setup();
     state('phase', 'understand');

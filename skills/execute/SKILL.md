@@ -118,5 +118,6 @@ it alone talks to the developer and writes `state.md`.
 ## Handoff
 
 Name the next command from the `Next:` line of the state output (another
-`/flow:execute` while steps remain, then the whole-ticket `/flow:verify`), and suggest
-`/clear` before it: everything the next step needs is on disk.
+`/flow:execute` while steps remain, then the whole-ticket `/flow:verify`, or `/flow:ship`
+on the short route), and suggest `/clear` before it: everything the next step needs is
+on disk.

@@ -83,8 +83,9 @@ checks every phase and step move and writes the navigation log.
 
 ## Common questions
 
-- **Do I have to use every phase?** No. Design is conditional; you can skip, repeat, or
-  regress. The flow adapts to you.
+- **Do I have to use every phase?** No. Design is conditional, and a small, clear change
+  can take the short route (understand → plan → execute → ship): `/flow:understand`
+  offers it and you choose. You can also skip, repeat, or regress.
 - **What if the plan turns out wrong mid-execution?** Regress to `/flow:plan`; the reason
   is logged in the navigation log and `decisions.md`.
 - **How do I add context that isn't in the ticket?** `/flow:context`, anytime, or when
@@ -109,6 +110,9 @@ checks every phase and step move and writes the navigation log.
   secrets it recognizes first, and the plugin's guard hook blocks edits that remove or
   change a recorded entry or log, and hand edits to `state.md`. The flow's subagents are
   also blocked from git writes and a step's gate.
-- **Why does it suggest `/clear` between phases?** Everything a phase needs is on disk in
-  `.specs/`, so a fresh context costs nothing in knowledge and saves tokens. A new or
-  cleared session is told which tickets are in progress and their next command.
+- **When does it suggest `/clear`?** From the plan on (before each step and before
+  ship), each phase works from self-contained specs in `.specs/`, so a fresh context costs
+  nothing in knowledge and keeps the build sharp; a new or cleared session is told which
+  tickets are in progress and their next command. Up to the plan (understand, design,
+  explore), the next phase builds on the conversation, so it continues in the same
+  session unless that has grown long.

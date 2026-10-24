@@ -15,6 +15,8 @@ the files left behind.
 | `review-flags-seeded-flaws` | `flow:diff-reviewer` reads a step's change cold and names, by axis, at least five of the seven flaws seeded in it (tag `heavy`) |
 | `explore-reproduces-bug` | for a Bug ticket, `/flow:explore` builds a red reproduction under `repro/`, ranks hypotheses, and offers fixes proven by the reproduction turning green, leaving the code and no probes behind |
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
+| `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
+| `plan-short-route` | on the short route, `/flow:plan` maps the change itself (no explore detour), writes a short ADR and one small step, and suggests `/clear` before execute |
 
 Run from the repository root:
 

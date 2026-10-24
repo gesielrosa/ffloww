@@ -16,15 +16,19 @@ the developer's choices; this phase drafts the ADR and the step specs from them,
 ## Before you start
 
 Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`,
-`understanding.md`, and `discoveries.md`. Without a context map and options in
-`discoveries.md`, the next command is `/flow:explore <ticket-id>`: say so and stop.
+`understanding.md`, and `discoveries.md`. On the full route, without a context map and
+options in `discoveries.md`, the next command is `/flow:explore <ticket-id>`: say so and
+stop. On the short route (`route: short`), the plan maps the change itself.
 
 ## Steps
 
-1. **Record the decision.** The developer chooses among the options in `discoveries.md`;
-   when they have not chosen yet, present the options and ask. Once they choose, append
-   an ADR entry to `decisions.md` (append-only): context, the decision, trade-offs (which
-   options were rejected and why), and consequences.
+1. **Record the decision.** On the full route, the developer chooses among the options in
+   `discoveries.md`; when they have not chosen yet, present the options and ask. On the
+   short route, read the files the change touches and propose its one approach, with
+   `file:line` evidence, for the developer to confirm. Once chosen, append an ADR entry to
+   `decisions.md` (append-only): the context, the decision and why, in one to three
+   sentences, plus the rejected options and the consequences when there was a real
+   trade-off.
 
 2. **Agree the proof strategy.** What counts as proof is project-defined (often tests,
    sometimes a command's output or a screenshot); ask the developer when it is not

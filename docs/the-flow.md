@@ -14,6 +14,20 @@ a phase by itself (each phase skill sets `disable-model-invocation`).
    /flow:retro looks back once the ticket is done.
 ```
 
+**The short route.** A small, clear change (one sane approach, a few files, nothing to
+compare) can skip the separate explore and the whole-ticket verify:
+`understand → design? → plan → execute → ship`. `/flow:understand` offers it, you choose
+it, and `state.md` records it (`route: short`), so every `Next:` line follows it. The
+plan maps the change itself; the step gates prove the criteria, and `/flow:ship` still
+stops if one has no evidence.
+
+**Phase boundaries.** A phase ends once whatever you said that shapes later work is in
+the ticket's files. Up to the plan (understand, design, explore), the next phase builds
+on the conversation, so it continues in the same session unless that has grown long (or,
+after design, holds the screenshots). From the plan on (each step, verify, ship), each
+phase works from self-contained specs, so the flow suggests `/clear` first; a cleared
+session is told where each ticket stands.
+
 ## Entry — `/flow:start`
 
 Begins or resumes a ticket. Collects the ticket id (and an optional title) and runs
@@ -35,6 +49,7 @@ Captures *what* must be built and *why*, before any code is explored.
 - Closes once the open questions that shape the acceptance criteria are answered (or
   you choose to carry them forward), asking the remaining ones together, each with a
   recommended answer.
+- Offers the **short route** when the change is small and clear; you choose.
 - **Determines design involvement actively.** It infers design from the work and does
   not rely on a Figma link being in the ticket; when unsure, it asks. Sets
   `design_involved` accordingly.
@@ -57,7 +72,9 @@ The divergent phase. Build breadth, then options — not a decision.
 - Maps the relevant code (where it lives, how it flows, what it touches) with
   `file:line` evidence. The mapping fans out to parallel `flow:code-mapper` subagents
   (Haiku, read-only); the main session confirms the cited lines it builds options on.
-- Lays out **at least two viable approaches**, each with pros/cons and risk/effort.
+- Lays out the viable approaches, each with pros/cons and risk/effort; when the code
+  leaves a single sane one, it records that one with the evidence that rules out the
+  rest, instead of inventing a second.
 - A **Bug** is explored from a **red reproduction** first: one command that fails on
   the reported symptom, kept under `.specs/<ticket-id>/repro/` and shrunk to its
   smallest red case; then three to five ranked, falsifiable hypotheses, tested with
@@ -69,8 +86,10 @@ The divergent phase. Build breadth, then options — not a decision.
 
 The convergent phase. You architect, it types.
 
-- You pick an approach from the options; the skill records it as an **ADR** in
-  `decisions.md` (context, decision, trade-offs, consequences).
+- You pick an approach from the options (on the short route, the plan reads the few
+  files itself and proposes the one approach); the skill records it as an **ADR** in
+  `decisions.md`: context, decision and why in one to three sentences, plus the rejected
+  options and consequences when there was a real trade-off.
 - Agrees the **proof strategy** (project-defined; often tests) and writes it to
   `state.md` as `proof_definition`.
 - Slices the work into **vertical** steps (tracer bullets): each a narrow path through

@@ -30,7 +30,9 @@ run git that writes.
   link being in the ticket); closes once the open questions that shape the criteria are
   answered or carried forward.
 - **Writes:** `understanding.md`, `context.md`; sets `design_involved`.
-- **Hands off to:** `/flow:design` (if design) or `/flow:explore`.
+- **Hands off to:** `/flow:design` (if design), then `/flow:explore`, or `/flow:plan` on
+  the short route, which it offers for a small, clear change and you choose. You continue
+  in the same session.
 
 ## `/flow:design` — phase 2 *(conditional)*
 
@@ -41,7 +43,8 @@ run git that writes.
   and records design notes tied to acceptance criteria — the large design payloads stay
   out of the main session.
 - **Writes:** `assets/`, the Design section of `understanding.md`.
-- **Hands off to:** `/flow:explore`.
+- **Hands off to:** `/flow:explore` (`/flow:plan` on the short route); `/clear` first when
+  screenshots were opened.
 
 ## `/flow:explore` — phase 3
 
@@ -54,7 +57,7 @@ run git that writes.
   symptom, shrunk, then ranked falsifiable hypotheses tested with probes it removes, and
   options whose proof is the reproduction turning green.
 - **Writes:** `discoveries.md`; for a bug, the reproduction under `repro/`.
-- **Hands off to:** `/flow:plan`.
+- **Hands off to:** `/flow:plan`, in the same session.
 
 ## `/flow:plan` — phase 4
 
@@ -63,10 +66,12 @@ run git that writes.
   the work into vertical, provable steps (tracer bullets); marks who builds each
   (`delegate` to a Sonnet subagent, `delegate-light` to a Haiku one, or `inline`). For
   a bug, the fixing step's proof is the reproduction, run red before the fix and green
-  after.
+  after. On the short route it reads the few files the change touches itself and
+  proposes the one approach; the ADR is one to three sentences unless there was a real
+  trade-off.
 - **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; sets
   `proof_definition` and `steps:` in `state.md`.
-- **Hands off to:** `/flow:execute`.
+- **Hands off to:** `/flow:execute`, after `/clear`.
 
 ## `/flow:execute` — phase 5
 
@@ -81,7 +86,8 @@ run git that writes.
   proven step is committed (`--reason` to start anyway).
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
   `state.md`.
-- **Hands off to:** `/flow:execute` (next step) or `/flow:verify` (all done).
+- **Hands off to:** `/flow:execute` (next step), then `/flow:verify`, or `/flow:ship` on
+  the short route; `/clear` first.
 
 ## `/flow:verify` — phase 6
 

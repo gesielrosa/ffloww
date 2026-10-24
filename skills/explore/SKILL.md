@@ -43,10 +43,11 @@ options.
    open the cited lines the options will rest on. Record the map in `discoveries.md` with
    the `file:line` references you confirmed.
 
-3. **Surface options.** Lay out at least two distinct approaches that satisfy the
-   acceptance criteria. For each: the approach, pros and cons, and a rough risk/effort
-   read. Keep them genuine options; a leaning may be noted, and the choice stays with the
-   developer.
+3. **Surface options.** Lay out the distinct approaches that satisfy the acceptance
+   criteria, each with the approach, pros and cons, and a rough risk/effort read. Keep
+   them genuine options; a leaning may be noted, and the choice stays with the
+   developer. When the code leaves a single sane approach, record it as the only option
+   with the `file:line` evidence that rules out the others, and say so.
 
 4. **Note constraints and gotchas.** Existing patterns to follow, prior art, landmines:
    anything that would shape the choice.
@@ -62,4 +63,5 @@ options.
 
 Present the options as a short comparison. Then name the next command from the `Next:`
 line of the state output, where the developer picks the approach and it becomes a
-recorded decision, and suggest `/clear` before it: the options are on disk.
+recorded decision. The choice builds on this conversation, so it runs in this session;
+`/clear` first only when the session has grown long.

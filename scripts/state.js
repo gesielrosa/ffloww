@@ -11,7 +11,7 @@
  * Usage:
  *   node state.js <ticket-id> show [--json]
  *   node state.js <ticket-id> phase <phase> [--reason <text>] [--note <text>]
- *   node state.js <ticket-id> set <design_involved|proof_definition|title> <value>
+ *   node state.js <ticket-id> set <design_involved|route|proof_definition|title> <value>
  *   node state.js <ticket-id> add-step <id> <title>
  *   node state.js <ticket-id> remove-step <id> --reason <text>
  *   node state.js <ticket-id> step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]
@@ -29,6 +29,10 @@
  * (todo -> in-progress -> proven -> done); moving it back needs --reason. Only one step
  * is in progress at a time, and a step starts after the previous proven one is done
  * (committed), so each step's diff stands alone; starting anyway needs --reason.
+ *
+ * Route: "full" (the default) runs every phase. "short", chosen by the developer for a
+ * small, clear change, goes from understand (and design, if any) straight to plan, and
+ * from the last step to ship, since the step gates already proved the criteria.
  */
 
 const fs = require('node:fs');
@@ -37,8 +41,9 @@ const path = require('node:path');
 const PHASES = ['start', 'understand', 'design', 'explore', 'plan', 'execute', 'verify', 'ship', 'done'];
 const STATUSES = ['todo', 'in-progress', 'proven', 'done'];
 const DESIGN = ['unknown', 'true', 'false'];
-const KNOWN = ['ticket', 'title', 'created', 'phase', 'design_involved', 'proof_definition', 'current_step', 'steps'];
-const SETTABLE = { design_involved: DESIGN, proof_definition: null, title: null };
+const ROUTES = ['full', 'short'];
+const KNOWN = ['ticket', 'title', 'created', 'phase', 'design_involved', 'route', 'proof_definition', 'current_step', 'steps'];
+const SETTABLE = { design_involved: DESIGN, route: ROUTES, proof_definition: null, title: null };
 
 /** Today as YYYY-MM-DD (UTC), like the rest of .specs. */
 function today() {
@@ -167,6 +172,7 @@ function frontMatter(f, extra) {
         `created: ${quoted(f.created)}`,
         `phase: ${f.phase}`,
         `design_involved: ${f.design_involved ?? 'unknown'}`,
+        `route: ${f.route ?? 'full'}`,
         `proof_definition: ${quoted(f.proof_definition ?? '')}`,
         `current_step: ${quoted(f.current_step)}`,
     ];
@@ -227,15 +233,19 @@ function nextMove(f) {
     const proven = steps.find((s) => s.status === 'proven');
     const todo = steps.find((s) => s.status === 'todo');
     const label = (s) => `step ${s.id} — ${s.title}`;
+    const short = f.route === 'short';
+    const explore = short
+        ? { skill: '/flow:plan', why: 'map the small change and slice it (short route)' }
+        : { skill: '/flow:explore', why: 'map the code and surface options' };
     switch (f.phase) {
         case 'start':
             return { skill: '/flow:understand', why: 'read the ticket and capture the problem and acceptance criteria' };
         case 'understand':
             if (f.design_involved === 'true') return { skill: '/flow:design', why: 'analyze the design against the ticket' };
-            if (f.design_involved === 'false') return { skill: '/flow:explore', why: 'map the code and surface options' };
+            if (f.design_involved === 'false') return explore;
             return { skill: '/flow:understand', why: 'finish understanding: decide whether design is involved' };
         case 'design':
-            return { skill: '/flow:explore', why: 'map the code and surface options' };
+            return explore;
         case 'explore':
             return { skill: '/flow:plan', why: 'pick an approach and slice it into steps' };
         case 'plan':
@@ -245,7 +255,7 @@ function nextMove(f) {
             if (current) return { skill: '/flow:execute', why: `continue ${label(current)} (in progress)` };
             if (proven) return { skill: '/flow:execute', why: `commit ${label(proven)}, then mark it done` };
             if (todo) return { skill: '/flow:execute', why: `build ${label(todo)}` };
-            if (f.phase !== 'verify') return { skill: '/flow:verify', why: 'check the whole ticket against its acceptance criteria' };
+            if (f.phase !== 'verify' && !short) return { skill: '/flow:verify', why: 'check the whole ticket against its acceptance criteria' };
             return { skill: '/flow:ship', why: 'assemble the PR/MR draft from the specs' };
         case 'ship':
             return { skill: null, why: 'ship it your way, then mark the phase done' };
@@ -268,7 +278,7 @@ function summary(f, nav) {
     const next = nextMove(f);
     const out = [
         `${f.ticket} — ${f.title}`,
-        `Phase: ${f.phase} · design: ${f.design_involved ?? 'unknown'} · proof: ${f.proof_definition || '(not set)'}`,
+        `Phase: ${f.phase} · design: ${f.design_involved ?? 'unknown'}${f.route === 'short' ? ' · route: short' : ''} · proof: ${f.proof_definition || '(not set)'}`,
         `Steps (${done}/${f.steps.length} done):`,
         ...(f.steps.length ? f.steps.map((s) => `  ${s.id} ${s.status.padEnd(11)} ${s.title}${s.id === f.current_step ? '  <- current' : ''}`) : ['  (none)']),
         'Recent navigation:',
@@ -397,7 +407,7 @@ function usage() {
     console.log('\nCommands:');
     console.log('  show [--json]');
     console.log('  phase <phase> [--reason <text>] [--note <text>]');
-    console.log('  set <design_involved|proof_definition|title> <value>');
+    console.log('  set <design_involved|route|proof_definition|title> <value>');
     console.log('  add-step <id> <title>');
     console.log('  remove-step <id> --reason <text>');
     console.log('  step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]');

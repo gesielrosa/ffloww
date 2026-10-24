@@ -49,10 +49,17 @@ stop.
      `assets/`) under the Design section; `/flow:design` reads the exact nodes next.
    - No design: write "No design involved".
 
-5. **Update state** through the state script, from the project root:
+5. **Size the route.** When the change is small and clear (one sane approach, a few
+   files, nothing to compare), offer the short route: the plan maps the change itself
+   instead of a separate explore, and the last step's gate leads to ship. The developer
+   decides.
+
+6. **Update state** through the state script, from the project root (`set route short`
+   only when the developer chose it):
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set design_involved <true|false>
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set route short
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase understand
    ```
 
@@ -61,6 +68,7 @@ stop.
 While open questions that shape an acceptance criterion remain, end your turn with
 them: numbered, together, each with your recommended answer. The developer answers
 them, or chooses to carry them forward (they stay under Open questions). Once that is
-settled, summarize the problem and acceptance criteria for a quick sanity check, name
-the next command from the `Next:` line of the state output, and suggest `/clear` before
-it: the understanding is on disk.
+settled, summarize the problem and acceptance criteria for a quick sanity check, and
+name the next command from the `Next:` line of the state output. It builds on this
+conversation, so it runs in this session; `/clear` first only when the session has
+grown long.
