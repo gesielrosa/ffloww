@@ -159,5 +159,10 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
   escalations, failed proof runs, review findings, gate changes) and proposes changes to
   the environment: automated checks for mechanical mistakes, `CLAUDE.md` lines for
   judgement calls. Writes `retro.md`; you pick what to apply.
+- **`/flow:upgrade`** — after a plugin update, brings a `.specs/` an earlier version
+  wrote up to the installed one: the mechanical changes once you agree, your edits to
+  `CONVENTIONS.md` merged into the new contract, and step statuses the flow no longer
+  knows mapped with you. See
+  [Upgrading `.specs/`](specs-and-state.md#upgrading-specs-from-an-earlier-version).
 - **`/flow:help`** — explains the flow and answers questions about it, in plain language
   (read-only). For "where am I", use `/flow:status`.

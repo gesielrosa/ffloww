@@ -36,10 +36,11 @@ home of the rules they share: the commands and how a phase ends, the state rules
 roles, the gate protocol, the git/PR policy, and the principles.
 
 Its first line is a stamp with the hash of its body. While the body still matches the
-stamp, `/flow:start` refreshes the file to the installed version of the flow. It is
-safe to edit to fit local conventions: an edited file is kept as is, and `/flow:start`
-warns when it differs from the current contract (`init_spec.js --print-conventions`
-prints that contract for a merge).
+stamp, `/flow:start` refreshes the file to the installed version of the flow; so it
+does for an unedited contract written before the stamp existed. It is safe to edit to
+fit local conventions: an edited file is kept as is. When the edits sit on an earlier
+contract, `/flow:start` warns and `/flow:upgrade` merges them into the current one
+(`init_spec.js --print-conventions` prints it).
 
 ## `state.md` — the single source of truth
 
@@ -87,6 +88,7 @@ node state.js AB-1234 phase plan           # forward moves are free
 node state.js AB-1234 phase explore --reason "missed a caller"   # back = regression
 node state.js AB-1234 add-step 03 "Add the download link"
 node state.js AB-1234 step 03 in-progress  # one status at a time, one step in progress
+node state.js AB-1234 normalize 02=todo     # an older state.md, in the current format (/flow:upgrade)
 ```
 
 It keeps the front matter valid YAML, checks every phase and step move, syncs each step
@@ -163,6 +165,27 @@ A step is not done because the agent says so:
 - A regression is appended to the navigation log *and* to `decisions.md` with its
   reason. History is never rewritten.
 - Run `/flow:status` anytime to see where you are and what to run next.
+
+## Upgrading `.specs/` from an earlier version
+
+A record an earlier version of the flow wrote keeps working, and `/flow:upgrade` brings
+it up to the installed version. Its script (`scripts/upgrade.js`) first reports, item
+by item, and changes nothing; `--apply` then makes the mechanical part:
+
+- an unedited earlier `CONVENTIONS.md` or `steps/_TEMPLATE.md` is replaced by the
+  current one, recognized from `scripts/history/` (every contract and step template
+  the flow has written);
+- a `state.md` in an older shape is rewritten in the current format by
+  `state.js normalize`: canonical front matter (a missing `route` becomes `full`), the
+  step specs' Status lines in sync, "Where we are" regenerated, one log entry.
+
+What only you can settle comes back as a decision: local edits on an earlier contract
+(the report names the contract they started from, so the diff shows exactly your
+edits), a value the flow does not know, like a step status `blocked`
+(`state.js AB-1234 normalize 02=in-progress`), or a `state.md` the script cannot read.
+Steps without an Executor line and evidence written by hand are notes: the flow works
+with them as they are. Tickets in phase `done` stay as they are. While work in progress
+meets an earlier record, a new or cleared session suggests `/flow:upgrade`.
 
 ## Versioning `.specs/`
 

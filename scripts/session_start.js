@@ -10,6 +10,9 @@
  * the next move — to the session's context. The flow suggests /clear between phases;
  * this is what lets a cleared session pick the work up without asking.
  *
+ * When work in progress meets a record from an earlier version of the flow (see
+ * upgrade.js needsUpgrade), it adds one more line pointing to /flow:upgrade.
+ *
  * Prints nothing in a project without active tickets, so it costs no context there.
  * Fails silently: a broken state.md is skipped, never an error.
  */
@@ -17,6 +20,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseState, nextMove } = require('./state');
+const { needsUpgrade } = require('./upgrade');
 
 const MAX_TICKETS = 5;
 
@@ -46,15 +50,28 @@ function activeTickets(root) {
     return tickets.sort((a, b) => b.mtime - a.mtime).map((t) => t.line);
 }
 
+const UPGRADE = 'ffloww: part of .specs/ was written by an earlier version of the flow: suggest /flow:upgrade to the developer before the next phase.';
+
+/** True when the record needs /flow:upgrade; a failed check counts as no. */
+function upgradeNeeded(root) {
+    try {
+        return needsUpgrade(root);
+    } catch {
+        return false;
+    }
+}
+
 /** The context to add, or '' for none. */
 function context(root) {
     const lines = activeTickets(root);
-    if (lines.length === 0) return '';
+    const upgrade = upgradeNeeded(root);
+    if (lines.length === 0) return upgrade ? UPGRADE : '';
     const shown = lines.slice(0, MAX_TICKETS).map((l) => `- ${l}`);
     if (lines.length > MAX_TICKETS) shown.push(`- … and ${lines.length - MAX_TICKETS} more (see /flow:status)`);
     return [
         'ffloww: tickets in progress in this project (from .specs/<ticket-id>/state.md):',
         ...shown,
+        ...(upgrade ? [UPGRADE] : []),
         'The flow state lives in .specs/, not in this conversation. To continue, run the next move above or /flow:status <ticket-id>; nothing advances without the developer.',
     ].join('\n');
 }

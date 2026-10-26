@@ -31,7 +31,8 @@ of "is this proven?" are not.
 - **Anytime utilities:** `/flow:status` (the compass — where am I, what's next),
   `/flow:context` (add context the ticket and code don't carry), `/flow:retro` (after
   shipping, propose changes to the project's checks and instructions from the ticket's
-  record), and `/flow:help` (explain the flow and answer questions).
+  record), `/flow:upgrade` (after a plugin update, bring a `.specs/` an earlier version
+  wrote up to date), and `/flow:help` (explain the flow and answer questions).
 
 Navigation is **human-driven and bidirectional**: the AI recommends and proves; you
 choose to advance, repeat, or regress. A regression is logged, not lost.

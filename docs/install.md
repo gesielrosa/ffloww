@@ -42,14 +42,15 @@ itself.
 
 - **Skills** — `/flow:start`, `/flow:understand`, `/flow:design`, `/flow:explore`,
   `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`, and the utilities
-  `/flow:status`, `/flow:context`, `/flow:retro`, `/flow:help`.
+  `/flow:status`, `/flow:context`, `/flow:retro`, `/flow:upgrade`, `/flow:help`.
 - **Subagents** — `flow:step-executor` (Sonnet) and `flow:step-executor-light`
   (Haiku) build delegated steps, `flow:diff-reviewer` (Sonnet, read-only) reviews each
   step's change before its gate, `flow:design-reader` (Sonnet) reads the Figma nodes,
   and `flow:code-mapper` (Haiku, read-only) maps code during exploration. Their models
   are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way
-  `state.md` changes; `run_proof.js` runs proofs and records their evidence.
+  `state.md` changes; `run_proof.js` runs proofs and records their evidence;
+  `upgrade.js` brings a `.specs/` from an earlier version up to date.
 - **A resume hook** — at session start, after `/clear`, and after compaction,
   `scripts/session_start.js` adds one line per ticket in progress (phase, step,
   next move) to the session. In a project without `.specs/` it adds nothing.
@@ -93,6 +94,12 @@ claude plugin update flow@ffloww
 
 Then run `/reload-plugins` in an open session. Auto-update is off by default for
 marketplaces other than Anthropic's.
+
+In a project whose `.specs/` an earlier version wrote, run `/flow:upgrade`: it reports
+what differs, applies the mechanical changes once you agree, and merges your edits to
+`CONVENTIONS.md` into the new contract. A new or cleared session suggests it while a
+ticket is in progress on an earlier record. See
+[Upgrading `.specs/`](specs-and-state.md#upgrading-specs-from-an-earlier-version).
 
 ## Verify the install
 

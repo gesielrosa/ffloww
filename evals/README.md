@@ -17,6 +17,7 @@ the files left behind.
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 | `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
 | `plan-short-route` | on the short route, `/flow:plan` maps the change itself (no explore detour), writes a short ADR and one small step, and suggests `/clear` before execute |
+| `upgrade-carries-local-edits` | on a record flow 0.1 left, `/flow:upgrade` applies the mechanical changes, carries the team's rule into the current contract, maps the blocked step as the developer says, and leaves the done ticket, the evidence and git alone |
 
 Run from the repository root:
 
@@ -44,4 +45,5 @@ the horizontal slicing. Edit it as a fixture, not by hand-tuning the plan it lea
 TEST-3's step in progress, committed, then an uncommitted change carrying the seven flaws
 its `findings` grader lists. So are `explore-reproduces-bug` (a seeded `--to` bug, with
 the test that covered it removed) and `retro-reads-the-record` (the rehearsal's own
-INV-42 record, shipped).
+INV-42 record, shipped). `upgrade-carries-local-edits/scaffold.sh` is generated from
+`scripts/history/`: the 0.1 contract and step template, with a hand-written state.

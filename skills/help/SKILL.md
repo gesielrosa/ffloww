@@ -48,6 +48,9 @@ judgment of "is this proven?" stay with the developer.
 - `/flow:retro` — after shipping, look back at the ticket's record (regressions,
   escalations, failed proofs, gate changes) and propose changes to the project's
   checks and instructions that make the next ticket go better.
+- `/flow:upgrade` — after a plugin update, bring a project's `.specs/` written by an
+  earlier version of the flow up to the installed one (a new or cleared session says
+  when it is needed).
 - `/flow:help` — this page.
 
 ## The principles
@@ -78,7 +81,7 @@ phase can resume. Per ticket: `state.md` (phase, steps, navigation log),
 `understanding.md`, `context.md`, `discoveries.md`, `decisions.md`, `plan.md`,
 `steps/NN-*.md`, `verification.md`, `evidence/` (full proof logs), and `assets/`. The
 shared contract is `.specs/CONVENTIONS.md`, which `/flow:start` keeps current until you
-edit it. `state.md` changes only through the flow's state script (`state.js`), which
+edit it; `/flow:upgrade` carries your edits into a newer contract. `state.md` changes only through the flow's state script (`state.js`), which
 checks every phase and step move and writes the navigation log.
 
 ## Common questions

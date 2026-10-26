@@ -16,6 +16,7 @@
  *   node state.js <ticket-id> remove-step <id> --reason <text>
  *   node state.js <ticket-id> step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]
  *   node state.js <ticket-id> log <text>
+ *   node state.js <ticket-id> normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>]...
  *   (every command takes --root <dir>; default: the current directory)
  *
  * Examples:
@@ -29,6 +30,11 @@
  * (todo -> in-progress -> proven -> done); moving it back needs --reason. Only one step
  * is in progress at a time, and a step starts after the previous proven one is done
  * (committed), so each step's diff stands alone; starting anyway needs --reason.
+ *
+ * normalize rewrites a state.md an earlier version of the flow (or a hand edit) left in
+ * another shape in the current format, for /flow:upgrade: canonical front matter, the
+ * step specs' Status lines in sync, "Where we are" regenerated. A value the flow does not
+ * know (a step status like "blocked") is the developer's to map, as an assignment.
  *
  * Route: "full" (the default) runs every phase. "short", chosen by the developer for a
  * small, clear change, goes from understand (and design, if any) straight to plan, and
@@ -134,8 +140,8 @@ function parseSteps(inline, block) {
     return steps.map((s) => ({ id: String(s.id ?? ''), title: String(s.title ?? ''), status: String(s.status ?? 'todo') }));
 }
 
-/** Parse state.md into its known fields, any extra front-matter keys, and the body. */
-function parseState(text) {
+/** Parse state.md into its known fields, any extra front-matter keys, and the body. Lenient keeps unknown step statuses. */
+function parseState(text, { lenient = false } = {}) {
     const eol = text.includes('\r\n') ? '\r\n' : '\n';
     const t = text.replace(/\r\n/g, '\n');
     const fm = t.match(/^---\n([\s\S]*?)\n---\n?/);
@@ -155,9 +161,9 @@ function parseState(text) {
         else extra.push(lines.slice(start, i).join('\n').replace(/\n+$/, ''));
     }
     for (const step of fields.steps) {
-        if (!STATUSES.includes(step.status)) throw new Error(`step ${step.id} has an unknown status "${step.status}"`);
+        if (!lenient && !STATUSES.includes(step.status)) throw new Error(`step ${step.id} has an unknown status "${step.status}"`);
     }
-    return { fields, extra, body: t.slice(fm[0].length), eol };
+    return { fields, extra, body: t.slice(fm[0].length), eol, text: t };
 }
 
 function quoted(value) {
@@ -288,17 +294,66 @@ function summary(f, nav) {
     return out.join('\n');
 }
 
-/** Keep the "- Status:" line of the step's spec in sync, if the spec exists. */
-function syncStepFile(ticketDir, id, status) {
+/** The step's spec, steps/<id>-<slug>.md, or null. */
+function stepSpec(ticketDir, id) {
     const dir = path.join(ticketDir, 'steps');
     if (!fs.existsSync(dir)) return null;
     const name = fs.readdirSync(dir).find((n) => n === `${id}.md` || (n.startsWith(`${id}-`) && n.endsWith('.md')));
-    if (!name) return null;
-    const file = path.join(dir, name);
+    return name ? path.join(dir, name) : null;
+}
+
+/** Keep the "- Status:" line of the step's spec in sync, if the spec exists: { name, changed }, or null. */
+function syncStepFile(ticketDir, id, status) {
+    const file = stepSpec(ticketDir, id);
+    if (!file) return null;
     const text = fs.readFileSync(file, 'utf8');
     const updated = text.replace(/^- Status:[ \t]*\S+/m, `- Status: ${status}`);
     if (updated !== text) fs.writeFileSync(file, updated, 'utf8');
-    return name;
+    return { name: path.basename(file), changed: updated !== text };
+}
+
+/**
+ * The state in the current format, after the developer's assignments: { text, notes }.
+ * Throws naming each value the developer has to map. Changes state.fields in place.
+ */
+function normalize(state, ticket, assignments) {
+    const f = state.fields;
+    const notes = [];
+    const fields = { phase: PHASES, design_involved: DESIGN, route: ROUTES };
+    for (const arg of assignments) {
+        const at = arg.indexOf('=');
+        if (at < 1) throw new Error(`"${arg}" is not an assignment (<step-id>=<status>, or phase=, design_involved=, route=)`);
+        const [key, value] = [arg.slice(0, at), arg.slice(at + 1)];
+        if (key in fields) {
+            if (!fields[key].includes(value)) throw new Error(`${key} must be one of: ${fields[key].join(', ')}`);
+            if (f[key] !== value) notes.push(`${key} ${f[key] ?? '(none)'} → ${value}`);
+            f[key] = value;
+            continue;
+        }
+        const step = f.steps.find((s) => s.id === key);
+        if (!step) throw new Error(`no step ${key}`);
+        if (!STATUSES.includes(value)) throw new Error(`unknown status "${value}" (one of: ${STATUSES.join(', ')})`);
+        if (step.status !== value) notes.push(`step ${key} ${step.status} → ${value}`);
+        step.status = value;
+    }
+    const problems = [];
+    if (!PHASES.includes(f.phase)) problems.push(`unknown phase "${f.phase}": pass phase=<${PHASES.join('|')}>`);
+    if (f.design_involved != null && !DESIGN.includes(f.design_involved)) problems.push(`unknown design_involved "${f.design_involved}": pass design_involved=<${DESIGN.join('|')}>`);
+    if (f.route != null && !ROUTES.includes(f.route)) problems.push(`unknown route "${f.route}": pass route=<${ROUTES.join('|')}>`);
+    for (const s of f.steps) {
+        if (!STATUSES.includes(s.status)) problems.push(`step ${s.id} has an unknown status "${s.status}": pass ${s.id}=<${STATUSES.join('|')}>`);
+    }
+    const running = f.steps.filter((s) => s.status === 'in-progress');
+    if (running.length > 1) problems.push(`steps ${running.map((s) => s.id).join(', ')} are all in progress; one step at a time: pass <step-id>=<status> for the others`);
+    if (problems.length) throw new Error(problems.join('; '));
+
+    if (!f.ticket) f.ticket = ticket;
+    if (!f.title) f.title = f.ticket;
+    const current = running[0] || f.steps.find((s) => s.id === f.current_step && s.status === 'proven');
+    const currentStep = current ? current.id : null;
+    if ((f.current_step ?? null) !== currentStep) notes.push(`current_step ${f.current_step ?? 'null'} → ${currentStep ?? 'null'}`);
+    f.current_step = currentStep;
+    return { text: frontMatter(f, state.extra) + updateBody(state.body, whereWeAre(f), []), notes };
 }
 
 /** Apply one command. Returns { changed, message, entries } or throws on a rule violation. */
@@ -374,7 +429,15 @@ function apply(state, ticketDir, command, args, opts) {
             const synced = syncStepFile(ticketDir, id, to);
             const note = opts.reason || opts.note;
             entries.push(`step ${id}: ${from} → ${to}${delta < 0 ? ' (back)' : ''}${note ? `: ${note}` : ''}`);
-            return { changed: true, message: `step ${id}: ${from} → ${to}${synced ? ` (${synced} Status synced)` : ''}`, entries };
+            return { changed: true, message: `step ${id}: ${from} → ${to}${synced ? ` (${synced.name} Status synced)` : ''}`, entries };
+        }
+        case 'normalize': {
+            const { text, notes } = normalize(state, path.basename(ticketDir), args);
+            const synced = f.steps.map((s) => syncStepFile(ticketDir, s.id, s.status)).filter((r) => r && r.changed).map((r) => r.name);
+            if (synced.length) notes.push(`Status synced in ${synced.join(', ')}`);
+            if (text === state.text && notes.length === 0) return { changed: false, message: 'state.md is already in the current format' };
+            entries.push(`state.md rewritten in the current format${notes.length ? `: ${notes.join('; ')}` : ''}`);
+            return { changed: true, message: `state.md rewritten in the current format${notes.length ? ` (${notes.join('; ')})` : ''}`, entries };
         }
         case 'log': {
             const text = args.join(' ').trim();
@@ -412,6 +475,7 @@ function usage() {
     console.log('  remove-step <id> --reason <text>');
     console.log('  step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]');
     console.log('  log <text>');
+    console.log('  normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>]...');
 }
 
 function main() {
@@ -432,7 +496,7 @@ function main() {
     }
 
     try {
-        const state = parseState(fs.readFileSync(file, 'utf8'));
+        const state = parseState(fs.readFileSync(file, 'utf8'), { lenient: opts.command === 'normalize' });
         if (opts.command === 'show') {
             const nav = navEntries(state.body);
             if (opts.json) console.log(JSON.stringify({ ...state.fields, next: nextMove(state.fields), navigation: nav }, null, 2));
@@ -457,4 +521,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { parseState, frontMatter, parseSteps, parseScalar, nextMove, apply, updateBody, navEntries };
+module.exports = { STATUSES, parseState, frontMatter, parseSteps, parseScalar, nextMove, apply, updateBody, navEntries, normalize, stepSpec };

@@ -183,3 +183,70 @@ test('a title with quotes stays valid', () => {
     const s = parseState(fs.readFileSync(path.join(p.root, '.specs', 'AB-4', 'state.md'), 'utf8'));
     assert.equal(s.fields.title, 'Add "CSV" export');
 });
+
+test('normalize leaves a current state alone', () => {
+    const { state, read } = setup();
+    state('phase', 'understand');
+    const before = read();
+    assert.match(state('normalize').out, /\[skip\] state\.md is already in the current format/);
+    assert.equal(read(), before);
+});
+
+test('normalize rewrites an older state in the current format, mapping what the flow does not know', () => {
+    const { state, read, dir } = setup();
+    fs.writeFileSync(path.join(dir, 'state.md'), [
+        '---',
+        'ticket: "AB-1"',
+        'title: "Old"',
+        'created: "2026-05-01"',
+        'phase: execute',
+        'design_involved: false',
+        'proof_definition: "npm test"',
+        'current_step: 01',
+        'steps:',
+        '  - id: 01',
+        '    title: Exporter',
+        '    status: done',
+        '  - id: 02',
+        '    title: Button',
+        '    status: blocked',
+        '---',
+        '',
+        '# AB-1 — Old',
+        '',
+        '## Where we are',
+        '',
+        'Phase: **execute**. Next: run `flow-execute`.',
+        '',
+        '## Navigation log',
+        '',
+        '- 2026-05-01 — flow initialized (phase: start)',
+        '',
+    ].join('\n'));
+    assert.match(state('show').out, /unknown status "blocked"/);
+    const unmapped = state('normalize');
+    assert.equal(unmapped.code, 1);
+    assert.match(unmapped.out, /step 02 has an unknown status "blocked": pass 02=<todo\|in-progress\|proven\|done>/);
+    assert.equal(state('normalize', '02=paused').code, 1);
+
+    assert.equal(state('normalize', '02=in-progress').code, 0);
+    const text = read();
+    assert.match(text, /^route: full$/m);
+    assert.match(text, /^current_step: "02"$/m);
+    assert.match(text, /- \{ id: "02", title: "Button", status: in-progress \}/);
+    assert.match(text, /Next: run `\/flow:execute AB-1` to continue step 02/);
+    assert.match(text, /— state\.md rewritten in the current format: step 02 blocked → in-progress; current_step 01 → 02; Status synced in 01-exporter\.md, 02-button\.md\n$/);
+    assert.match(fs.readFileSync(path.join(dir, 'steps', '02-button.md'), 'utf8'), /^- Status: in-progress <!--/m);
+    assert.match(state('normalize').out, /\[skip\]/);
+});
+
+test('normalize keeps one step in progress', () => {
+    const { state, dir } = setup();
+    state('add-step', '01', 'One');
+    state('add-step', '02', 'Two');
+    const file = path.join(dir, 'state.md');
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/status: todo/g, 'status: in-progress'));
+    assert.match(state('normalize').out, /steps 01, 02 are all in progress/);
+    assert.equal(state('normalize', '01=done').code, 0);
+    assert.equal(parseState(fs.readFileSync(file, 'utf8')).fields.current_step, '02');
+});

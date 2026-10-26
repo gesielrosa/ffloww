@@ -1,7 +1,7 @@
 # Skills reference
 
-Every skill is independent. The phases, `/flow:start`, `/flow:retro`, and `/flow:help`
-run only when you type them (`disable-model-invocation`): the assistant cannot start a
+Every skill is independent. The phases, `/flow:start`, `/flow:retro`, `/flow:upgrade`,
+and `/flow:help` run only when you type them (`disable-model-invocation`): the assistant cannot start a
 phase by itself, and their descriptions cost no context until you call them.
 `/flow:status` and `/flow:context` also answer plain requests ("where are we?", "fyi,
 the API is rate limited"). Each phase reads `.specs/CONVENTIONS.md`, the ticket's
@@ -142,6 +142,20 @@ See [the context channel](context-channel.md).
   and habits for planning and proofs. Every proposal cites the record; you pick what to
   apply.
 - **Writes:** `retro.md`.
+
+## `/flow:upgrade` — bring `.specs/` up to date
+
+- **When:** after a plugin update, in a project whose `.specs/` an earlier version of
+  the flow wrote; a new or cleared session suggests it while work is in progress.
+- **Does:** runs `upgrade.js` for a report (`[ok]`, `[apply]`, `[decide]`, `[note]`),
+  then, once you agree, `--apply`: unedited earlier `CONVENTIONS.md` and step
+  templates are replaced, older `state.md` files are rewritten in the current format.
+  With you, it merges local edits on an earlier contract into the current one and maps
+  values the flow no longer knows (a step status like `blocked`). Done tickets stay as
+  they are. Ends with each ticket's next command.
+- **Writes:** `.specs/` only; never git.
+
+See [Upgrading `.specs/`](specs-and-state.md#upgrading-specs-from-an-earlier-version).
 
 ## `/flow:help` — explain the flow
 

@@ -42,12 +42,14 @@ human converges and decides.**
   git/PR policy, principles. It is the one home of the rules every phase shares, so a
   skill states only what is particular to its phase. Every phase reads it + the
   ticket's `state.md` at start. Its first line stamps the hash of its body: while the
-  body still matches, `init_spec.js` refreshes it to the plugin's current template;
-  an edited file is kept, with a warning (`--print-conventions` prints the template).
+  body still matches, or matches an unstamped contract an earlier version wrote,
+  `init_spec.js` refreshes it to the plugin's current template; an edited file is kept,
+  and edits on an earlier contract get a warning naming `/flow:upgrade`
+  (`--print-conventions` prints the template).
 - **Skills are independent; phases run only when the developer types them.**
   `/flow:start`, the phases (`/flow:understand`, `/flow:design`, `/flow:explore`,
-  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`), `/flow:retro` and
-  `/flow:help` set
+  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`), `/flow:retro`,
+  `/flow:upgrade` and `/flow:help` set
   `disable-model-invocation: true`: their descriptions cost no context in any session,
   and neither the model nor a subagent can start a phase (the Skill tool refuses), so
   "the developer drives transitions" is enforced by the harness. Their descriptions are
@@ -89,7 +91,7 @@ human converges and decides.**
   self-contained specs, so they hand off with a `/clear` suggestion. The rule lives in
   `CONVENTIONS.md`; each handoff states its own case.
 - **State changes through a script, never by hand.** `scripts/state.js` (`show`,
-  `phase`, `set`, `add-step`, `remove-step`, `step`, `log`) is the only writer of
+  `phase`, `set`, `add-step`, `remove-step`, `step`, `log`, `normalize`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with
   `--reason`, logged as a regression; execute ⇄ verify is free), steps move one status
   at a time with one in progress, and a step starts only once the previous proven step
@@ -114,6 +116,18 @@ human converges and decides.**
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
   nothing in a project without `.specs/`, so the `/clear` the flow suggests from the
   plan on costs no re-orientation.
+- **Earlier records are upgraded, not abandoned.** `scripts/upgrade.js`, behind
+  `/flow:upgrade`, reports what a project's `.specs/` needs to match the installed
+  version; `--apply` makes the mechanical part (an unedited earlier `CONVENTIONS.md` or
+  `steps/_TEMPLATE.md` is replaced; an older `state.md` is rewritten by
+  `state.js normalize`, which also takes the developer's mapping of values the flow
+  does not know, like a step status `blocked`). Local edits on an earlier contract are
+  merged with the developer, against the contract they started from. Earlier texts are
+  recognized from `scripts/history/<kind>/<digest>.md`, every contract and step
+  template the flow has written; the current ones are kept there too
+  (`tests/upgrade.test.js`), so every release stays upgradable. While work in progress
+  meets an earlier record, the SessionStart hook adds one line suggesting
+  `/flow:upgrade`. Tickets in phase `done` are history and stay as they are.
 - **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
   runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
   session it denies edits to `evidence/` logs, edits that would remove or change a
@@ -137,9 +151,11 @@ ffloww/
     marketplace.json   # marketplace "ffloww", listing this repo ("./") as plugin "flow"
   skills/<name>/SKILL.md   # one skill per phase/utility → /flow:<name> (lean, <500 lines)
   agents/<name>.md         # subagents (model/effort/tools pinned) → flow:<name>
-  scripts/                 # init_spec.js, state.js, run_proof.js, guard.js, session_start.js
+  scripts/                 # init_spec.js, state.js, run_proof.js, guard.js, session_start.js, upgrade.js
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
     lib/redact.js          # secret masking for run_proof.js
+    lib/history.js         # recognizes the texts earlier versions wrote (init_spec.js, upgrade.js)
+    history/               # every CONVENTIONS.md body and step template shipped, named by digest
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
   tests/                   # node --test tests/*.test.js (no dependencies)
   evals/                   # claude plugin eval cases: behavior of the commands (see evals/README.md)
@@ -172,7 +188,9 @@ For a headless smoke test, run a skill in a scratch git repo:
 `claude -p "/flow:start TEST-1" --plugin-dir <this repo> --strict-mcp-config --model haiku --allowedTools "Bash(node *)"`.
 
 Release: bump `version` in `.claude-plugin/plugin.json` — consumers on a pinned
-version stay on it until it changes — then tag.
+version stay on it until it changes — then tag. A change to `CONVENTIONS_TEMPLATE` or
+`STEP_TEMPLATE` saves the new text under `scripts/history/` (the failing test names the
+file), so projects on that version can upgrade from it.
 
 ## MCP servers
 
@@ -186,5 +204,6 @@ auth through their own environment and accounts, never through the plugin. In a 
 Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the proof
 runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
 script, the `delegate-light` (Haiku) executor tier, user-invoked phases, secret
-masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, and the
-independent diff reviewer before the gate. Next: an end-to-end run on a real ticket.
+masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, the
+independent diff reviewer before the gate, and `/flow:upgrade` for records earlier
+versions wrote. Next: an end-to-end run on a real ticket.

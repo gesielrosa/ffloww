@@ -24,14 +24,16 @@
  *
  * Idempotent: re-running for an existing ticket is a no-op (it will not overwrite
  * work). CONVENTIONS.md carries a stamp with the hash of its body: while the body still
- * matches the stamp (nobody edited it), a re-run refreshes it to this version of the
- * flow; an edited file is kept as is, with a warning when it differs from the current
- * contract (--print-conventions prints that contract).
+ * matches the stamp (nobody edited it), or matches a contract an earlier version wrote
+ * before the stamp existed, a re-run refreshes it to this version of the flow. An edited
+ * file is kept as is; when it was edited on an earlier contract, a warning points to
+ * /flow:upgrade, which merges the edits into the current one (--print-conventions prints
+ * it).
  */
 
-const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const { digest, template, shipped, nearest } = require('./lib/history');
 
 /** Replace {key} placeholders in a template string. */
 function fill(template, vars) {
@@ -314,15 +316,30 @@ function writeFile(filePath, content, { overwrite = true } = {}) {
 // First line of CONVENTIONS.md: the hash of the body as it was written.
 const STAMP = /^<!-- ffloww:conventions sha256:([0-9a-f]{16})\b[^\n]*-->\n/;
 
-/** Short sha256 of a text. */
-function digest(text) {
-    return crypto.createHash('sha256').update(text).digest('hex').slice(0, 16);
-}
-
 /** CONVENTIONS.md as written: the stamp line, then the contract. */
 function conventionsFile() {
     const note = '/flow:start keeps this file current until it is edited; an edited file is kept as is.';
     return `<!-- ffloww:conventions sha256:${digest(CONVENTIONS_TEMPLATE)} — ${note} -->\n${CONVENTIONS_TEMPLATE}`;
+}
+
+/**
+ * What a project's CONVENTIONS.md is, as { kind, base }:
+ *   current        — this version's contract;
+ *   earlier        — an earlier version's contract, unedited;
+ *   edited         — this version's contract with local edits;
+ *   edited-earlier — local edits on an earlier contract; base is that contract's file;
+ *   unknown        — matches no contract the flow has written.
+ */
+function conventionsState(text) {
+    const t = text.replace(/\r\n/g, '\n');
+    const stamp = t.match(STAMP);
+    const body = stamp ? t.slice(stamp[0].length) : t;
+    if (body === CONVENTIONS_TEMPLATE) return { kind: 'current', base: null };
+    if (stamp && digest(body) === stamp[1]) return { kind: 'earlier', base: null };
+    if (stamp && stamp[1] === digest(CONVENTIONS_TEMPLATE)) return { kind: 'edited', base: null };
+    if (!stamp && shipped('conventions', digest(template(body)))) return { kind: 'earlier', base: null };
+    const base = (stamp && shipped('conventions', stamp[1])) || nearest('conventions', body);
+    return base ? { kind: 'edited-earlier', base } : { kind: 'unknown', base: null };
 }
 
 /** Write .specs/CONVENTIONS.md, or refresh it while nobody has edited it. */
@@ -333,17 +350,17 @@ function ensureConventions(specsRoot) {
         console.log('[ok] Created .specs/CONVENTIONS.md');
         return;
     }
-    const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-    const stamp = text.match(STAMP);
-    const body = stamp ? text.slice(stamp[0].length) : text;
-    if (body === CONVENTIONS_TEMPLATE) {
+    const { kind } = conventionsState(fs.readFileSync(file, 'utf8'));
+    if (kind === 'current') {
         console.log('[skip] .specs/CONVENTIONS.md is current');
-    } else if (stamp && digest(body) === stamp[1]) {
+    } else if (kind === 'earlier') {
         writeFile(file, conventionsFile());
         console.log('[ok] Updated .specs/CONVENTIONS.md to this version of the flow');
+    } else if (kind === 'edited') {
+        console.log('[skip] .specs/CONVENTIONS.md has local edits on the current contract, so it was kept as is');
     } else {
-        const why = stamp ? 'has local edits' : 'predates this version of the flow';
-        console.log(`[warn] .specs/CONVENTIONS.md ${why}, so it was kept as is. The current contract: node "${__filename}" --print-conventions`);
+        const why = kind === 'edited-earlier' ? 'has local edits on an earlier contract' : 'matches no contract the flow has written';
+        console.log(`[warn] .specs/CONVENTIONS.md ${why}, so it was kept as is. /flow:upgrade merges it into the current contract (node "${__filename}" --print-conventions prints it).`);
     }
 }
 
@@ -425,4 +442,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { CONVENTIONS_TEMPLATE, conventionsFile, digest };
+module.exports = { CONVENTIONS_TEMPLATE, STEP_TEMPLATE, conventionsFile, conventionsState, digest, writeFile };

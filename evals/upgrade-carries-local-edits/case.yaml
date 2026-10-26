@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: upgrade-carries-local-edits
+description: On a record flow 0.1 left, /flow:upgrade applies the mechanical changes, carries the team's rule into the current contract, maps the blocked step as the developer says, leaves the done ticket and the evidence alone, and commits nothing.
+tags: [upgrade]
+context:
+  scaffold_script: scaffold.sh

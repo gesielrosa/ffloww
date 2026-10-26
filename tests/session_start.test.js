@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { run, project, script } = require('./helpers');
+const { DIR } = require('../scripts/lib/history');
 
 const hook = (input) => execFileSync('node', [script('session_start.js')], { input: JSON.stringify(input), encoding: 'utf8' });
 
@@ -37,4 +38,15 @@ test('a broken state.md is skipped, not an error', () => {
     fs.writeFileSync(path.join(dir, 'state.md'), 'no front matter here');
     assert.equal(hook({ cwd: root }), '');
     assert.equal(execFileSync('node', [script('session_start.js')], { input: 'garbage', encoding: 'utf8' }), '');
+});
+
+test('work in progress on an earlier record points to /flow:upgrade', () => {
+    const { root } = project('AB-1');
+    const contract = path.join(root, '.specs', 'CONVENTIONS.md');
+    assert.doesNotMatch(hook({ cwd: root }), /flow:upgrade/);
+    fs.writeFileSync(contract, '# .specs — a contract the project wrote\n');
+    assert.doesNotMatch(hook({ cwd: root }), /flow:upgrade/);
+    fs.writeFileSync(contract, fs.readFileSync(path.join(DIR, 'conventions', '6a95c89ef4cd5a5a.md'), 'utf8').replace('{date}', '2026-05-01'));
+    const text = JSON.parse(hook({ cwd: root })).hookSpecificOutput.additionalContext;
+    assert.match(text, /- AB-1 — AB-1 · phase start[^\n]*\nffloww: part of \.specs\/ was written by an earlier version of the flow: suggest \/flow:upgrade/);
 });
