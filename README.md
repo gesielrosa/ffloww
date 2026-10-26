@@ -85,7 +85,8 @@ claude plugin install flow@ffloww --scope project
 ```
 
 **MCP servers.** The plugin starts the `azure-devops` and `figma` MCP servers. Set
-`AZURE_DEVOPS_ORG` to your Azure DevOps organization and authenticate Figma from
+`AZURE_DEVOPS_ORG` to your Azure DevOps organization (there is no default; the `env`
+block of `~/.claude/settings.json` reaches every session) and authenticate Figma from
 `/mcp`; credentials stay in your environment and accounts. Requires Node.js on the
 `PATH`. See [Install & configure](docs/install.md).
 

@@ -176,9 +176,9 @@ version stay on it until it changes — then tag.
 
 ## MCP servers
 
-`.mcp.json` declares `azure-devops` (`npx -y @azure-devops/mcp ${AZURE_DEVOPS_ORG:-…}`)
-and `figma` (remote http). Consumers supply auth through their own environment and
-accounts, never through the plugin. In a session their tools are named
+`.mcp.json` declares `azure-devops` (`npx -y @azure-devops/mcp ${AZURE_DEVOPS_ORG}`, no
+default organization) and `figma` (remote http). Consumers supply the organization and
+auth through their own environment and accounts, never through the plugin. In a session their tools are named
 `mcp__plugin_flow_<server>__<tool>`.
 
 ## Build status

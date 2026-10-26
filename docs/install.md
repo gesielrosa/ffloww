@@ -65,8 +65,17 @@ itself.
 The plugin starts two MCP servers while it is enabled:
 
 - **azure-devops** — used by `/flow:understand` to read the work item. It runs
-  `npx -y @azure-devops/mcp <organization>`; set `AZURE_DEVOPS_ORG` in your environment
-  to your organization (it defaults to `HAL-LMKSRVST`). Sign in with a Microsoft account
+  `npx -y @azure-devops/mcp $AZURE_DEVOPS_ORG`, and the plugin sets no default: set
+  `AZURE_DEVOPS_ORG` to your organization (the name after `dev.azure.com/`). The `env`
+  block of your user settings, `~/.claude/settings.json`, reaches every session,
+  including the desktop app and IDEs opened outside a shell:
+
+  ```json
+  { "env": { "AZURE_DEVOPS_ORG": "<organization>" } }
+  ```
+
+  An `export` in your shell profile works for sessions started from that shell. The
+  server reads the variable when a session starts. Sign in with a Microsoft account
   that can access the organization when prompted.
 - **figma** — used by `/flow:design`. The remote Figma MCP server
   (`https://mcp.figma.com/mcp`); authenticate it from `/mcp`.
@@ -98,7 +107,8 @@ Start with `/flow:start` on a ticket — see [the flow](the-flow.md).
 
 - **Skills or agents missing.** Check `/plugin` that `flow` is enabled, then run
   `/reload-plugins`.
-- **`azure-devops` calls fail.** Check `AZURE_DEVOPS_ORG` and that you signed in with
-  an account that can access it.
+- **`azure-devops` calls fail.** Check that `AZURE_DEVOPS_ORG` is set where Claude Code
+  starts (unset, it reaches the server as the literal text `${AZURE_DEVOPS_ORG}`), then
+  start a new session, and that you signed in with an account that can access it.
 - **`node` not found when scaffolding or proving.** Install Node.js and make sure it is
   on the `PATH` of the shell Claude Code uses.

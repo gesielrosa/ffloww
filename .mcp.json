@@ -2,7 +2,7 @@
   "mcpServers": {
     "azure-devops": {
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp", "${AZURE_DEVOPS_ORG:-HAL-LMKSRVST}"]
+      "args": ["-y", "@azure-devops/mcp", "${AZURE_DEVOPS_ORG}"]
     },
     "figma": {
       "type": "http",
