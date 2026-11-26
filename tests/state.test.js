@@ -134,6 +134,18 @@ test('the short route skips explore and the whole-ticket verify; the full route 
     assert.equal(setup().state('set', 'route', 'shortest').code, 1);
 });
 
+test('a ticket of several steps is offered one review of the whole change before verify, or ship on the short route', () => {
+    const steps = (n) => Array.from({ length: n }, (_, i) => ({ id: `0${i + 1}`, title: 'Step', status: 'done' }));
+    const next = (n, phase = 'execute', route = 'full') => nextMove({ ticket: 'AB-1', phase, route, steps: steps(n) });
+    assert.equal(next(2).skill, '/flow:verify');
+    assert.match(next(2).why, /optional first: `\/flow:review AB-1`/);
+    assert.doesNotMatch(next(1).why, /review/);
+    assert.equal(next(2, 'verify').skill, '/flow:ship');
+    assert.doesNotMatch(next(2, 'verify').why, /review/);
+    assert.equal(next(2, 'execute', 'short').skill, '/flow:ship');
+    assert.match(next(2, 'execute', 'short').why, /`\/flow:review AB-1`/);
+});
+
 test('Where we are is regenerated and the log keeps history', () => {
     const { state, read } = setup();
     state('phase', 'understand');

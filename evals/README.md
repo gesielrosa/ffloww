@@ -13,6 +13,7 @@ the files left behind.
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
 | `review-flags-seeded-flaws` | `flow:diff-reviewer` reads a step's change cold and names, by axis, at least five of the seven flaws seeded in it (tag `heavy`) |
+| `review-pr-without-flow` | in a project without `.specs/`, `/flow:review` fetches a teammate's pull request from the branches the developer names, reviews it against the pasted description, and reports the seeded flaws by axis as comments ready to paste, leaving the checkout on `main` and git otherwise alone (tag `heavy`) |
 | `explore-reproduces-bug` | for a Bug ticket, `/flow:explore` builds a red reproduction under `repro/`, ranks hypotheses, and offers fixes proven by the reproduction turning green, leaving the code and no probes behind |
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 | `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
@@ -43,7 +44,9 @@ INV-42's `.specs` at the explore phase with heredocs, from the rehearsal run tha
 the horizontal slicing. Edit it as a fixture, not by hand-tuning the plan it leads to.
 `review-flags-seeded-flaws/scaffold.sh` is generated the same way: the fixture with
 TEST-3's step in progress, committed, then an uncommitted change carrying the seven flaws
-its `findings` grader lists. So are `explore-reproduces-bug` (a seeded `--to` bug, with
+its `findings` grader lists. `review-pr-without-flow/scaffold.sh` is built from it: the
+same fixture without `.specs/`, the flawed change committed on a branch that only a bare
+remote in `.remote.git` holds. So are `explore-reproduces-bug` (a seeded `--to` bug, with
 the test that covered it removed) and `retro-reads-the-record` (the rehearsal's own
 INV-42 record, shipped). `upgrade-carries-local-edits/scaffold.sh` is generated from
 `scripts/history/`: the 0.1 contract and step template, with a hand-written state.

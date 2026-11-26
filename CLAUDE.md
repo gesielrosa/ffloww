@@ -48,8 +48,8 @@ human converges and decides.**
   (`--print-conventions` prints the template).
 - **Skills are independent; phases run only when the developer types them.**
   `/flow:start`, the phases (`/flow:understand`, `/flow:design`, `/flow:explore`,
-  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`), `/flow:retro`,
-  `/flow:upgrade` and `/flow:help` set
+  `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`), `/flow:review`,
+  `/flow:retro`, `/flow:upgrade` and `/flow:help` set
   `disable-model-invocation: true`: their descriptions cost no context in any session,
   and neither the model nor a subagent can start a phase (the Skill tool refuses), so
   "the developer drives transitions" is enforced by the harness. Their descriptions are
@@ -74,9 +74,9 @@ human converges and decides.**
   (Sonnet, effort xhigh) builds `delegate` steps and `flow:step-executor-light`
   (Haiku, effort high) builds `delegate-light` ones — same body, kept identical by
   `tests/agents.test.js`; `flow:diff-reviewer` (Sonnet, read-only) reviews each
-  step's change in a fresh context before its gate, on three axes kept apart (Spec,
-  Proof, Standards, with a code-smell baseline where the project documents nothing), so
-  the author never reviews itself; `flow:design-reader` (Sonnet) reads the Figma nodes;
+  step's change in a fresh context before its gate, and the change `/flow:review` names,
+  on three axes kept apart (Spec, Proof, Standards, with a code-smell baseline where the
+  project documents nothing), so the author never reviews itself; `flow:design-reader` (Sonnet) reads the Figma nodes;
   `flow:code-mapper` (Haiku, read-only) maps code for `/flow:explore`. Their output is
   a lead the main session checks, never a verdict. `/flow:plan` records who builds
   each step in the step's `Executor` line; `/flow:execute` escalates one model per new
@@ -137,6 +137,15 @@ human converges and decides.**
   Executor line or Gate section. The main session's git rule stays an
   instruction, because plugin hooks run in every session, flow or not. The guard fails
   open on bad input or internal errors.
+- **`/flow:review` works in any git project, on any host.** A utility outside the
+  phases: it pins a change to a base and a head with git alone (a pull request's
+  branches come from whatever tools the session has for the host, or from the
+  developer, and are read without touching the working tree), takes its intent from a
+  ticket's `.specs/` when there is one, or from the pull request and what the developer
+  points to, and reports checked findings; posting them is the developer's, so the
+  skill names no VCS host. `nextMove()` offers it, optionally, once a ticket of several
+  steps is built: per-step reviews against per-step specs miss what spans steps, which a
+  real ticket's post-ship review showed.
 - **Git and PR steps are suggested, never executed.** `/flow:execute` proposes a
   commit (draft message); `/flow:ship` assembles a PR draft from the specs and
   suggests the push/PR sequence. The package does not assume GitHub/GitLab/Azure or
@@ -205,5 +214,6 @@ Done: `.specs/` scaffolding, all `/flow:*` skills, model-routed subagents, the p
 runner, the Claude Code plugin packaging (replacing APM), the guard hook, and the state
 script, the `delegate-light` (Haiku) executor tier, user-invoked phases, secret
 masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, the
-independent diff reviewer before the gate, and `/flow:upgrade` for records earlier
-versions wrote. Next: an end-to-end run on a real ticket.
+independent diff reviewer before the gate, `/flow:upgrade` for records earlier
+versions wrote, and `/flow:review` for any change, in any project. Next: an end-to-end
+run on a real ticket.

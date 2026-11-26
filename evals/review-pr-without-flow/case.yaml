@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: review-pr-without-flow
+description: In a project without the flow, /flow:review fetches a teammate's pull request from the branches the developer names, reviews it against the description they paste, and reports the seeded flaws by axis as comments ready to paste, leaving the developer's checkout and the remote alone.
+tags: [heavy, review]
+context:
+  scaffold_script: scaffold.sh

@@ -29,7 +29,9 @@ of "is this proven?" are not.
 
 - **Entry:** `/flow:start` begins (or resumes) a ticket and scaffolds its `.specs/` record.
 - **Anytime utilities:** `/flow:status` (the compass — where am I, what's next),
-  `/flow:context` (add context the ticket and code don't carry), `/flow:retro` (after
+  `/flow:context` (add context the ticket and code don't carry), `/flow:review` (one
+  fresh review of a change on spec, proof and standards: local work, a branch, a pull
+  request in any project, or a ticket's whole change), `/flow:retro` (after
   shipping, propose changes to the project's checks and instructions from the ticket's
   record), `/flow:upgrade` (after a plugin update, bring a `.specs/` an earlier version
   wrote up to date), and `/flow:help` (explain the flow and answer questions).

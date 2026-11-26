@@ -45,6 +45,10 @@ judgment of "is this proven?" stay with the developer.
 - `/flow:status` — the compass: where a ticket stands and the next command (read-only).
 - `/flow:context` — add context the ticket and code don't carry (links, constraints,
   gotchas).
+- `/flow:review` — one fresh review of a change on Spec, Proof and Standards: your
+  uncommitted work, a branch, a pull request (yours or a teammate's, in any project), or
+  a flow ticket's whole change before verify. It reports; you decide what to do with each
+  finding.
 - `/flow:retro` — after shipping, look back at the ticket's record (regressions,
   escalations, failed proofs, gate changes) and propose changes to the project's
   checks and instructions that make the next ticket go better.
@@ -108,7 +112,9 @@ checks every phase and step move and writes the navigation log.
   reads the step's change in a fresh context, so the author never reviews itself. It
   reports cited findings on three axes: Spec, Proof (would the tests catch a wrong
   change?) and Standards. Its findings are leads; you decide at the gate. Mechanical
-  `delegate-light` steps are reviewed by the main session instead.
+  `delegate-light` steps are reviewed by the main session instead. Per-step reviews miss
+  what spans steps, so once a ticket of several steps is built, the next move offers
+  `/flow:review <ticket-id>`, the same reviewer on the whole change, before verify.
 - **Can the AI rewrite the evidence?** No. The proof runner records it, masking the
   secrets it recognizes first, and the plugin's guard hook blocks edits that remove or
   change a recorded entry or log, and hand edits to `state.md`. The flow's subagents are

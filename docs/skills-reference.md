@@ -1,7 +1,7 @@
 # Skills reference
 
-Every skill is independent. The phases, `/flow:start`, `/flow:retro`, `/flow:upgrade`,
-and `/flow:help` run only when you type them (`disable-model-invocation`): the assistant cannot start a
+Every skill is independent. The phases, `/flow:start`, `/flow:review`, `/flow:retro`,
+`/flow:upgrade`, and `/flow:help` run only when you type them (`disable-model-invocation`): the assistant cannot start a
 phase by itself, and their descriptions cost no context until you call them.
 `/flow:status` and `/flow:context` also answer plain requests ("where are we?", "fyi,
 the API is rate limited"). Each phase reads `.specs/CONVENTIONS.md`, the ticket's
@@ -87,7 +87,8 @@ run git that writes.
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
   `state.md`.
 - **Hands off to:** `/flow:execute` (next step), then `/flow:verify`, or `/flow:ship` on
-  the short route; `/clear` first.
+  the short route, with `/flow:review` offered first when the ticket has several steps;
+  `/clear` first.
 
 ## `/flow:verify` — phase 6
 
@@ -130,6 +131,24 @@ run git that writes.
   decision. Does not change phase, write code, or run git.
 
 See [the context channel](context-channel.md).
+
+## `/flow:review` — review a change
+
+- **When:** anytime, on any change: your uncommitted work, a branch, a pull request
+  (yours or a teammate's), or a flow ticket's whole change before verify, which the
+  `Next:` line offers once a ticket of several steps is built. Works in projects that
+  don't use the flow.
+- **Does:** pins the change to a base and a head (a pull request's branches come from
+  whatever tools the session has for your host, or from you, and are fetched and read
+  without touching your working tree); finds its intent (the ticket's `.specs/` record,
+  a spec you pass, the pull request's description and linked work item, ticket ids in the
+  commits); has `flow:diff-reviewer` review it in a fresh context on Spec, Proof and
+  Standards (one reviewer per axis for a large change); checks each finding against its
+  cited lines; reports them by axis, never ranked across. For a pull request, each
+  finding is also written as a comment ready to paste. Posting, approving and fixing are
+  yours.
+- **Writes:** nothing, except for a flow ticket: `review.md` and a log line; findings you
+  accept become a new step. In git, it only fetches a pull request's branches.
 
 ## `/flow:retro` — look back
 

@@ -11,6 +11,7 @@ a phase by itself (each phase skill sets `disable-model-invocation`).
                     ▲                                         │
                     └──────── regress (logged) ◀─────────────┘
    /flow:status (compass) and /flow:context (add context) run anytime;
+   /flow:review reviews any change, a ticket's whole change included;
    /flow:retro looks back once the ticket is done.
 ```
 
@@ -121,6 +122,8 @@ Builds one step, proves it, and stops at the human gate.
   and **Standards** (the project's documented rules, then a baseline of code smells).
   The main session checks each finding it brings you; one review per step, never a loop
   until clean. Mechanical `delegate-light` steps are reviewed by the main session.
+  Per-step reviews miss what spans steps, so once a ticket of several steps is built,
+  the `Next:` line offers `/flow:review <ticket-id>` before verify (optional).
 - **Human gate:** you validate the evidence and the findings, and decide approve /
   changes / regress. Only on approval does the step become `proven`.
 - On approval it **suggests a commit message** — it never commits. You commit your
@@ -155,6 +158,12 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
   the next command. Changes nothing. Asking "where are we?" reaches it too.
 - **`/flow:context`** — append developer context to `context.md` at any point; sharing
   it in plain words reaches it too. See [the context channel](context-channel.md).
+- **`/flow:review`** — one fresh review of a change, by `flow:diff-reviewer`, on Spec,
+  Proof and Standards kept apart: your uncommitted work, a branch, a pull request (yours
+  or a teammate's, in a project with or without the flow), or a ticket's whole change.
+  The spec is the ticket's `.specs/` record, the pull request's description and linked
+  work item, or what you point to. It reports checked findings, each with `path:line`
+  (for a pull request, also as comments ready to paste); posting and fixing are yours.
 - **`/flow:retro`** — after shipping, reads the ticket's record (regressions,
   escalations, failed proof runs, review findings, gate changes) and proposes changes to
   the environment: automated checks for mechanical mistakes, `CLAUDE.md` lines for

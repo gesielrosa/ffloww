@@ -42,10 +42,11 @@ itself.
 
 - **Skills** — `/flow:start`, `/flow:understand`, `/flow:design`, `/flow:explore`,
   `/flow:plan`, `/flow:execute`, `/flow:verify`, `/flow:ship`, and the utilities
-  `/flow:status`, `/flow:context`, `/flow:retro`, `/flow:upgrade`, `/flow:help`.
+  `/flow:status`, `/flow:context`, `/flow:review`, `/flow:retro`, `/flow:upgrade`,
+  `/flow:help`.
 - **Subagents** — `flow:step-executor` (Sonnet) and `flow:step-executor-light`
   (Haiku) build delegated steps, `flow:diff-reviewer` (Sonnet, read-only) reviews each
-  step's change before its gate, `flow:design-reader` (Sonnet) reads the Figma nodes,
+  step's change before its gate, and the change `/flow:review` names, `flow:design-reader` (Sonnet) reads the Figma nodes,
   and `flow:code-mapper` (Haiku, read-only) maps code during exploration. Their models
   are pinned in their definitions.
 - **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way

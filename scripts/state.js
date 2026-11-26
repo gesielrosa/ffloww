@@ -261,8 +261,12 @@ function nextMove(f) {
             if (current) return { skill: '/flow:execute', why: `continue ${label(current)} (in progress)` };
             if (proven) return { skill: '/flow:execute', why: `commit ${label(proven)}, then mark it done` };
             if (todo) return { skill: '/flow:execute', why: `build ${label(todo)}` };
-            if (f.phase !== 'verify' && !short) return { skill: '/flow:verify', why: 'check the whole ticket against its acceptance criteria' };
-            return { skill: '/flow:ship', why: 'assemble the PR/MR draft from the specs' };
+            // Per-step reviews miss what spans steps, so a multi-step ticket is offered one review of the whole change.
+            const reviewFirst = steps.length > 1 && f.phase !== 'verify'
+                ? ` (optional first: \`/flow:review${f.ticket ? ` ${f.ticket}` : ''}\`, one fresh review of the whole change)`
+                : '';
+            if (f.phase !== 'verify' && !short) return { skill: '/flow:verify', why: `check the whole ticket against its acceptance criteria${reviewFirst}` };
+            return { skill: '/flow:ship', why: `assemble the PR/MR draft from the specs${reviewFirst}` };
         case 'ship':
             return { skill: null, why: 'ship it your way, then mark the phase done' };
         default:
