@@ -38,6 +38,20 @@ stop. On the short route (`route: short`), the plan maps the change itself.
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> set proof_definition "<the proof>"
    ```
 
+   Then take the **baseline**: run each kind of proof command the steps will use once,
+   on the untouched tree, through the proof runner (the lint, the typecheck, a test
+   filter pointed at an existing test, to see that it narrows the run):
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> plan --label "baseline: <what>" --root "<project-root>" --cmd "<command>"
+   ```
+
+   The runner appends each run to `plan.md`. A baseline is done when the command ran
+   with the flags the steps will use, is green before the ticket, and its duration is
+   known; a guard that is already red is fixed, narrowed or left out, the developer's
+   call. A long run the developer vouches for (the whole suite) is theirs to skip: note
+   its usual duration in the proof strategy instead.
+
 3. **Slice the work into vertical steps.** Each step is a **tracer bullet**: a narrow
    path through every layer it touches, provable on its own through the entry point the
    acceptance criteria use (the command, the endpoint, the screen), roughly one commit.
@@ -49,12 +63,24 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 
    For each step, copy `steps/_TEMPLATE.md` to `steps/NN-<slug>.md` (NN = 01, 02, …),
    replace the `<n>`/`<title>` placeholders, and fill **Spec**, **Changes**, and
-   **Proof**, whose commands each exit non-zero exactly when the step fails its
-   criterion; **Evidence** and **Gate** belong to `/flow:execute`. For a bug, the fixing
-   step's Proof is the reproduction from `discoveries.md`, made a regression test where a
-   seam reaches the bug, run red before the fix and green after. Then fill `plan.md`: the
-   approach in a paragraph, the ordered steps with the acceptance criteria each one
-   proves, and the proof strategy.
+   **Proof**: one command per line, each exiting non-zero exactly when the step fails
+   its criterion, or naming the exit code that passes; **Evidence** and **Gate** belong
+   to `/flow:execute`.
+
+   Mark a Proof command `red first` when it proves new behavior and is fast: it runs
+   once before the change, where it has to fail, and again after. Where fast ends is
+   the developer's line to draw; until they draw it, a proof that runs in seconds is
+   fast and one that takes minutes is slow, and their line goes in the proof strategy
+   once given. Guards (lint, typecheck, the existing suite) and mechanical steps carry
+   no mark. A slow proof of new behavior runs once, after the change; when the
+   developer wants to see it fail, a last step breaks the change, shows that proof red,
+   and restores it. For a bug, the fixing step's Proof is the reproduction from
+   `discoveries.md`, made a regression test where a seam reaches the bug, marked
+   `red first`.
+
+   Then fill `plan.md` with Edit, so the baseline entries the runner recorded stay as
+   they are: the approach in a paragraph, the ordered steps with the acceptance
+   criteria each one proves, and the proof strategy.
 
 4. **Choose who builds each step.** Set each step's **Executor** line to one of:
    - `delegate`: a subagent on Sonnet builds it, so the spec must be buildable without a
@@ -74,6 +100,8 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 5. **Mirror into state** through the state script: set the phase, then add one entry per
    step, ids matching the NN files. `/flow:execute` sets the current step when work
    starts. On a re-plan, `remove-step <id> --reason "<why>"` drops a step still `todo`.
+   When the developer prefers one commit for the whole ticket over one per step, record
+   it with `set commit at-end`.
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase plan
@@ -82,9 +110,12 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 
 ## Handoff
 
-Present the plan for the developer's approval: the decision, the proof strategy, and the
-ordered steps with who builds each and the criteria each proves. Ask whether the
-granularity is right: a step to split or merge, a step that cannot be proven on its own.
+Present the plan for the developer's approval: the decision, the proof strategy with
+its baseline durations, and the ordered steps with who builds each, the criteria each
+proves, and the proofs marked `red first`, any of which the developer can change. Say
+how the steps are committed (one by one, unless the developer chose one commit at the
+end). Ask whether the granularity is right: a step to split or merge, a step that
+cannot be proven on its own.
 Once approved, name the next command from the `Next:` line of the state output, and
 suggest `/clear` before it: the plan is on disk. When the
 developer wants to revisit exploration or understanding instead, that is a regression:

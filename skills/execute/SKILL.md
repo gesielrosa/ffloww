@@ -20,19 +20,22 @@ and stop.
 
 ## Steps
 
-1. **Select the step**: the one the developer names, or the next `todo`. Start it
-   through the state script, from the project root; it sets the current step and syncs
-   the step spec's Status line:
+1. **Select the step**: the one the developer names, or the next `todo`. With none left
+   to build and steps still `proven` (a ticket committed at the end), this run closes
+   the build: go to step 6. Otherwise start the step through the state script, from the
+   project root; it sets the current step, syncs the step spec's Status line, and
+   snapshots the working tree, so the step's change stands alone later:
 
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> phase execute
    node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> step <step-id> in-progress
    ```
 
-   The script refuses while another step is in progress, or proven but not yet
-   committed. For the latter, ask the developer to commit it (then `step <id> done`);
-   starting anyway takes `--reason "<why>"`, and the review in step 4 then sees both
-   steps' changes.
+   The script refuses while another step is in progress, or, on a ticket committed step
+   by step, proven but not yet committed. For the latter, ask the developer to commit
+   it (then `step <id> done`), or whether they prefer one commit at the end of the
+   ticket (`state.js <ticket-id> set commit at-end`); `--reason "<why>"` starts this
+   one step anyway.
 
 2. **Build only this step.** Implement the step's **Spec** and **Changes**, nothing
    beyond, matching the conventions of the surrounding code. The **Executor** line says
@@ -51,37 +54,59 @@ and stop.
    lines of output, and the log path. Give the Bash call a timeout that fits the proof. A
    proof that is not a command (a screenshot) is saved to the path the Proof names, and
    you add an Evidence entry with that path. Every result you report is one the runner
-   recorded.
-   - A Proof that asks for a red run before the change (a bug's reproduction) runs first,
-     before the build, with `--label "red: before the fix"`; that run is not an attempt.
+   recorded, with any `Note` it printed.
+   - A Proof command marked `red first` also runs before the change it proves, with
+     `--red` added: a bug's reproduction before the build, a new test once it is written
+     and before the code it tests. It has to fail there, on the behavior the step adds;
+     that run is not an attempt. A red run that passes, or that the runner notes did
+     not run, is a proof that cannot fail: fix the proof first, and take a Proof the
+     plan got wrong to the developer.
+   - A command that passes on an exit code other than 0 (a search that must find
+     nothing) runs plain, with `--expect <code>`.
    - A failing proof is the loop: fix and re-run, for up to three attempts, then take it
      to the developer. If the chosen approach turns out wrong, stop and recommend
      regressing to `/flow:plan` (record the reason in `decisions.md`; the move is
      `state.js <ticket-id> phase plan --reason "<why>"`).
 
-4. **Review the change in a fresh context.** Call the Agent tool with subagent_type
-   `flow:diff-reviewer`, passing the ticket id, the step id and the project root. It
-   reads the change cold and reports cited findings on three axes: Spec (missing, scope,
-   wrong), Proof (tautological, internal, untested) and Standards. Each finding is a lead:
-   open its cited lines before you take it to the gate. One review per step: after
-   changes requested at the gate, check the new change against the findings it answers,
-   and review again only when the developer asks.
+4. **Review the change in a fresh context.** The step's own change comes from the state
+   script:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> diff <step-id>
+   ```
+
+   It prints the files the step changed and a `git diff` between two snapshots of the
+   working tree, the step's start and now, so earlier steps stay out of it, committed
+   or not. Run it for the gate's file list. Then call the Agent tool with subagent_type
+   `flow:diff-reviewer`, passing the ticket id, the step id and the project root; it
+   takes the same diff from the script, reads the change cold and reports cited
+   findings on three axes: Spec (missing, scope, wrong), Proof (tautological, internal,
+   untested) and Standards. Each finding is a lead: open its cited lines before you
+   take it to the gate. One review per step: after changes requested at the gate, check
+   the new change against the findings it answers, and review again only when the
+   developer asks.
    - A `delegate-light` step, a mechanical mirror of existing code, is reviewed here
-     instead, against its Spec and Changes: `git status --porcelain` lists every changed
-     and new file, `git diff HEAD` shows the changes to tracked files, and each new file
-     is read in full, since `git diff` leaves it out.
+     instead, against its Spec and Changes, from the same diff.
+   - When the script prints `[skip]` (no snapshot), the change is the uncommitted work:
+     `git status --porcelain` lists every changed and new file, `git diff HEAD` shows
+     the changes to tracked files, and each new file is read in full, since `git diff`
+     leaves it out.
 
 5. **Open the human gate.** A passing proof readies the step for the gate; the
-   developer's approval is what makes it `proven`. Present the evidence, the changed
-   files (`git status --porcelain`), and the review findings you confirmed, by axis, and
-   ask the developer to validate them: approve / request changes / regress. Record the
-   decision (who + when) in the step's **Gate** section. On approval, run
+   developer's approval is what makes it `proven`. Present the evidence with the
+   runner's notes, the step's changed files, and the review findings you confirmed, by
+   axis, and ask the developer to validate them: approve / request changes / regress.
+   Record the decision (who + when) in the step's **Gate** section. On approval, run
    `state.js <ticket-id> step <step-id> proven`.
 
 6. **Draft the commit.** On approval, propose a commit message for this step in the
    developer's conventions; the developer commits. Once they confirm the commit, run
-   `state.js <ticket-id> step <step-id> done`. Anything else worth keeping, such as an
-   escalation, goes to the log: `state.js <ticket-id> log "<text>"`.
+   `state.js <ticket-id> step <step-id> done`. On a ticket committed at the end
+   (`commit: at-end` in the state), the step stays `proven` and the next one starts
+   without a commit; once the last step is proven, propose one commit message for the
+   whole ticket, and when the developer confirms that commit, mark each proven step
+   `done`. Anything else worth keeping, such as an escalation, goes to the log:
+   `state.js <ticket-id> log "<text>"`.
 
 ## Delegated execution
 
@@ -101,8 +126,8 @@ it alone talks to the developer and writes `state.md`.
   specs itself, so the plan needs no retelling. One agent at a time, and the main session
   leaves the code alone while it runs.
 - **Check the work, not the report.** Read the step's Evidence entries and compare the
-  agent's file list with `git status --porcelain`; the review in step 4 reads the change
-  itself. The runner wrote the evidence, so re-run a proof (through the runner) only when
+  agent's file list with the step's diff (`state.js <ticket-id> diff <step-id>`); the
+  review in step 4 reads the change itself. The runner wrote the evidence, so re-run a proof (through the runner) only when
   an entry has no log under `evidence/` or disagrees with the change. A report that
   disagrees with the evidence or the change goes back to the agent.
 - **When it stops.** A question, a missing decision, or a recommendation to regress goes

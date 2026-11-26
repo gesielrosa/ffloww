@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: execute-commit-at-end
+description: On a ticket committed at the end, with step 01 proven and still uncommitted, /flow:execute builds step 02 without asking for a commit, and takes only step 02's change (from its snapshot) to the review and the gate.
+tags: [heavy, execute]
+context:
+  scaffold_script: scaffold.sh

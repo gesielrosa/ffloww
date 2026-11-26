@@ -24,8 +24,10 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md` and `context.md`.
    - `state.md`'s navigation log: regressions and their reasons, steps moved back,
      escalations, steps added or removed after the plan;
    - `decisions.md`: regressions and changed decisions;
-   - each `steps/NN-*.md`: proof runs that failed before the passing one, runner notes,
-     the review's findings, and the changes requested at the Gate, with their reasons;
+   - each `steps/NN-*.md`: proof runs that failed before the passing one (a `red` run is
+     meant to fail; one that passed is the finding), runner notes, the review's
+     findings, and the changes requested at the Gate, with their reasons;
+   - `plan.md`: the baseline runs, and what they already showed about a proof command;
    - `verification.md`: criteria with a gap; `context.md`: what the developer added
      after understand;
    - a session transcript, when the developer points to one.

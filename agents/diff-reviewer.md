@@ -17,7 +17,7 @@ that dispatched you checks your findings and takes them to the developer, who de
 
 The project root and one of:
 
-- **A ffloww step**: a ticket id and a step id. The change is the project's uncommitted work.
+- **A ffloww step**: a ticket id and a step id. The change is what that step changed.
 - **A change brief**: the diff command (a range such as `git diff <base>...<head>`, or the
   uncommitted work), the commits it holds, the revision its files are read at when that is not
   the checked-out tree, the intent sources (paths, text quoted in the brief, or none), and
@@ -32,10 +32,15 @@ The project root and one of:
   - for a brief, the sources it names.
 - **The project's standards**: `CLAUDE.md` or `AGENTS.md` and the guides they point to,
   `CONTRIBUTING.md`, `CODING_STANDARDS.md`, whichever exist.
-- **The change.** For uncommitted work, `git status --porcelain` lists every changed and new
-  file, `git diff HEAD` shows the changes to tracked files, and each new file is read in full,
-  since `git diff` leaves it out. For a range, `--name-status` on the brief's diff command lists
-  its files. At a revision other than the checked-out tree, read files with
+- **The change.** For a step,
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> diff <step-id> --root "<project-root>"`
+  prints the files the step changed and its diff command, a `git diff` between two snapshots of
+  the working tree (the step's start and now): new files are in it, earlier steps are not, and
+  its files are read where they are. When it prints `[skip]` instead, the change is the
+  uncommitted work: `git status --porcelain` lists every changed and new file, `git diff HEAD`
+  shows the changes to tracked files, and each new file is read in full, since `git diff`
+  leaves it out. For a brief, `--name-status` on its diff command lists the files. At a
+  revision other than the checked-out tree, read files with
   `git show <rev>:<path>` and search with `git grep <pattern> <rev>`: the working tree holds
   other code. `.specs/` is the flow's record: you read it as input, and the change is everything
   else.
@@ -56,7 +61,9 @@ The project root and one of:
      by construction;
    - *internal*: a test that checks internals (mocks of the code under test, private calls) instead
      of behavior through the change's entry point;
-   - *untested*: a criterion or a branch of the change that no proof exercises.
+   - *untested*: a criterion or a branch of the change that no proof exercises; for a step, also
+     a Proof command marked `red first` whose red run passed, or has no red run in the Evidence:
+     that proof does not depend on the change.
 3. **Standards.** Does the change follow the project's documented rules? Cite the file and the rule.
    Where the project documents nothing on a point, weigh the change against this baseline of
    smells, each a judgement call that a documented rule overrides:
@@ -76,7 +83,7 @@ this run. The review is done when every changed file has been read against every
 ## Your lane
 
 You read and report. The change, the proof runs and any git that writes belong to others;
-reading git (status, diff, log, show, grep) is yours.
+reading git (status, diff, log, show, grep) and the state (`state.js` `show` and `diff`) is yours.
 
 ## Final reply
 

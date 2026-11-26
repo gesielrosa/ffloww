@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: execute-proves-red-first
+description: A step whose Proof marks its new test "red first" is built by its executor, which records the test failing before the code exists and passing after; the review reads the step's snapshot diff, and the run stops at the gate.
+tags: [heavy, execute]
+context:
+  scaffold_script: scaffold.sh

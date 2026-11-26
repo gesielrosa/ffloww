@@ -54,11 +54,12 @@ created: "2026-06-19"
 phase: execute
 design_involved: true
 route: full
+commit: per-step
 proof_definition: "pnpm test + screenshot of the modal"
 current_step: "02"
 steps:
-  - { id: "01", title: "Add the CSV exporter", status: done }
-  - { id: "02", title: "Wire the export button", status: in-progress }
+  - { id: "01", title: "Add the CSV exporter", status: done, base: "8a83e71…", head: "26fdaf5…" }
+  - { id: "02", title: "Wire the export button", status: in-progress, base: "26fdaf5…" }
 ---
 
 # AB-1234 — Add CSV export to reports
@@ -88,11 +89,21 @@ node state.js AB-1234 phase plan           # forward moves are free
 node state.js AB-1234 phase explore --reason "missed a caller"   # back = regression
 node state.js AB-1234 add-step 03 "Add the download link"
 node state.js AB-1234 step 03 in-progress  # one status at a time, one step in progress
+node state.js AB-1234 diff 03              # what step 03 changed, and the git diff for it
+node state.js AB-1234 set commit at-end    # one commit for the ticket, after the last gate
 node state.js AB-1234 normalize 02=todo     # an older state.md, in the current format (/flow:upgrade)
 ```
 
 It keeps the front matter valid YAML, checks every phase and step move, syncs each step
 spec's Status line, appends the navigation log, and rewrites "Where we are".
+
+When a step starts, the script also snapshots the working tree as a git tree id (`base`),
+and again when the step is proven (`head`). A snapshot is built in a temporary index, so
+your index, branch and files stay as they are, and it leaves `.specs/` and ignored files
+out. `diff <step-id>` prints the files between the two and the `git diff <tree> <tree>`
+command, new files included: the step's change alone, whether or not the steps before it
+were committed. Outside git, or for a step started before the flow took snapshots, it
+says so and the change is the uncommitted work.
 
 Field meanings:
 
@@ -102,10 +113,15 @@ Field meanings:
   route for a small, clear change and you choose it: the plan maps the change itself
   instead of a separate explore, and the last step's gate leads to ship, without a
   whole-ticket verify. `/flow:ship` still checks every criterion has evidence.
+- **`commit`** — `per-step` (the default) or `at-end`. Per step, each proven step is
+  committed, and so `done`, before the next one starts (`--reason` starts it anyway).
+  At the end, which you choose with `set commit at-end`, steps stay `proven` while the
+  next ones are built; after the last gate `/flow:execute` drafts one commit message
+  for the ticket, and that commit makes them all `done`.
 - **`proof_definition`** — what counts as proof for this work; set in `/flow:plan`.
 - **`current_step`** — the step being worked, or `null`.
 - **`steps`** — one entry per planned step, with a status that advances
-  `todo → in-progress → proven → done`.
+  `todo → in-progress → proven → done`, and the step's snapshots (`base`, `head`).
 
 ## Step specs
 
@@ -135,9 +151,27 @@ credentials in URLs, private keys, and well-known token formats. The entry notes
 many were masked. Proofs should read credentials from environment variables.
 
 A proof's exit code is its verdict: each proof command exits non-zero exactly when its
-criterion fails (`! cmd` when a failure is expected). A command chained with `;`, `||`
-or a pipe reports its last part's exit code (`cmd; echo $?` always exits 0), so the
-runner adds a note to such an entry, and the last part has to carry the verdict.
+criterion fails. The runner records what the proof was expected to do beside what it
+did, and notes what an exit code can hide:
+
+- `--expect <code>` names the exit code that passes when it is not 0. A search that
+  must find nothing runs as `--expect 1 --cmd "grep -rn legacyExport src/"`: `grep`
+  exits 1 on a clean miss, and 2 or 127 when it could not look, which `! grep …` would
+  turn into a pass.
+- `--red` marks a run made **before** the change the proof is for, where it has to
+  fail. The plan marks a Proof command `red first` when it proves new behavior and is
+  fast enough to run twice (you say what fast is); guards that are green before and
+  after (lint, typecheck, the existing suite) and slow proofs run once. A red run that
+  passes gets a note: the proof passes without the change, so it cannot fail on it.
+- A **note** is added for a command chained with `;`, `||` or a pipe (the exit code is
+  its last part's: `cmd; echo $?` always exits 0), a command negated with `!`, a
+  command the shell did not find (exit code 127, or `command not found` in the output),
+  and an exit code that is not the expected one. Notes go to the gate with the result.
+
+Before the steps are written, `/flow:plan` runs each kind of proof command once on the
+untouched tree (`run_proof.js <ticket-id> plan --label "baseline: …"`), recorded in
+`plan.md`: the command works with its flags, is green before the ticket, and its
+duration is known, which is what decides `red first`.
 
 ## Gates — "make it prove it"
 
@@ -151,16 +185,20 @@ A step is not done because the agent says so:
 - These rules are **enforced in code**, not only asked for. The plugin's `PreToolUse`
   hook (`scripts/guard.js`) blocks, in any session, edits to the proof logs under
   `evidence/`, any edit that would remove or change an evidence entry the runner
-  recorded, hand edits to `state.md`, and hand changes to a step's Status line. In the
-  flow's subagents it also blocks git commands that write, `state.js` commands other
-  than `show`, and changes to a step's Executor line or Gate section.
+  recorded (in a step spec, `verification.md` or `plan.md`), hand edits to `state.md`,
+  and hand changes to a step's Status line. In the
+  flow's subagents it also blocks git commands that write, `state.js` commands that
+  change the state (`show` and `diff` only read it), and changes to a step's Executor
+  line or Gate section.
 
 ## Navigation — human-driven and bidirectional
 
 - You drive every transition. Each phase runs only when you type its command and ends
   by naming the next one; the agent proves, and cannot start a phase by itself.
-- A step starts once the previous proven step is committed (`state.js` refuses
-  otherwise; `--reason` starts it anyway), so each step's change can be reviewed alone.
+- By default a step starts once the previous proven step is committed (`state.js`
+  refuses otherwise; `--reason` starts it anyway); with `commit: at-end` the steps are
+  committed together after the last gate. Either way each step's change is reviewed
+  alone, from the snapshot taken when it started.
 - You can **advance**, **repeat** the current phase, or **regress** to an earlier one.
 - A regression is appended to the navigation log *and* to `decisions.md` with its
   reason. History is never rewritten.

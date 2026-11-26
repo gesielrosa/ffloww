@@ -62,15 +62,18 @@ run git that writes.
 ## `/flow:plan` — phase 4
 
 - **When:** after exploring, to converge.
-- **Does:** records your chosen approach as an ADR; agrees the proof strategy; slices
-  the work into vertical, provable steps (tracer bullets); marks who builds each
-  (`delegate` to a Sonnet subagent, `delegate-light` to a Haiku one, or `inline`). For
-  a bug, the fixing step's proof is the reproduction, run red before the fix and green
-  after. On the short route it reads the few files the change touches itself and
+- **Does:** records your chosen approach as an ADR; agrees the proof strategy and runs
+  each kind of proof command once on the untouched tree (the baseline, recorded in
+  `plan.md`); slices the work into vertical, provable steps (tracer bullets); marks who
+  builds each (`delegate` to a Sonnet subagent, `delegate-light` to a Haiku one, or
+  `inline`) and which proofs run `red first` (new behavior, fast enough to run twice).
+  For a bug, the fixing step's proof is the reproduction, run red before the fix and
+  green after. On the short route it reads the few files the change touches itself and
   proposes the one approach; the ADR is one to three sentences unless there was a real
   trade-off.
 - **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; sets
-  `proof_definition` and `steps:` in `state.md`.
+  `proof_definition` and `steps:` in `state.md`, and `commit: at-end` when you prefer
+  one commit for the ticket.
 - **Hands off to:** `/flow:execute`, after `/clear`.
 
 ## `/flow:execute` — phase 5
@@ -78,12 +81,15 @@ run git that writes.
 - **When:** to build a planned step.
 - **Does:** implements one step's scope — inline, or delegated to an executor
   subagent (`flow:step-executor` on Sonnet, `flow:step-executor-light` on Haiku); runs
-  its proof through the bundled `run_proof.js`, which records the raw evidence; has the
-  change reviewed in a fresh context by `flow:diff-reviewer` (Sonnet, read-only), whose
+  its proof through the bundled `run_proof.js`, which records the raw evidence (a proof
+  marked `red first` runs before the change too, and has to fail there); has the step's
+  own change (`state.js diff`, from the snapshot taken when the step started) reviewed
+  in a fresh context by `flow:diff-reviewer` (Sonnet, read-only), whose
   cited findings on Spec, Proof and Standards the main session checks (a mechanical
   `delegate-light` step is reviewed by the main session); opens the human gate; on
-  approval **drafts a commit message** (never commits). A step starts once the previous
-  proven step is committed (`--reason` to start anyway).
+  approval **drafts a commit message** (never commits). By default a step starts once
+  the previous proven step is committed (`--reason` to start anyway); with
+  `commit: at-end` the steps stay `proven` and one commit closes the ticket's build.
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
   `state.md`.
 - **Hands off to:** `/flow:execute` (next step), then `/flow:verify`, or `/flow:ship` on

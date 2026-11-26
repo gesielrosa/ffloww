@@ -8,23 +8,35 @@
  *   - runs the proof command from the project root, through the shell;
  *   - saves the full output to .specs/<ticket-id>/evidence/<target>-<timestamp>.log;
  *   - appends an entry to the Evidence section of the target spec — a step's
- *     .specs/<ticket-id>/steps/<step-id>-*.md, or, for the target `ticket`, the
- *     whole-ticket .specs/<ticket-id>/verification.md (created if missing) — with the
- *     exact command, its exit code, the duration, the log path, and the last lines of
- *     output.
+ *     .specs/<ticket-id>/steps/<step-id>-*.md; for the target `ticket`, the whole-ticket
+ *     .specs/<ticket-id>/verification.md (created if missing); for the target `plan`,
+ *     the ticket's plan.md, where the baseline runs go — with the exact command, its
+ *     exit code, the duration, the log path, and the last lines of output.
  *
  * The evidence is written by this script, not by the assistant, so it cannot be
  * paraphrased or invented. It records the exit code; it never grades the result.
  * Secrets are masked before anything is written (lib/redact.js), since recorded
  * evidence cannot be edited afterwards; the entry says how many were masked.
  *
+ * What the proof was expected to do is recorded beside what it did:
+ *   --expect <code>  the exit code that passes, when it is not 0 (a search that must
+ *                    find nothing: grep exits 1, and 2 or 127 when it could not look);
+ *   --red            a run before the change the proof is for, where it has to fail: a
+ *                    proof that passes without the change cannot fail on it.
+ * The entry also notes what can hide a verdict behind the exit code: a command chained
+ * with ";", "||" or a pipe, a command negated with "!", a command the shell did not find.
+ *
  * Usage:
- *   node run_proof.js <ticket-id> <step-id|ticket> --cmd "<command>" [--label <text>] [--root <dir>] [--tail <n>] [--timeout <seconds>]
+ *   node run_proof.js <ticket-id> <step-id|ticket|plan> --cmd "<command>" [--expect <code>] [--red]
+ *                     [--label <text>] [--root <dir>] [--tail <n>] [--timeout <seconds>]
  *
  * Examples:
  *   node run_proof.js AB-1234 02 --cmd "pnpm test -- export"
+ *   node run_proof.js AB-1234 02 --red --cmd "pnpm test -- export"
+ *   node run_proof.js AB-1234 02 --expect 1 --cmd "grep -rn legacyExport src/"
  *   node run_proof.js AB-1234 02 --cmd "npm run lint && npm test" --root /path/to/project --tail 60
  *   node run_proof.js AB-1234 ticket --label "AC 2: exports a CSV" --cmd "pnpm test -- csv"
+ *   node run_proof.js AB-1234 plan --label "baseline: lint" --cmd "npm run lint"
  *
  * Exits 0 once the evidence is recorded, whatever the proof's exit code (it prints
  * it); exits 1 only when it cannot run the command or record the evidence.
@@ -111,6 +123,44 @@ function maskingOperators(cmd) {
     return [...found];
 }
 
+/** True when a "!" negates a command: at the start, or right after "&&", "||", ";", "|" or "(". */
+function negated(cmd) {
+    // Quoted text cannot hold the operator, so it is blanked before looking.
+    const bare = cmd.replace(/\\./g, '__').replace(/'[^']*'|"[^"]*"/g, (quoted) => '_'.repeat(quoted.length));
+    return /(?:^|&&|\|\||;|\||\()\s*!\s/.test(bare);
+}
+
+// What a shell prints when it does not find a command.
+const NOT_FOUND = [
+    /(?:^|:\s)command not found(?::\s.+)?$/i, // bash, zsh, sh
+    /^\S*sh:\s(?:(?:line\s)?\d+:\s)?.+:\snot found$/, // dash, ash
+    /is not recognized as an internal or external command/i, // cmd.exe
+    /is not recognized as the name of a cmdlet/i, // PowerShell
+];
+
+/** The first output line that says the shell did not find a command, or null. */
+function notFoundLine(lines) {
+    const line = lines.find((l) => NOT_FOUND.some((pattern) => pattern.test(l.trim())));
+    return line ? line.trim().slice(0, 160) : null;
+}
+
+/**
+ * What the run was expected to do, against what it did: { text, met }. A proof passes
+ * on exit code `expect` (0 unless given); a red run, made before the change, has to
+ * end on any other code.
+ */
+function expectation({ expect, red }, status) {
+    if (expect === null && !red) return null;
+    const pass = expect === null ? 0 : expect;
+    if (red) {
+        const met = status !== null && status !== pass;
+        const what = pass === 0 ? 'a non-zero exit code' : `an exit code other than ${pass}`;
+        return { met, text: `${what}, before the change (${met ? 'met' : 'not met'})` };
+    }
+    const met = status === pass;
+    return { met, text: `exit code ${pass} (${met ? 'met' : 'not met'})` };
+}
+
 /** Find the step spec for a step id: steps/<id>-<slug>.md (or steps/<id>.md). */
 function findStepFile(stepsDir, stepId) {
     if (!fs.existsSync(stepsDir)) return { error: `no steps/ folder in ${stepsDir}` };
@@ -141,6 +191,12 @@ function ensureVerification(ticketDir, ticket) {
         fs.writeFileSync(file, content, 'utf8');
     }
     return { file };
+}
+
+/** The ticket's plan.md, where the baseline runs of the proof commands are recorded. */
+function planFile(ticketDir) {
+    const file = path.join(ticketDir, 'plan.md');
+    return fs.existsSync(file) ? { file } : { error: `no plan.md in ${ticketDir}` };
 }
 
 /** Create a new log file with its header; never overwrites an earlier run's log. */
@@ -183,12 +239,16 @@ function appendEvidence(specFile, entryLines) {
 }
 
 /** Run the proof, save the log, append the evidence entry. Returns the run summary. */
-function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
+function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = null, red = false }) {
     const ticketDir = path.resolve(root, '.specs', ticket);
     if (!fs.existsSync(ticketDir)) throw new Error(`${path.join('.specs', ticket)} not found — run /flow:start first`);
 
-    const found = target === 'ticket' ? ensureVerification(ticketDir, ticket) : findStepFile(path.join(ticketDir, 'steps'), target);
+    let found;
+    if (target === 'ticket') found = ensureVerification(ticketDir, ticket);
+    else if (target === 'plan') found = planFile(ticketDir);
+    else found = findStepFile(path.join(ticketDir, 'steps'), target);
     if (found.error) throw new Error(found.error);
+    if (red) label = `red: before the change${label ? ` — ${label}` : ''}`;
 
     const started = new Date();
     const evidenceDir = path.join(ticketDir, 'evidence');
@@ -239,8 +299,29 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     fs.appendFileSync(logFile, `\n# finished: ${isoStamp(finished)}\n# exit code: ${exit}\n`, 'utf8');
 
     const logRel = path.relative(ticketDir, logFile).split(path.sep).join('/');
+    const status = result.error ? null : result.status;
+    const expected = expectation({ expect, red }, status);
+    // Each note is a way the exit code may not carry the verdict; `hint` is said on the console only.
+    const notes = [];
     const operators = maskingOperators(cmd);
-    const note = operators.length > 0 ? `the exit code is the last part's (the command chains with ${operators.map((o) => `"${o}"`).join(', ')})` : '';
+    if (operators.length > 0) {
+        notes.push({ text: `the exit code is the last part's (the command chains with ${operators.map((o) => `"${o}"`).join(', ')})`, hint: 'write the proof so its exit code is the verdict' });
+    }
+    if (negated(cmd)) {
+        notes.push({ text: 'the command is negated with "!", so it also passes when the command cannot run or reads nothing', hint: 'run the plain command with --expect <code>' });
+    }
+    // A plain command that exits 0 ran; anywhere else, the output may show one that did not.
+    const hidden = status !== 0 || notes.length > 0 || expected !== null;
+    const missing = hidden ? notFoundLine(lines) : null;
+    if (status === 127 || status === 126 || missing) {
+        const why = status === 127 ? 'exit code 127 means the shell did not find a command'
+            : status === 126 ? 'exit code 126 means the shell could not run a command'
+                : 'the output shows a command the shell did not find';
+        notes.push({ text: `${why}${missing ? ` (${JSON.stringify(missing)})` : ''}, so the proof may not have run` });
+    }
+    if (expected && !expected.met) {
+        notes.push({ text: red ? 'the proof already passes without the change, so it cannot fail on it' : 'the exit code is not the expected one' });
+    }
     const excerptText = excerpt.join('\n');
     const fence = fenceFor(excerptText);
     const entry = [
@@ -248,7 +329,8 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
         '',
         `- Command: ${inlineCode(shown.text)}`,
         `- Exit code: ${exit}`,
-        ...(note ? [`- Note: ${note}`] : []),
+        ...(expected ? [`- Expected: ${expected.text}`] : []),
+        ...notes.map((note) => `- Note: ${note.text}`),
         `- Duration: ${seconds}s`,
         `- Log: ${inlineCode(logRel)} (${plural(lines.length, 'line')})`,
         ...(redacted > 0 ? [`- Redacted: ${plural(redacted, 'secret')}`] : []),
@@ -259,15 +341,17 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout }) {
     ];
     appendEvidence(found.file, entry);
 
-    return { specFile: found.file, logFile, exit, note, seconds, total: lines.length, excerpt, command: shown.text, redacted };
+    return { specFile: found.file, logFile, exit, expected, notes, seconds, total: lines.length, excerpt, command: shown.text, redacted };
 }
 
 function parseArgs(argv) {
-    const out = { ticket: null, target: null, cmd: '', label: '', root: process.cwd(), tail: DEFAULT_TAIL, timeout: 0 };
+    const out = { ticket: null, target: null, cmd: '', label: '', root: process.cwd(), tail: DEFAULT_TAIL, timeout: 0, expect: null, red: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === '--cmd') out.cmd = argv[++i] || '';
         else if (a === '--label') out.label = argv[++i] || '';
+        else if (a === '--expect') out.expect = Number(argv[++i]);
+        else if (a === '--red') out.red = true;
         else if (a === '--root') out.root = argv[++i];
         else if (a === '--tail') out.tail = Number(argv[++i]);
         else if (a === '--timeout') out.timeout = Number(argv[++i]);
@@ -278,11 +362,14 @@ function parseArgs(argv) {
 }
 
 function usage() {
-    console.log('Usage: node run_proof.js <ticket-id> <step-id|ticket> --cmd "<command>" [--label <text>] [--root <dir>] [--tail <n>] [--timeout <seconds>]');
+    console.log('Usage: node run_proof.js <ticket-id> <step-id|ticket|plan> --cmd "<command>" [--expect <code>] [--red]');
+    console.log('                         [--label <text>] [--root <dir>] [--tail <n>] [--timeout <seconds>]');
     console.log('\nExamples:');
     console.log('  node run_proof.js AB-1234 02 --cmd "pnpm test -- export"');
-    console.log('  node run_proof.js AB-1234 02 --cmd "npm run lint && npm test" --root /path/to/project --tail 60');
+    console.log('  node run_proof.js AB-1234 02 --red --cmd "pnpm test -- export"            (before the change: it has to fail)');
+    console.log('  node run_proof.js AB-1234 02 --expect 1 --cmd "grep -rn legacyExport src/"  (passes on exit code 1)');
     console.log('  node run_proof.js AB-1234 ticket --label "AC 2: exports a CSV" --cmd "pnpm test -- csv"');
+    console.log('  node run_proof.js AB-1234 plan --label "baseline: lint" --cmd "npm run lint"');
 }
 
 function main() {
@@ -302,6 +389,10 @@ function main() {
         console.log('[error] --tail must be a positive integer and --timeout a number of seconds.');
         process.exit(1);
     }
+    if (args.expect !== null && !(Number.isInteger(args.expect) && args.expect >= 0 && args.expect <= 255)) {
+        console.log('[error] --expect takes the exit code that passes, 0 to 255.');
+        process.exit(1);
+    }
 
     let run;
     try {
@@ -315,7 +406,8 @@ function main() {
     console.log(`[ok] Evidence recorded in ${path.relative(root, run.specFile)}`);
     console.log(`   Command:   ${run.command}`);
     console.log(`   Exit code: ${run.exit}`);
-    if (run.note) console.log(`   Note:      ${run.note}; write the proof so its exit code is the verdict`);
+    if (run.expected) console.log(`   Expected:  ${run.expected.text}`);
+    for (const note of run.notes) console.log(`   Note:      ${note.text}${note.hint ? `; ${note.hint}` : ''}`);
     console.log(`   Duration:  ${run.seconds}s`);
     console.log(`   Log:       ${path.relative(root, run.logFile)} (${plural(run.total, 'line')})`);
     if (run.redacted > 0) console.log(`   Redacted:  ${plural(run.redacted, 'secret')}`);

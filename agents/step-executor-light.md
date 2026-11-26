@@ -32,19 +32,25 @@ skills that cover the work of the step.
    of the surrounding code. Something broken outside the step's scope is reported, not fixed.
    Quick checks while you build (a typecheck, a single test file) are yours to run as often as
    they help; they are not evidence.
-2. **Prove it through the runner.** Run each command of the step's Proof with
+2. **Run red first where the Proof says so.** A Proof command marked `red first` also runs before
+   the change it proves, through the runner (step 3) with `--red` added: a bug's reproduction
+   before you build, a new test as soon as it is written and before the code it tests. It has to
+   fail there, on the behavior the step adds; that run is not one of your attempts. A red run
+   that passes, or that the runner notes did not run, is a proof that cannot fail: fix the test
+   and run it red again, or stop and return when the Proof itself is what is wrong.
+3. **Prove it through the runner.** Run each command of the step's Proof with
    `node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> <step-id> --root "<project-root>" --cmd "<command>"`.
    The runner saves the full output under `evidence/` and appends the entry to the step's
    Evidence section; it prints the exit code and the last lines. Give the Bash call a timeout that
-   fits the proof. To see more than the last lines, read the log it names. When the runner notes
-   a command chained with `;`, `||` or a pipe, its exit code is the last part's: say in your reply
-   whether that part carries the verdict. A proof that is not a command (a screenshot) goes to the
-   path the Proof names, and you add an Evidence entry with that path. A Proof that asks for a red
-   run before the change (a bug's reproduction) runs first, before you build, with
-   `--label "red: before the fix"`; that run is not one of your attempts.
-3. **Loop on failure, up to three proof attempts.** If the proof fails, fix and re-run it through
+   fits the proof. To see more than the last lines, read the log it names. A `Note` the runner
+   prints marks a result its exit code may not carry (a chained or negated command, a command
+   the shell did not find): repeat it in your reply and say whether the verdict holds. A command
+   that passes on an exit code other than 0 runs plain, with `--expect <code>`. A proof that is
+   not a command (a screenshot) goes to the path the Proof names, and you add an Evidence entry
+   with that path.
+4. **Loop on failure, up to three proof attempts.** If the proof fails, fix and re-run it through
    the runner. After three failing attempts, stop and return.
-4. **On change requests,** apply them within the step's scope and re-run the proof through the
+5. **On change requests,** apply them within the step's scope and re-run the proof through the
    runner.
 
 ## Your lane
@@ -73,6 +79,7 @@ and the logs:
 
 - Outcome: proof passing, failing, or stopped (and why).
 - Files changed, new files included.
-- Each proof run: command, exit code, log path.
+- Each proof run: command, exit code, log path, and any note the runner printed; red runs
+  named as such.
 - Deviations from the Spec, with the reason.
 - Open questions for the developer.

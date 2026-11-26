@@ -42,13 +42,16 @@ test('git: writes are denied in subagents', () => {
     }
 });
 
-test('state.js: subagents may only show', () => {
+test('state.js: subagents read the state (show, diff); changing it is the main session\'s', () => {
     assert.equal(bash('node "/p/scripts/state.js" AB-1 show'), null);
     assert.equal(bash('node /p/scripts/state.js AB-1 show --json'), null);
     assert.equal(bash('node /p/scripts/state.js AB-1 --root "/x" show'), null);
+    assert.equal(bash('node "/p/scripts/state.js" AB-1 diff 01 --root "/x"'), null);
+    assert.equal(bash('node /p/scripts/state.js AB-1 diff 01', 'flow:diff-reviewer'), null);
     assert.equal(bash('cat /p/scripts/state.js'), null);
-    assert.match(bash('node "/p/scripts/state.js" AB-1 step 01 proven') || '', /show` only/);
-    assert.match(bash('node /p/scripts/state.js AB-1 --root /x phase done') || '', /show` only/);
+    assert.match(bash('node "/p/scripts/state.js" AB-1 step 01 proven') || '', /the main session changes it/);
+    assert.match(bash('node /p/scripts/state.js AB-1 --root /x phase done') || '', /the main session changes it/);
+    assert.match(bash('node /p/scripts/state.js AB-1 set commit at-end') || '', /the main session changes it/);
     assert.equal(bash('node /p/scripts/state.js AB-1 step 01 proven', null), null);
 });
 
@@ -83,6 +86,15 @@ test('run entries: verification.md and CRLF files are covered', () => {
     fs.writeFileSync(crlf, read().replace(/\n/g, '\r\n'));
     assert.match(check(ev('Edit', { file_path: crlf, old_string: '- Exit code: 0', new_string: '- Exit code: 1' })) || '', /immutable/);
     assert.equal(check(ev('Edit', { file_path: crlf, old_string: '## Changes', new_string: '## Changes\n\n- a.js' })), null);
+});
+
+test('run entries: the baseline runs in plan.md are covered, and the plan around them can be filled', () => {
+    const { root, dir } = fixture();
+    run('run_proof.js', ['AB-1', 'plan', '--label', 'baseline: lint', '--root', root, '--cmd', 'echo linted']);
+    const plan = path.join(dir, 'plan.md');
+    assert.match(check(ev('Edit', { file_path: plan, old_string: 'echo linted', new_string: 'echo other' })) || '', /immutable/);
+    assert.match(check(ev('Write', { file_path: plan, content: '# Plan\n\n## Approach\n\nRewritten.\n' })) || '', /immutable/);
+    assert.equal(check(ev('Edit', { file_path: plan, old_string: '1.\n2.', new_string: '1. Add the exporter\n2. Wire the button' })), null);
 });
 
 test('a step Status changes only through state.js; new specs can be written', () => {

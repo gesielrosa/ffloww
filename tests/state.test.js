@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { run, project } = require('./helpers');
+const { run, project, git, gitProject } = require('./helpers');
 const { parseState, frontMatter, nextMove } = require('../scripts/state');
 
 function setup() {
@@ -261,4 +261,111 @@ test('normalize keeps one step in progress', () => {
     assert.match(state('normalize').out, /steps 01, 02 are all in progress/);
     assert.equal(state('normalize', '01=done').code, 0);
     assert.equal(parseState(fs.readFileSync(file, 'utf8')).fields.current_step, '02');
+});
+
+/** A git project with two planned steps and the state script bound to it. */
+function gitSetup(sub = '') {
+    const p = gitProject('AB-1', [['01', 'exporter'], ['02', 'button']], sub);
+    const state = (...args) => run('state.js', ['AB-1', '--root', p.root, ...args]);
+    const read = () => parseState(fs.readFileSync(path.join(p.dir, 'state.md'), 'utf8')).fields;
+    state('add-step', '01', 'Add the exporter');
+    state('add-step', '02', 'Wire the button');
+    return { ...p, state, read };
+}
+
+test('a step is snapshotted when it starts and when it is proven, and diff shows its change alone', () => {
+    const { repo, root, state, read } = gitSetup();
+    assert.match(state('diff', '01').out, /\[skip\] step 01 has not started/);
+    assert.match(state('step', '01', 'in-progress').out, /\[ok\] step 01: todo → in-progress \(01-exporter\.md Status synced; start snapshot [0-9a-f]{10}\)/);
+    fs.appendFileSync(path.join(root, 'src', 'a.js'), 'const exporter = 2;\n');
+    fs.writeFileSync(path.join(root, 'src', 'exporter.js'), 'module.exports = {};\n');
+    const during = state('diff', '01').out;
+    assert.match(during, /^Step 01 — Add the exporter: 2 files changed between its start and now\n {2}M\tsrc\/a\.js\n {2}A\tsrc\/exporter\.js\nDiff: git diff [0-9a-f]{40} [0-9a-f]{40}\n/);
+    assert.match(state('step', '01', 'proven').out, /end snapshot [0-9a-f]{10}/);
+
+    // Step 02 starts with step 01 still uncommitted: its diff holds its own files only.
+    assert.equal(state('step', '02', 'in-progress', '--reason', 'one commit for both').code, 0);
+    fs.writeFileSync(path.join(root, 'src', 'button.js'), 'module.exports = {};\n');
+    const second = state('diff', '02').out;
+    assert.match(second, /Step 02 — Wire the button: 1 file changed between its start and now\n {2}A\tsrc\/button\.js\nDiff: /);
+    assert.doesNotMatch(second, /exporter/);
+    const [, base, head] = second.match(/Diff: git diff (\S+) (\S+)/);
+    assert.equal(git(repo, 'diff', '--name-only', base, head), 'src/button.js');
+    assert.equal(read().steps[1].base, read().steps[0].head, 'step 02 starts where step 01 was approved');
+
+    // Step 01 stays as its gate approved it, whatever came after.
+    assert.match(state('diff', '01').out, /2 files changed between its start and the gate that approved it\n {2}M\tsrc\/a\.js\n {2}A\tsrc\/exporter\.js\n/);
+    assert.equal(git(repo, 'diff', '--cached', '--name-only'), '', 'the snapshots staged nothing');
+});
+
+test('snapshots follow the step back: restarted from todo it starts over, sent back from proven it keeps its start', () => {
+    const { state, read } = gitSetup();
+    state('step', '01', 'in-progress');
+    const base = read().steps[0].base;
+    state('step', '01', 'proven');
+    assert.ok(read().steps[0].head);
+    state('step', '01', 'in-progress', '--reason', 'changes requested after approval');
+    assert.deepEqual([read().steps[0].base, read().steps[0].head], [base, undefined]);
+    state('step', '01', 'todo', '--reason', 're-planned');
+    assert.equal(read().steps[0].base, undefined);
+    assert.match(state('log', 'a note').out, /\[ok\]/);
+    assert.equal(read().steps[0].base, undefined);
+});
+
+test('outside git a step starts without a snapshot, and diff points to the uncommitted work', () => {
+    const { state, read } = setup();
+    state('add-step', '01', 'One');
+    assert.match(state('step', '01', 'in-progress').out, /no start snapshot: not a git work tree/);
+    assert.match(read(), /- \{ id: "01", title: "One", status: in-progress \}/);
+    const diff = state('diff', '01');
+    assert.equal(diff.code, 0);
+    assert.match(diff.out, /\[skip\] step 01 has no start snapshot[^\n]*git status --porcelain/);
+    assert.equal(state('diff', '09').code, 1);
+    assert.equal(state('diff').code, 1);
+});
+
+test('commit at-end: steps stay proven while the next ones are built, and one commit closes them', () => {
+    const { state, read } = setup();
+    state('add-step', '01', 'One');
+    state('add-step', '02', 'Two');
+    assert.match(read(), /^commit: per-step$/m);
+    assert.equal(state('set', 'commit', 'sometimes').code, 1);
+    assert.equal(state('set', 'commit', 'at-end').code, 0);
+    assert.match(read(), /^commit: at-end$/m);
+    state('phase', 'execute');
+    state('step', '01', 'in-progress');
+    state('step', '01', 'proven');
+    assert.match(state('show').out, /commit: at-end[\s\S]*Next: \/flow:execute AB-1 — build step 02 — Two/);
+    const next = state('step', '02', 'in-progress');
+    assert.equal(next.code, 0, next.out);
+    assert.doesNotMatch(read(), /step 02: todo → in-progress:/, 'no reason is logged for what the ticket allows');
+    state('step', '02', 'proven');
+    assert.match(state('show').out, /Next: \/flow:execute AB-1 — commit the ticket's work \(steps 01, 02, proven\), then mark them done/);
+    state('step', '01', 'done');
+    state('step', '02', 'done');
+    assert.match(state('show').out, /Next: \/flow:verify AB-1/);
+});
+
+test('per-step stays the default: a proven step waits for its commit, and the error names the ways on', () => {
+    const { state } = setup();
+    state('add-step', '01', 'One');
+    state('add-step', '02', 'Two');
+    state('phase', 'execute');
+    state('step', '01', 'in-progress');
+    state('step', '01', 'proven');
+    assert.match(state('show').out, /Next: \/flow:execute AB-1 — commit step 01 — One, then mark it done/);
+    assert.match(state('step', '02', 'in-progress').out, /commit it and mark it done first, pass --reason to start step 02 anyway, or commit the whole ticket at the end \(set commit at-end\)/);
+    assert.equal(nextMove({ ticket: 'AB-1', phase: 'execute', commit: 'at-end', steps: [{ id: '01', title: 'One', status: 'proven' }] }).why, "commit the ticket's work (step 01, proven), then mark it done");
+});
+
+test('normalize adds the commit line to an older state and maps a value the flow does not know', () => {
+    const { state, read, dir } = setup();
+    const file = path.join(dir, 'state.md');
+    fs.writeFileSync(file, read().replace('commit: per-step\n', ''));
+    assert.match(state('normalize').out, /\[ok\] state\.md rewritten in the current format/);
+    assert.match(read(), /^route: full\ncommit: per-step$/m);
+    fs.writeFileSync(file, read().replace('commit: per-step', 'commit: squash'));
+    assert.match(state('normalize').out, /unknown commit "squash": pass commit=<per-step\|at-end>/);
+    assert.equal(state('normalize', 'commit=at-end').code, 0);
+    assert.match(read(), /^commit: at-end$/m);
 });

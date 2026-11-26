@@ -90,14 +90,23 @@ human converges and decides.**
   screenshots). From the plan on (each step, verify, ship) phases work from
   self-contained specs, so they hand off with a `/clear` suggestion. The rule lives in
   `CONVENTIONS.md`; each handoff states its own case.
-- **State changes through a script, never by hand.** `scripts/state.js` (`show`,
+- **State changes through a script, never by hand.** `scripts/state.js` (`show`, `diff`,
   `phase`, `set`, `add-step`, `remove-step`, `step`, `log`, `normalize`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with
   `--reason`, logged as a regression; execute ⇄ verify is free), steps move one status
-  at a time with one in progress, and a step starts only once the previous proven step
-  is done, i.e. committed (`--reason` overrides), so each step's diff stands alone.
-  Step specs' Status lines stay in sync, the navigation log is appended, and "Where we
-  are" is regenerated. `nextMove()` in it is the single source of the "what's next"
+  at a time with one in progress. Step specs' Status lines stay in sync, the navigation
+  log is appended, and "Where we are" is regenerated.
+- **A step's change stands alone, however the ticket is committed.** The ticket's
+  `commit` is the developer's choice: `per-step` (the default: a step starts once the
+  previous proven one is done, i.e. committed; `--reason` overrides) or `at-end` (steps
+  stay `proven` while the next ones are built, and one commit after the last gate makes
+  them `done`; `nextMove()` asks for it before verify). Two real tickets chose the
+  latter and paid for it in hand-made snapshots. So the state script snapshots the
+  working tree itself (`scripts/lib/snapshot.js`: a git tree id built in a temporary
+  index, `.specs/` and ignored files left out, the project's index untouched) when a
+  step starts and when it is proven, and `state.js diff <step-id>` prints the step's
+  files and its `git diff <tree> <tree>`: the gate's file list, and what the reviewer
+  reads. `nextMove()` in it is the single source of the "what's next"
   mapping that every phase's handoff, `/flow:status`, and the SessionStart hook report.
   It follows the ticket's `route`: `full` by default, or `short`, which the developer
   chooses for a small, clear change (offered by `/flow:understand`): understand →
@@ -109,8 +118,17 @@ human converges and decides.**
   `verification.md`). Recorded evidence cannot be edited afterwards, so the runner masks
   secrets first (`scripts/lib/redact.js`: secret-named env var values, auth headers,
   `key=value` credentials, URL credentials, private keys, known token formats) and the
-  entry notes the count. A proof's exit code is its verdict, so the runner also notes a
-  command chained with `;`, `||` or a pipe (its exit code is the last part's).
+  entry notes the count.
+- **A proof has to be able to fail.** A proof's exit code is its verdict, and three real
+  tickets showed how it lies: `! tool` passes when the tool is missing, a search skips
+  what it should read, a test passes without the change. So the runner records the
+  expectation beside the result (`--expect <code>` for a proof that passes on another
+  code, `--red` for a run before the change, which has to fail) and notes what an exit
+  code can hide: a command chained with `;`, `||` or a pipe, a command negated with `!`,
+  a command the shell did not find, a red run that passed. `/flow:plan` runs each kind of
+  proof command once on the untouched tree (the baseline, target `plan`, recorded in
+  `plan.md`) and marks `red first` only the proofs of new behavior that are fast enough
+  to run twice, the developer saying what fast is; guards and slow proofs run once.
 - **A cleared session resumes from disk.** A `SessionStart` hook
   (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
@@ -131,10 +149,11 @@ human converges and decides.**
 - **Guardrails are enforced in code where a rule can be checked.** `hooks/hooks.json`
   runs `scripts/guard.js` on every `PreToolUse` of Bash/Edit/Write/MultiEdit. In any
   session it denies edits to `evidence/` logs, edits that would remove or change a
-  `### Run` entry, hand edits to `state.md`, and hand changes to a step's Status line.
+  `### Run` entry (in a step spec, `verification.md` or `plan.md`), hand edits to
+  `state.md`, and hand changes to a step's Status line.
   In the flow's subagents (hook input `agent_type` = `flow:<name>`) it also denies git
-  commands that write, `state.js` commands other than `show`, and changes to a step's
-  Executor line or Gate section. The main session's git rule stays an
+  commands that write, `state.js` commands that change the state (`show` and `diff`
+  only read it), and changes to a step's Executor line or Gate section. The main session's git rule stays an
   instruction, because plugin hooks run in every session, flow or not. The guard fails
   open on bad input or internal errors.
 - **`/flow:review` works in any git project, on any host.** A utility outside the
@@ -163,6 +182,7 @@ ffloww/
   scripts/                 # init_spec.js, state.js, run_proof.js, guard.js, session_start.js, upgrade.js
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
     lib/redact.js          # secret masking for run_proof.js
+    lib/snapshot.js        # working-tree snapshots as git tree ids, for state.js
     lib/history.js         # recognizes the texts earlier versions wrote (init_spec.js, upgrade.js)
     history/               # every CONVENTIONS.md body and step template shipped, named by digest
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
@@ -215,5 +235,8 @@ runner, the Claude Code plugin packaging (replacing APM), the guard hook, and th
 script, the `delegate-light` (Haiku) executor tier, user-invoked phases, secret
 masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, the
 independent diff reviewer before the gate, `/flow:upgrade` for records earlier
-versions wrote, and `/flow:review` for any change, in any project. Next: an end-to-end
-run on a real ticket.
+versions wrote, `/flow:review` for any change, in any project, and, from three real
+tickets' retros, proofs that have to be able to fail (baseline, `red first`, `--expect`,
+runner notes) and per-step snapshots with a commit policy. Next: the rest of those
+retros' feedback (evidence freshness against the base branch, the runner's shell on
+Windows).

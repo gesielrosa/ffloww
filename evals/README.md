@@ -12,6 +12,8 @@ the files left behind.
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
+| `execute-proves-red-first` | a step whose Proof marks its new test `red first` has that test recorded failing before the code exists and passing after, its review reads the step's snapshot diff, and the run stops at the gate (tag `heavy`) |
+| `execute-commit-at-end` | on a ticket committed at the end, with step 01 proven and uncommitted, `/flow:execute` builds step 02 without asking for a commit and takes only step 02's change to the review and the gate (tag `heavy`) |
 | `review-flags-seeded-flaws` | `flow:diff-reviewer` reads a step's change cold and names, by axis, at least five of the seven flaws seeded in it (tag `heavy`) |
 | `review-pr-without-flow` | in a project without `.specs/`, `/flow:review` fetches a teammate's pull request from the branches the developer names, reviews it against the pasted description, and reports the seeded flaws by axis as comments ready to paste, leaving the checkout on `main` and git otherwise alone (tag `heavy`) |
 | `explore-reproduces-bug` | for a Bug ticket, `/flow:explore` builds a red reproduction under `repro/`, ranks hypotheses, and offers fixes proven by the reproduction turning green, leaving the code and no probes behind |

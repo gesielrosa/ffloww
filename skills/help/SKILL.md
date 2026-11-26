@@ -76,7 +76,8 @@ judgment of "is this proven?" stay with the developer.
 - **Make it prove it:** proof is raw evidence (command, exit code, real output, a
   screenshot) recorded by a script. You grade it at the gate.
 - **Git & PR are yours.** `/flow:execute` drafts a commit message; `/flow:ship` drafts a
-  PR — you run them, your way.
+  PR — you run them, your way. Commit each step before the next one (the default), or
+  say you prefer one commit at the end of the ticket.
 
 ## `.specs/` — the memory
 
@@ -102,6 +103,18 @@ checks every phase and step move and writes the navigation log.
 - **Can I just say "start AB-1234"?** Phases run when you type them:
   `/flow:start AB-1234`. Plain questions like "where are we?" reach `/flow:status`.
 - **Does the AI commit or open PRs?** No — it drafts; you run them.
+- **Do I have to commit after every step?** No. That is the default, so each step is its
+  own commit. Say you prefer one commit for the ticket and it is recorded as
+  `commit: at-end`: steps stay `proven` while the next ones are built, and one commit
+  after the last gate makes them `done`. Either way each step is reviewed on its own
+  change: the state script snapshots the working tree when a step starts, and
+  `state.js <ticket-id> diff <step-id>` shows what that step changed.
+- **How do I know a proof can fail?** The plan runs each proof command once on the
+  untouched tree (the baseline) and marks the fast proofs of new behavior `red first`:
+  those run before the change, where they have to fail, and again after. You say what
+  counts as fast; guards (lint, typecheck, the suite) and slow proofs run once. The
+  runner also notes what an exit code can hide: a chained or negated command, a command
+  the shell did not find, a code other than the one the proof expects.
 - **Who writes the code?** `/flow:plan` marks each step `delegate`, `delegate-light`,
   or `inline`. A delegated step is built by an executor subagent — `flow:step-executor`
   on Sonnet, or `flow:step-executor-light` on Haiku for mechanical steps; the main

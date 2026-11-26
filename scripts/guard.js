@@ -10,13 +10,13 @@
  *     - Edit/Write of a proof log under .specs/<ticket-id>/evidence/ — logs are written
  *       only by run_proof.js;
  *     - Edit/Write of a ticket's state.md — it changes only through state.js;
- *     - an Edit/Write of a step spec or verification.md that would remove or change an
- *       evidence entry run_proof.js recorded ("### Run <timestamp>"), or change a step's
- *       existing Status line (state.js keeps it in sync).
+ *     - an Edit/Write of a step spec, verification.md or plan.md that would remove or
+ *       change an evidence entry run_proof.js recorded ("### Run <timestamp>"), or change
+ *       a step's existing Status line (state.js keeps it in sync).
  *
  *   In the flow's subagents (agent_type "flow:<name>"):
  *     - git commands that write — only read-only git (status, diff, log, ...) runs;
- *     - state.js commands other than show;
+ *     - state.js commands that change the state (show and diff, which read it, run);
  *     - changes to a step's Executor line or its Gate section.
  *
  * The main session's git rule stays an instruction, not a block: plugin hooks run in
@@ -72,7 +72,7 @@ function gitCalls(command) {
     return calls;
 }
 
-/** True when the command runs state.js with a command other than `show`. */
+/** True when the command runs state.js with a command other than `show` or `diff`, which only read. */
 function mutatingState(command) {
     const at = command.search(/state\.js["']?(\s|$)/);
     if (at === -1) return false;
@@ -82,7 +82,7 @@ function mutatingState(command) {
         if (['--root', '--reason', '--note'].includes(tokens[i])) i++;
         else if (tokens[i] && !tokens[i].startsWith('--')) words.push(tokens[i]);
     }
-    return words.length >= 2 && words[1] !== 'show';
+    return words.length >= 2 && !['show', 'diff'].includes(words[1]);
 }
 
 function stateCommand() {
@@ -149,7 +149,7 @@ function check(event) {
                 'Leave commits and branches to the developer and report back to the main session.';
         }
         if (mutatingState(command)) {
-            return `ffloww guard: ${agent} reads state with \`state.js <ticket-id> show\` only; the main session updates it.`;
+            return `ffloww guard: ${agent} reads the state (\`state.js <ticket-id> show\`, \`diff <step-id>\`); the main session changes it.`;
         }
         return null;
     }
@@ -164,11 +164,11 @@ function check(event) {
     }
     if (where.rel === 'state.md') {
         return `ffloww guard: state.md changes only through the flow's state script: ${stateCommand()} ` +
-            '(show | phase | set | add-step | remove-step | step | log). It validates transitions and writes the navigation log.';
+            '(show | diff | phase | set | add-step | remove-step | step | log). It validates transitions and writes the navigation log.';
     }
 
     const isStep = /^steps\/[^/]+\.md$/.test(where.rel) && path.basename(where.rel) !== '_TEMPLATE.md';
-    if (!isStep && where.rel !== 'verification.md') return null;
+    if (!isStep && !['verification.md', 'plan.md'].includes(where.rel)) return null;
 
     const change = beforeAfter(tool, input);
     if (!change) return null;

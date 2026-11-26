@@ -92,7 +92,10 @@ The convergent phase. You architect, it types.
   `decisions.md`: context, decision and why in one to three sentences, plus the rejected
   options and consequences when there was a real trade-off.
 - Agrees the **proof strategy** (project-defined; often tests) and writes it to
-  `state.md` as `proof_definition`.
+  `state.md` as `proof_definition`. Then takes the **baseline**: each kind of proof
+  command runs once on the untouched tree, through the runner, recorded in `plan.md`,
+  so a flag the tool ignores, a guard that is already red or a twenty-minute suite
+  shows up before any step depends on it.
 - Slices the work into **vertical** steps (tracer bullets): each a narrow path through
   every layer it touches, provable on its own through the entry point the acceptance
   criteria use; refactoring that makes the change easy comes first, and a wide
@@ -100,6 +103,12 @@ The convergent phase. You architect, it types.
   `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`, and each proof command
   exits non-zero exactly when its step fails. It asks you whether the granularity is
   right before you approve.
+- Marks the proofs that run **red first**: a proof of new behavior that is fast enough
+  to run twice (you say what fast is) runs before the change too, where it has to fail.
+  Guards (lint, typecheck, the existing suite), mechanical steps and slow proofs run
+  once.
+- Records how the ticket is committed when you prefer one commit at the end over one
+  per step (`commit: at-end`).
 - Marks who builds each step: `delegate` (a subagent on Sonnet; the spec must need no
   decision), `delegate-light` (a lighter subagent on Haiku, for mechanical steps), or
   `inline` (the main session). You can change any of them.
@@ -112,11 +121,16 @@ Builds one step, proves it, and stops at the human gate.
   executor subagent on a cheaper model (Sonnet, or Haiku for `delegate-light`); the
   main session keeps the gate.
 - Runs the step's proof through `run_proof.js`, which records the **raw evidence**
-  (command, exit code, last lines, full log) in the step spec. Never self-graded.
+  (command, exit code, last lines, full log) in the step spec. Never self-graded. A
+  proof marked `red first` runs before the change too (`--red`) and has to fail there;
+  the runner notes a red run that passed, and anything else an exit code can hide (a
+  chained or negated command, a command the shell did not find).
 - Stops after three failing proof attempts and brings it to you: clarify the step,
   re-run it on a more capable model, or build it inline.
 - **Independent review:** before the gate, `flow:diff-reviewer` (Sonnet, read-only)
-  reads the step's change in a fresh context, so the author never reviews itself, and
+  reads the step's change in a fresh context, so the author never reviews itself (the
+  change is the diff between two snapshots of the working tree, the step's start and
+  now, so it is this step's alone even when earlier steps are not committed), and
   reports cited findings on three axes kept apart: **Spec** (missing, out of scope,
   wrong), **Proof** (a tautological test, a test of internals, an untested criterion),
   and **Standards** (the project's documented rules, then a baseline of code smells).
@@ -127,7 +141,9 @@ Builds one step, proves it, and stops at the human gate.
 - **Human gate:** you validate the evidence and the findings, and decide approve /
   changes / regress. Only on approval does the step become `proven`.
 - On approval it **suggests a commit message** — it never commits. You commit your
-  way; then the step is `done`.
+  way; then the step is `done`. With `commit: at-end`, the step stays `proven`, the
+  next one starts, and after the last gate it suggests one message for the whole
+  ticket.
 
 ## 6. Verify — `/flow:verify`
 

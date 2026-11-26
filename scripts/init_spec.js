@@ -84,13 +84,19 @@ advises on the session:
 
 ## State
 
-\`state.md\` changes only through the flow's state script (\`state.js\`: \`show\`, \`phase\`,
-\`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand edits.
-Phases move forward freely; moving back is a regression and needs a reason, recorded in
-\`decisions.md\` too. A step moves \`todo → in-progress → proven\` (approved at its gate)
-\`→ done\` (committed), one at a time, and the next step starts once the previous one is
-committed. Before the gate, a step's proof passes or fails; only the developer's
-approval makes it \`proven\`.
+\`state.md\` changes only through the flow's state script (\`state.js\`: \`show\`, \`diff\`,
+\`phase\`, \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand
+edits. Phases move forward freely; moving back is a regression and needs a reason,
+recorded in \`decisions.md\` too. A step moves \`todo → in-progress → proven\` (approved at
+its gate) \`→ done\` (committed), one at a time. Before the gate, a step's proof passes
+or fails; only the developer's approval makes it \`proven\`.
+
+How the ticket is committed is the developer's choice. By default each step is
+committed before the next one starts (\`commit: per-step\`). With
+\`state.js set commit at-end\`, steps stay \`proven\` while the next ones are built, and
+one commit after the last gate makes them all \`done\`. Either way a step's change
+stands alone: the state script snapshots the working tree when the step starts, and
+\`state.js diff <step-id>\` prints the step's files and its \`git diff\` from there.
 
 A small, clear change can take the **short route**, when the developer chooses it
 (\`state.js set route short\`): the plan maps the change itself instead of a separate
@@ -109,10 +115,17 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
 - Proof is raw evidence recorded by the proof runner (\`run_proof.js\`): command, exit
   code, real output; or a screenshot path. Numbers, not opinions.
 - A proof's exit code is its verdict: each proof command exits non-zero exactly when its
-  criterion fails (\`! cmd\` when a failure is expected). The runner keeps the full
-  output, so no \`| tail\` or \`; echo $?\` is needed; it notes a command chained with
-  \`;\`, \`||\` or a pipe, whose exit code is its last part's, so that part carries the
-  verdict.
+  criterion fails. A proof that passes on another code runs plain with the runner's
+  \`--expect <code>\` (a search that must find nothing: \`grep\` exits 1, and 2 or 127
+  when it could not look). The runner keeps the full output, so no \`| tail\` or
+  \`; echo $?\` is needed, and it notes what can hide the verdict: a command chained with
+  \`;\`, \`||\` or a pipe (the exit code is its last part's), a command negated with \`!\`,
+  a command the shell did not find. A note goes to the gate with the result.
+- A proof has to be able to fail. A Proof command the plan marks \`red first\` (new
+  behavior, fast enough to run twice) runs once before the change, with the runner's
+  \`--red\`, and has to fail there; a proof that passes without the change proves nothing
+  about it. Guards that are green before and after (lint, typecheck, the existing
+  suite) carry no mark.
 - The developer grades the evidence at the step's \`Gate\`; the assistant presents it
   and records the decision. Recorded evidence is immutable: a new result is a new run.
 - Proofs read credentials from environment variables; the runner masks the secrets it
@@ -135,6 +148,7 @@ created: "{date}"
 phase: start
 design_involved: unknown
 route: full
+commit: per-step
 proof_definition: ""
 current_step: null
 steps: []
@@ -248,7 +262,15 @@ const PLAN_TEMPLATE = `# Plan — {ticket}
 
 ## Proof strategy
 
-<!-- How each step and the whole are proven. Project-defined; confirm with a human. -->
+<!-- How each step and the whole are proven. Project-defined; confirm with a human.
+     Which proofs run red first (new behavior, fast enough to run twice), and what
+     "fast" means for this ticket. -->
+
+## Evidence
+
+<!-- Baseline runs of the proof commands on the untouched tree, recorded by the proof
+     runner (target \`plan\`): each works with the flags the steps use, is green before
+     the ticket, and shows how long it takes. -->
 `;
 
 // Step template keeps <n>/<title> placeholders for /flow:plan to fill per step.
@@ -264,7 +286,10 @@ const STEP_TEMPLATE = `# Step <n> — <title>
 
 ## Proof
 
-<!-- The project-defined proof for THIS step: the exact commands, test names, expected output. -->
+<!-- The project-defined proof for THIS step: the exact commands, one per line, with the
+     exit code that passes when it is not 0. "red first" marks a command that proves new
+     behavior and is fast enough to run twice: it runs before the change too, and has to
+     fail there. Guards (lint, typecheck, the existing suite) carry no mark. -->
 
 ## Evidence
 

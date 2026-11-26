@@ -10,13 +10,14 @@
  *
  * Usage:
  *   node state.js <ticket-id> show [--json]
+ *   node state.js <ticket-id> diff <step-id>
  *   node state.js <ticket-id> phase <phase> [--reason <text>] [--note <text>]
- *   node state.js <ticket-id> set <design_involved|route|proof_definition|title> <value>
+ *   node state.js <ticket-id> set <design_involved|route|commit|proof_definition|title> <value>
  *   node state.js <ticket-id> add-step <id> <title>
  *   node state.js <ticket-id> remove-step <id> --reason <text>
  *   node state.js <ticket-id> step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]
  *   node state.js <ticket-id> log <text>
- *   node state.js <ticket-id> normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>]...
+ *   node state.js <ticket-id> normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>|commit=<c>]...
  *   (every command takes --root <dir>; default: the current directory)
  *
  * Examples:
@@ -28,8 +29,17 @@
  * Rules: phases move forward freely and between execute and verify; moving back is a
  * regression and needs --reason. A step moves one status forward at a time
  * (todo -> in-progress -> proven -> done); moving it back needs --reason. Only one step
- * is in progress at a time, and a step starts after the previous proven one is done
- * (committed), so each step's diff stands alone; starting anyway needs --reason.
+ * is in progress at a time.
+ *
+ * Commit: "per-step" (the default) has each proven step committed (done) before the next
+ * one starts; starting anyway needs --reason. "at-end", chosen by the developer, leaves
+ * the steps proven while the next ones are built, and one commit after the last gate
+ * makes them done.
+ *
+ * Snapshots: when a step starts, the script records the working tree as a git tree id
+ * (lib/snapshot.js), and again when the step is proven. `diff <step-id>` prints the
+ * step's own change from them: the files, and the `git diff <tree> <tree>` command. So a
+ * step's change stands alone whether or not the steps before it were committed.
  *
  * normalize rewrites a state.md an earlier version of the flow (or a hand edit) left in
  * another shape in the current format, for /flow:upgrade: canonical front matter, the
@@ -43,13 +53,15 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { snapshot, exists, changes } = require('./lib/snapshot');
 
 const PHASES = ['start', 'understand', 'design', 'explore', 'plan', 'execute', 'verify', 'ship', 'done'];
 const STATUSES = ['todo', 'in-progress', 'proven', 'done'];
 const DESIGN = ['unknown', 'true', 'false'];
 const ROUTES = ['full', 'short'];
-const KNOWN = ['ticket', 'title', 'created', 'phase', 'design_involved', 'route', 'proof_definition', 'current_step', 'steps'];
-const SETTABLE = { design_involved: DESIGN, route: ROUTES, proof_definition: null, title: null };
+const COMMITS = ['per-step', 'at-end'];
+const KNOWN = ['ticket', 'title', 'created', 'phase', 'design_involved', 'route', 'commit', 'proof_definition', 'current_step', 'steps'];
+const SETTABLE = { design_involved: DESIGN, route: ROUTES, commit: COMMITS, proof_definition: null, title: null };
 
 /** Today as YYYY-MM-DD (UTC), like the rest of .specs. */
 function today() {
@@ -137,7 +149,13 @@ function parseSteps(inline, block) {
             for (const [k, v] of pairs(line)) item[k] = v;
         }
     }
-    return steps.map((s) => ({ id: String(s.id ?? ''), title: String(s.title ?? ''), status: String(s.status ?? 'todo') }));
+    return steps.map((s) => ({
+        id: String(s.id ?? ''),
+        title: String(s.title ?? ''),
+        status: String(s.status ?? 'todo'),
+        ...(s.base ? { base: String(s.base) } : {}),
+        ...(s.head ? { head: String(s.head) } : {}),
+    }));
 }
 
 /** Parse state.md into its known fields, any extra front-matter keys, and the body. Lenient keeps unknown step statuses. */
@@ -179,13 +197,17 @@ function frontMatter(f, extra) {
         `phase: ${f.phase}`,
         `design_involved: ${f.design_involved ?? 'unknown'}`,
         `route: ${f.route ?? 'full'}`,
+        `commit: ${f.commit ?? 'per-step'}`,
         `proof_definition: ${quoted(f.proof_definition ?? '')}`,
         `current_step: ${quoted(f.current_step)}`,
     ];
     if (f.steps.length === 0) lines.push('steps: []');
     else {
         lines.push('steps:');
-        for (const s of f.steps) lines.push(`  - { id: ${quoted(s.id)}, title: ${quoted(s.title)}, status: ${s.status} }`);
+        for (const s of f.steps) {
+            const trees = ['base', 'head'].filter((key) => s[key]).map((key) => `, ${key}: ${quoted(s[key])}`).join('');
+            lines.push(`  - { id: ${quoted(s.id)}, title: ${quoted(s.title)}, status: ${s.status}${trees} }`);
+        }
     }
     return ['---', ...lines, ...extra, '---', ''].join('\n');
 }
@@ -240,6 +262,7 @@ function nextMove(f) {
     const todo = steps.find((s) => s.status === 'todo');
     const label = (s) => `step ${s.id} — ${s.title}`;
     const short = f.route === 'short';
+    const atEnd = f.commit === 'at-end';
     const explore = short
         ? { skill: '/flow:plan', why: 'map the small change and slice it (short route)' }
         : { skill: '/flow:explore', why: 'map the code and surface options' };
@@ -259,8 +282,13 @@ function nextMove(f) {
         case 'verify':
             if (steps.length === 0) return { skill: '/flow:plan', why: 'break the work into steps' };
             if (current) return { skill: '/flow:execute', why: `continue ${label(current)} (in progress)` };
-            if (proven) return { skill: '/flow:execute', why: `commit ${label(proven)}, then mark it done` };
+            if (proven && !atEnd) return { skill: '/flow:execute', why: `commit ${label(proven)}, then mark it done` };
             if (todo) return { skill: '/flow:execute', why: `build ${label(todo)}` };
+            // Committed at the end: the proven steps wait for the ticket's one commit.
+            if (proven) {
+                const waiting = steps.filter((s) => s.status === 'proven').map((s) => s.id);
+                return { skill: '/flow:execute', why: `commit the ticket's work (${waiting.length > 1 ? 'steps' : 'step'} ${waiting.join(', ')}, proven), then mark ${waiting.length > 1 ? 'them' : 'it'} done` };
+            }
             // Per-step reviews miss what spans steps, so a multi-step ticket is offered one review of the whole change.
             const reviewFirst = steps.length > 1 && f.phase !== 'verify'
                 ? ` (optional first: \`/flow:review${f.ticket ? ` ${f.ticket}` : ''}\`, one fresh review of the whole change)`
@@ -288,7 +316,7 @@ function summary(f, nav) {
     const next = nextMove(f);
     const out = [
         `${f.ticket} — ${f.title}`,
-        `Phase: ${f.phase} · design: ${f.design_involved ?? 'unknown'}${f.route === 'short' ? ' · route: short' : ''} · proof: ${f.proof_definition || '(not set)'}`,
+        `Phase: ${f.phase} · design: ${f.design_involved ?? 'unknown'}${f.route === 'short' ? ' · route: short' : ''}${f.commit === 'at-end' ? ' · commit: at-end' : ''} · proof: ${f.proof_definition || '(not set)'}`,
         `Steps (${done}/${f.steps.length} done):`,
         ...(f.steps.length ? f.steps.map((s) => `  ${s.id} ${s.status.padEnd(11)} ${s.title}${s.id === f.current_step ? '  <- current' : ''}`) : ['  (none)']),
         'Recent navigation:',
@@ -323,10 +351,10 @@ function syncStepFile(ticketDir, id, status) {
 function normalize(state, ticket, assignments) {
     const f = state.fields;
     const notes = [];
-    const fields = { phase: PHASES, design_involved: DESIGN, route: ROUTES };
+    const fields = { phase: PHASES, design_involved: DESIGN, route: ROUTES, commit: COMMITS };
     for (const arg of assignments) {
         const at = arg.indexOf('=');
-        if (at < 1) throw new Error(`"${arg}" is not an assignment (<step-id>=<status>, or phase=, design_involved=, route=)`);
+        if (at < 1) throw new Error(`"${arg}" is not an assignment (<step-id>=<status>, or phase=, design_involved=, route=, commit=)`);
         const [key, value] = [arg.slice(0, at), arg.slice(at + 1)];
         if (key in fields) {
             if (!fields[key].includes(value)) throw new Error(`${key} must be one of: ${fields[key].join(', ')}`);
@@ -344,6 +372,7 @@ function normalize(state, ticket, assignments) {
     if (!PHASES.includes(f.phase)) problems.push(`unknown phase "${f.phase}": pass phase=<${PHASES.join('|')}>`);
     if (f.design_involved != null && !DESIGN.includes(f.design_involved)) problems.push(`unknown design_involved "${f.design_involved}": pass design_involved=<${DESIGN.join('|')}>`);
     if (f.route != null && !ROUTES.includes(f.route)) problems.push(`unknown route "${f.route}": pass route=<${ROUTES.join('|')}>`);
+    if (f.commit != null && !COMMITS.includes(f.commit)) problems.push(`unknown commit "${f.commit}": pass commit=<${COMMITS.join('|')}>`);
     for (const s of f.steps) {
         if (!STATUSES.includes(s.status)) problems.push(`step ${s.id} has an unknown status "${s.status}": pass ${s.id}=<${STATUSES.join('|')}>`);
     }
@@ -358,6 +387,52 @@ function normalize(state, ticket, assignments) {
     if ((f.current_step ?? null) !== currentStep) notes.push(`current_step ${f.current_step ?? 'null'} → ${currentStep ?? 'null'}`);
     f.current_step = currentStep;
     return { text: frontMatter(f, state.extra) + updateBody(state.body, whereWeAre(f), []), notes };
+}
+
+/**
+ * Keep the step's snapshots of the working tree in step with its status: `base` when it
+ * starts, `head` when it is proven. Returns a note for the command's message, or ''.
+ */
+function trackSnapshots(step, from, to, root) {
+    if (to === 'todo') {
+        delete step.base;
+        delete step.head;
+        return '';
+    }
+    if (to === 'in-progress') {
+        delete step.head;
+        if (from !== 'todo') return '';
+        const tree = snapshot(root);
+        if (tree) step.base = tree;
+        else delete step.base;
+        return tree ? `start snapshot ${tree.slice(0, 10)}` : 'no start snapshot: not a git work tree';
+    }
+    if (to === 'proven' && step.base) {
+        const tree = snapshot(root);
+        if (tree) step.head = tree;
+        return tree ? `end snapshot ${tree.slice(0, 10)}` : '';
+    }
+    return '';
+}
+
+/** The step's own change, from its snapshots: the lines `diff <step-id>` prints. */
+function stepDiff(f, id, root) {
+    const step = f.steps.find((s) => s.id === id);
+    if (!step) throw new Error(`no step ${id}`);
+    if (step.status === 'todo') return [`[skip] step ${id} has not started, so it has no change yet`];
+    const fallback = 'its change is the uncommitted work (git status --porcelain, git diff HEAD, and each new file read in full)';
+    if (!step.base) return [`[skip] step ${id} has no start snapshot (it started before the flow took them, or outside a git work tree): ${fallback}`];
+    if (!exists(root, step.base)) return [`[skip] step ${id}'s start snapshot ${step.base.slice(0, 10)} is no longer in the repository: ${fallback}`];
+    const head = step.head && exists(root, step.head) ? step.head : snapshot(root);
+    if (!head) return [`[skip] the working tree could not be read through git: ${fallback}`];
+    const files = changes(root, step.base, head) || [];
+    const until = head === step.head ? 'the gate that approved it' : 'now';
+    return [
+        `Step ${id} — ${step.title}: ${files.length} file${files.length === 1 ? '' : 's'} changed between its start and ${until}`,
+        ...files.map((line) => `  ${line}`),
+        `Diff: git diff ${step.base} ${head}`,
+        `(two snapshots of the working tree, .specs/ left out: the change is this step's alone, whether or not earlier steps were committed)`,
+    ];
 }
 
 /** Apply one command. Returns { changed, message, entries } or throws on a rule violation. */
@@ -423,17 +498,19 @@ function apply(state, ticketDir, command, args, opts) {
             const other = f.steps.find((s) => s.id !== id && s.status === 'in-progress');
             if (to === 'in-progress' && other) throw new Error(`step ${other.id} is in progress; one step at a time`);
             const uncommitted = f.steps.find((s) => s.id !== id && s.status === 'proven');
-            if (to === 'in-progress' && uncommitted && !opts.reason) {
-                throw new Error(`step ${uncommitted.id} is proven but not done: commit it and mark it done first, or pass --reason to start step ${id} anyway`);
+            if (to === 'in-progress' && uncommitted && f.commit !== 'at-end' && !opts.reason) {
+                throw new Error(`step ${uncommitted.id} is proven but not done: commit it and mark it done first, pass --reason to start step ${id} anyway, or commit the whole ticket at the end (set commit at-end)`);
             }
             step.status = to;
+            const tree = trackSnapshots(step, from, to, opts.root);
             if (to === 'in-progress') f.current_step = id;
             else if (to === 'done' && f.current_step === id) f.current_step = null;
             else if (to === 'todo' && f.current_step === id) f.current_step = null;
             const synced = syncStepFile(ticketDir, id, to);
             const note = opts.reason || opts.note;
             entries.push(`step ${id}: ${from} → ${to}${delta < 0 ? ' (back)' : ''}${note ? `: ${note}` : ''}`);
-            return { changed: true, message: `step ${id}: ${from} → ${to}${synced ? ` (${synced.name} Status synced)` : ''}`, entries };
+            const details = [synced ? `${synced.name} Status synced` : '', tree].filter(Boolean).join('; ');
+            return { changed: true, message: `step ${id}: ${from} → ${to}${details ? ` (${details})` : ''}`, entries };
         }
         case 'normalize': {
             const { text, notes } = normalize(state, path.basename(ticketDir), args);
@@ -473,13 +550,14 @@ function usage() {
     console.log('Usage: node state.js <ticket-id> <command> [args] [--root <dir>]');
     console.log('\nCommands:');
     console.log('  show [--json]');
+    console.log('  diff <step-id>');
     console.log('  phase <phase> [--reason <text>] [--note <text>]');
-    console.log('  set <design_involved|route|proof_definition|title> <value>');
+    console.log('  set <design_involved|route|commit|proof_definition|title> <value>');
     console.log('  add-step <id> <title>');
     console.log('  remove-step <id> --reason <text>');
     console.log('  step <id> <todo|in-progress|proven|done> [--reason <text>] [--note <text>]');
     console.log('  log <text>');
-    console.log('  normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>]...');
+    console.log('  normalize [<step-id>=<status>|phase=<phase>|design_involved=<v>|route=<r>|commit=<c>]...');
 }
 
 function main() {
@@ -507,7 +585,12 @@ function main() {
             else console.log(summary(state.fields, nav));
             process.exit(0);
         }
-        const result = apply(state, ticketDir, opts.command, opts.args, opts);
+        if (opts.command === 'diff') {
+            if (!opts.args[0]) throw new Error('missing step id');
+            console.log(stepDiff(state.fields, opts.args[0], path.resolve(opts.root)).join('\n'));
+            process.exit(0);
+        }
+        const result = apply(state, ticketDir, opts.command, opts.args, { ...opts, root: path.resolve(opts.root) });
         if (result.changed) {
             const body = updateBody(state.body, whereWeAre(state.fields), result.entries);
             const text = frontMatter(state.fields, state.extra) + body;
@@ -525,4 +608,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { STATUSES, parseState, frontMatter, parseSteps, parseScalar, nextMove, apply, updateBody, navEntries, normalize, stepSpec };
+module.exports = { STATUSES, parseState, frontMatter, parseSteps, parseScalar, nextMove, apply, updateBody, navEntries, normalize, stepSpec, stepDiff };
