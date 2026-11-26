@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: start-proposes-profile
+description: In a project new to the flow, /flow:start scaffolds the ticket and proposes the project profile's first values from what the repository shows (test and lint scripts, base branch, PR template, commit convention), asks whether to commit per step or at the end, and writes nothing into the profile before the developer confirms.
+tags: [start, profile]
+context:
+  scaffold_script: scaffold.sh

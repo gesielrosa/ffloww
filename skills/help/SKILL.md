@@ -89,8 +89,10 @@ phase can resume. Per ticket: `state.md` (phase, steps, navigation log),
 shared contract is `.specs/CONVENTIONS.md`, which `/flow:start` keeps current until you
 edit it; `/flow:upgrade` carries your edits into a newer contract. `.specs/PROJECT.md`
 is the project profile, yours to edit: the proof commands with their flags and
-durations, where a fast proof ends, the commit policy, the PR format. `/flow:plan` reads
-it and adds what it measures, so the next ticket does not learn it again. `state.md`
+durations, where a fast proof ends, the commit policy, the PR format. While it is
+empty, `/flow:start` proposes its first values from what the repository shows, for you
+to confirm in one reply. `/flow:plan` reads it and adds what it measures, so the next
+ticket does not learn it again. `state.md`
 changes only through the flow's state script (`state.js`), which checks every phase and
 step move and writes the navigation log.
 

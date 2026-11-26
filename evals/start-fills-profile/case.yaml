@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: start-fills-profile
+description: When the developer answers the profile offer up front (take what the repository shows, one commit at the end), /flow:start writes the proof commands, base branch, PR template and commit convention into .specs/PROJECT.md, sets the policy to at-end there and on the ticket, and names the next command.
+tags: [start, profile]
+context:
+  scaffold_script: scaffold.sh

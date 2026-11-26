@@ -189,7 +189,13 @@ human converges and decides.**
   twice: the proof commands with their flags and durations, where a fast proof ends, the
   commit policy, the base branch and the PR format. `init_spec.js` writes it once, empty,
   and it is the project's from then on (never replaced, so it has no stamp and no
-  history). The scripts read only its settings, lines written `- Name: value`: a new
+  history). While it is still the empty template, the scaffolder ends by listing what
+  the repository shows (`hints()`: the remote's default branch, pull-request templates,
+  manifests and proof-like scripts, CI files, recent commit subjects), and `/flow:start`
+  proposes the first values from it in one message, writing only what the developer
+  confirms; a dated note under Notes ends the offer for a developer who declines. The
+  script lists and the session proposes: which script is the test, and the commit
+  policy, are not a script's call. The scripts read only its settings, lines written `- Name: value`: a new
   ticket takes its `Policy`. `/flow:plan` starts the proof strategy from it and writes
   back what the baseline measured; `/flow:ship` drafts the PR in its `Format`, else in a
   pull-request template the repository holds, else in the flow's own; `/flow:retro`
@@ -317,6 +323,6 @@ runner notes), per-step snapshots with a commit policy, the project profile, pro
 sized to the step, a PR draft in the project's format, evidence freshness (the tree
 each proof ran on, the base's drift), the criteria-and-proof table, gate outcomes with
 carried findings, the owner's decision summary, measured deciding claims, the port
-branch of the plan, the retro's feedback for the flow, and bash as the proof runner's
-shell. Next: a run of the runner on a real Windows machine (Git Bash found, output
+branch of the plan, the retro's feedback for the flow, bash as the proof runner's
+shell, and a profile whose first values `/flow:start` proposes from the repository. Next: a run of the runner on a real Windows machine (Git Bash found, output
 through pipes), which the tests here cannot give.

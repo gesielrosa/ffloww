@@ -48,7 +48,13 @@ contract, `/flow:start` warns and `/flow:upgrade` merges them into the current o
 ## `PROJECT.md` — the project profile
 
 What the flow has learned about the project that every ticket needs and none should
-learn twice. `/flow:start` writes it once, empty, and from then on it is yours:
+learn twice. `/flow:start` writes it once, empty, and from then on it is yours. While
+it is still empty, the scaffolder lists what the repository shows (the remote's default
+branch, a pull-request template, the manifests and their test, lint and build scripts,
+the CI files, recent commit subjects), and `/flow:start` proposes the profile's first
+values from that in one message, for you to confirm or correct in one reply; it writes
+only what you confirm. Say you would rather fill it as tickets go and the offer ends.
+`init_spec.js --profile-hints` prints that list anytime. The profile holds:
 
 - **Proof commands**: each command the flow uses as proof here, with the flags that
   make its output valid evidence and how long it takes, and `Fast ends at`, the longest

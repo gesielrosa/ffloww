@@ -35,7 +35,11 @@ Begins or resumes a ticket. Collects the ticket id (and an optional title) and r
 the bundled `init_spec.js` to scaffold `.specs/<ticket-id>/`, the repo-level
 `CONVENTIONS.md` and, once per project, the profile `PROJECT.md`. If the ticket already exists, it resumes: it reads `state.md` and
 points to the skill for the current phase. On a new ticket it suggests a ticket branch
-when you are on the default branch, before the first commit. It does no analysis itself.
+when you are on the default branch, before the first commit. While the project profile
+is still empty, it proposes its first values from what the repository shows (proof
+commands, base branch, PR template, commit convention) and asks the one thing only you
+know: a commit per step, or one at the end. One reply settles it, once per project. It
+does no analysis of the ticket itself.
 
 ## 1. Understand — `/flow:understand`
 

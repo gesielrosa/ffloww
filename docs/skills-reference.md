@@ -19,7 +19,9 @@ run git that writes.
   once per project, the profile `PROJECT.md`;
   orients from `state.md`. On an existing ticket it resumes and points to the current
   phase; on a new one it suggests a ticket branch when you are on the default branch.
-- **Writes:** the `.specs/` scaffold.
+  While the profile is still empty, it proposes its first values from what the
+  repository shows, for you to confirm in one reply.
+- **Writes:** the `.specs/` scaffold; the profile's values you confirm.
 - **Hands off to:** `/flow:understand` (new ticket) or the current-phase skill (resume).
 
 ## `/flow:understand` — phase 1

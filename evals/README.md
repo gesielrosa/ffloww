@@ -8,6 +8,8 @@ the files left behind.
 | Case | Checks |
 |---|---|
 | `start-names-next-command` | `/flow:start` scaffolds `.specs/`, stays in `start`, and names `/flow:understand <id>` |
+| `start-proposes-profile` | in a project new to the flow, `/flow:start` proposes the profile's first values from what the repository shows (test and lint scripts, base branch, PR template, commit convention), asks whether to commit per step or at the end, and writes nothing into the profile before the developer confirms |
+| `start-fills-profile` | when the developer answers that offer up front (take what the repository shows, one commit at the end), `/flow:start` writes those values into `.specs/PROJECT.md`, sets the policy to `at-end` there and on the ticket, and names the next command |
 | `status-names-next-command` | a plain "where are we?" reaches the status report, read-only, with the next command |
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |

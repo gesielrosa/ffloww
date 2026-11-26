@@ -69,8 +69,9 @@ takes no ticket id.
 
 ## Handoff
 
-Summarize what changed, file by file. When `.specs/` is tracked by git, offer a commit
-message draft; committing is the developer's. Then, for each ticket in progress, name
-the next command from the `Next:` line of
+Summarize what changed, file by file. When the upgrade wrote an empty project profile,
+say that the next `/flow:start` proposes its values from the repository. When `.specs/`
+is tracked by git, offer a commit message draft; committing is the developer's. Then,
+for each ticket in progress, name the next command from the `Next:` line of
 `node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> show --root "<project-root>"`;
 the developer runs it.

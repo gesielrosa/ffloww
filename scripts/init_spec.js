@@ -18,6 +18,7 @@
  * Usage:
  *   node init_spec.js <ticket-id> [--root <dir>] [--title <text>]
  *   node init_spec.js --print-conventions
+ *   node init_spec.js --profile-hints [--root <dir>]
  *
  * Examples:
  *   node init_spec.js AB-1234
@@ -30,13 +31,15 @@
  * file is kept as is; when it was edited on an earlier contract, a warning points to
  * /flow:upgrade, which merges the edits into the current one (--print-conventions prints
  * it). PROJECT.md is written when missing and never replaced; a new ticket takes its
- * commit policy from it.
+ * commit policy from it. While nobody has filled it, the run ends with what the
+ * repository shows that its first values can be proposed from (--profile-hints prints
+ * that alone).
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { digest, template, shipped, nearest } = require('./lib/history');
-const { PROFILE_TEMPLATE, profilePath, readProfile } = require('./lib/profile');
+const { PROFILE_TEMPLATE, profilePath, readProfile, untouched, hints } = require('./lib/profile');
 
 /** Replace {key} placeholders in a template string. */
 function fill(template, vars) {
@@ -439,6 +442,13 @@ function ensureProfile(root) {
     if (writeFile(profilePath(root), PROFILE_TEMPLATE, { overwrite: false })) console.log('[ok] Created .specs/PROJECT.md, the project profile');
 }
 
+/** What the repository shows for the profile's first values: the block /flow:start proposes them from. */
+function printProfileHints(root, heading) {
+    const found = hints(root);
+    console.log(heading);
+    console.log(found.length ? found.join('\n') : '   (nothing it could read: no remote, manifest, pull-request template or commit yet)');
+}
+
 /** Scaffold a ticket folder. Returns the ticket dir, or null on error/no-op. */
 function initSpec(ticket, root, title) {
     const specsRoot = path.resolve(root, '.specs');
@@ -472,12 +482,13 @@ function initSpec(ticket, root, title) {
 }
 
 function parseArgs(argv) {
-    const out = { ticket: null, root: process.cwd(), title: '', printConventions: false };
+    const out = { ticket: null, root: process.cwd(), title: '', printConventions: false, profileHints: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === '--root') out.root = argv[++i];
         else if (a === '--title') out.title = argv[++i];
         else if (a === '--print-conventions') out.printConventions = true;
+        else if (a === '--profile-hints') out.profileHints = true;
         else if (!a.startsWith('--') && out.ticket === null) out.ticket = a;
     }
     return out;
@@ -486,16 +497,21 @@ function parseArgs(argv) {
 function usage() {
     console.log('Usage: node init_spec.js <ticket-id> [--root <dir>] [--title <text>]');
     console.log('       node init_spec.js --print-conventions');
+    console.log('       node init_spec.js --profile-hints [--root <dir>]');
     console.log('\nExamples:');
     console.log('  node init_spec.js AB-1234');
     console.log('  node init_spec.js AB-1234 --root /path/to/project --title "Add export button"');
 }
 
 function main() {
-    const { ticket, root, title, printConventions } = parseArgs(process.argv.slice(2));
+    const { ticket, root, title, printConventions, profileHints } = parseArgs(process.argv.slice(2));
 
     if (printConventions) {
         process.stdout.write(CONVENTIONS_TEMPLATE);
+        process.exit(0);
+    }
+    if (profileHints) {
+        printProfileHints(path.resolve(root), '[profile] Found in this repository, for the project profile (.specs/PROJECT.md):');
         process.exit(0);
     }
     if (!ticket) {
@@ -512,6 +528,9 @@ function main() {
     console.log();
 
     initSpec(ticket, root, title);
+    if (untouched(path.resolve(root))) {
+        printProfileHints(path.resolve(root), '\n[profile] .specs/PROJECT.md is still empty. Found in this repository, to propose its first values from:');
+    }
 
     console.log(`\nNext: /flow:understand ${ticket} — capture the problem and acceptance criteria.`);
     // Exit 0 even on no-op (re-run) — only hard errors above exit non-zero.
