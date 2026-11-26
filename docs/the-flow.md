@@ -111,6 +111,12 @@ The convergent phase. You architect, it types.
   run) runs once for the ticket, at verify, or in the last step on the short route; a
   runtime tail (a build, then a probe or an end-to-end run with its controls) becomes
   a step of its own, built inline. You say where fast ends.
+- Writes **Criteria and proof** in `plan.md`: one row per acceptance criterion, with
+  how it is shown (the running product, a test, read off the code, checked by you), the
+  step that proves it and the command. A runtime proof is planned only after the code
+  shows the environment the criterion names can reach the change; a criterion the
+  ticket will not show is a `gap` with its reason, which you accept or not when you
+  approve the plan.
 - Marks the proofs that run **red first**: a proof of new behavior that is fast enough
   to run twice (you say what fast is) runs before the change too, where it has to fail.
   Guards (lint, typecheck, the existing suite), mechanical steps and slow proofs run
@@ -158,6 +164,12 @@ Builds one step, proves it, and stops at the human gate.
 Proves work meets its requirements — it **proves, it does not fix**.
 
 - Scope: one step, or the whole ticket against its acceptance criteria.
+- For the whole ticket it **checks the base first**: it fetches the base branch and
+  reads `state.js fresh`. Behind the base with files both sides changed, or a merge
+  that would conflict, it stops before any proof runs and tells you; the rebase or
+  merge is yours, and the proofs run on its result instead of twice.
+- Takes each criterion's command from the plan's **Criteria and proof** table and runs
+  it as written; a gap is listed as a gap.
 - Runs the proof without changing production code, through `run_proof.js`; records raw
   evidence per step, or per acceptance criterion in `verification.md`. The slow runs the
   plan left for the whole ticket (the suite, a build, an end-to-end run) run here, once.
@@ -167,7 +179,13 @@ Proves work meets its requirements — it **proves, it does not fix**.
 
 Prepares to ship. It **suggests, it does not execute** — no `git`, no branches, no PRs.
 
-- Confirms every step is `done` and the acceptance criteria are met with evidence.
+- Confirms every step is `done` and the acceptance criteria are met with evidence, or
+  are gaps you accepted at the plan.
+- **Checks that the proofs still describe what ships**: it fetches the base and reads
+  `state.js fresh`. Code that changed after its proof is named, file by file, with the
+  recommendation to verify again; a branch behind its base is said with the time of the
+  fetch, and when the two overlap, the ship sequence starts with your rebase or merge
+  and the proofs run again before the push.
 - Assembles a PR/MR draft **from the specs**, for a reviewer who sees only the PR, into
   `.specs/<ticket-id>/pr.md`. The project's format decides the sections and the length:
   the `Format` the profile names, else a pull-request template in the repository. With

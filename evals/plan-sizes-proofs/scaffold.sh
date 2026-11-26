@@ -177,6 +177,11 @@ cat > .specs/PRF-1/plan.md <<'PLAN'
 
 ## Steps
 
+## Criteria and proof
+
+| # | Criterion | Level | Step | Proof |
+|---|-----------|-------|------|-------|
+
 ## Proof strategy
 
 ## Evidence

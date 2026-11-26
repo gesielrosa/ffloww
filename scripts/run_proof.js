@@ -25,6 +25,8 @@
  *                    proof that passes without the change cannot fail on it.
  * The entry also notes what can hide a verdict behind the exit code: a command chained
  * with ";", "||" or a pipe, a command negated with "!", a command the shell did not find.
+ * In a git work tree it also records the tree the proof ran on (lib/snapshot.js), so a
+ * later reader can tell whether the code changed after it was proven.
  *
  * Usage:
  *   node run_proof.js <ticket-id> <step-id|ticket|plan> --cmd "<command>" [--expect <code>] [--red]
@@ -47,6 +49,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { headings, runHeading } = require('./lib/markdown');
 const { redact } = require('./lib/redact');
+const { snapshot, head } = require('./lib/snapshot');
 
 const DEFAULT_TAIL = 40;
 
@@ -282,6 +285,9 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = nu
     }
     const finished = new Date();
     const seconds = ((finished - started) / 1000).toFixed(1);
+    // The working tree as the run left it, .specs/ and ignored files aside: what this evidence is about.
+    const tree = snapshot(path.resolve(root));
+    const commit = tree ? head(path.resolve(root)) : null;
 
     const masked = redact(fs.readFileSync(logFile).subarray(Buffer.byteLength(header, 'utf8')).toString('utf8'));
     if (masked.count > 0) fs.writeFileSync(logFile, header + masked.text, 'utf8');
@@ -332,6 +338,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = nu
         ...(expected ? [`- Expected: ${expected.text}`] : []),
         ...notes.map((note) => `- Note: ${note.text}`),
         `- Duration: ${seconds}s`,
+        ...(tree ? [`- Tree: ${inlineCode(tree)}${commit ? ` (HEAD ${inlineCode(commit)})` : ''}`] : []),
         `- Log: ${inlineCode(logRel)} (${plural(lines.length, 'line')})`,
         ...(redacted > 0 ? [`- Redacted: ${plural(redacted, 'secret')}`] : []),
         '',
@@ -341,7 +348,7 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = nu
     ];
     appendEvidence(found.file, entry);
 
-    return { specFile: found.file, logFile, exit, expected, notes, seconds, total: lines.length, excerpt, command: shown.text, redacted };
+    return { specFile: found.file, logFile, exit, expected, notes, seconds, tree, total: lines.length, excerpt, command: shown.text, redacted };
 }
 
 function parseArgs(argv) {

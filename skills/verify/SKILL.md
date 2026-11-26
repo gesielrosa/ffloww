@@ -24,7 +24,22 @@ steps are done.
 1. **Scope the verification**: one step (by id), or the whole ticket (all done steps,
    checked against the acceptance criteria). Ask the developer when it is unclear.
 
-2. **Run the proof through the runner**, per `proof_definition` and the step's **Proof**
+2. **Check the base first** (whole ticket). A proof describes the tree it ran on, so a
+   branch behind its base is brought up to date before the proofs, not after them.
+   Fetch the base (`git fetch <remote> <branch>`: the profile's `Base branch`, else the
+   remote's default), then read the report, from the project root:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> fresh
+   ```
+
+   `Behind: 0`, or behind with no `Overlap`: go on, and say the count at the gate.
+   Behind with an `Overlap` or a `Merge` conflict: stop before any proof runs and tell
+   the developer the count and the files; the rebase or merge is theirs, and the
+   proofs run on its result. A fetch that fails leaves the base as of the last one:
+   say when that was.
+
+3. **Run the proof through the runner**, per `proof_definition` and the step's **Proof**
    section:
    - One step: the runner appends to the step's **Evidence** section.
 
@@ -33,7 +48,11 @@ steps are done.
      ```
 
    - Whole ticket: one entry per acceptance criterion, in the ticket's
-     `verification.md` (the runner creates it).
+     `verification.md` (the runner creates it). The plan's **Criteria and proof**
+     table says what proves each one: run its command as written. A command changed
+     here (a wider pattern, another filter) proves something else, so change one
+     only for a reason the record gives, and say so at the gate. A plan without the
+     table gets its rows from the steps' Proof sections first.
 
      ```bash
      node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> ticket --label "AC <n>: <criterion>" --root "<project-root>" --tail 15 --cmd "<command>"
@@ -48,19 +67,21 @@ steps are done.
    `evidence/` and records the exact command, its exit code, the last lines, and a
    `Note` for a result the exit code may not carry, which goes to the gate with it.
    Give the Bash call a timeout that fits the proof; read the log when you need more
-   than the last lines. A criterion no command proves (a
-   screenshot, a manual check) gets an entry by hand with the screenshot path, or is
-   listed as needing the developer: every acceptance criterion ends up with evidence or
-   a named gap.
+   than the last lines. A criterion no command proves (`manual` or `construction` in
+   the table: a screenshot, a check by reading) gets an entry by hand saying what was
+   checked and where, or is listed as needing the developer; a `gap` is listed as one,
+   with the plan's reason. Every acceptance criterion ends up with evidence or a named
+   gap.
    - A failing proof ends the run: report it and recommend regressing to `/flow:execute`
      to fix the step (log it with `state.js <ticket-id> log "<what failed>"`).
 
-3. **Open the human gate.** Present the evidence and ask the developer to validate it.
+4. **Open the human gate.** Present the evidence, criterion by criterion, with the gaps
+   and what the freshness report said, and ask the developer to validate it.
    Record their decision (who + when) in the **Gate** section of the step or of
    `verification.md`. On approval of a step, move it forward with
    `state.js <ticket-id> step <step-id> proven`.
 
-4. **Update state** through the state script, from the project root. A whole-ticket
+5. **Update state** through the state script, from the project root. A whole-ticket
    check is the verify phase; a single step leaves the phase as it is:
 
    ```bash

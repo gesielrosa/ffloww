@@ -42,7 +42,8 @@ test('git: writes are denied in subagents', () => {
     }
 });
 
-test('state.js: subagents read the state (show, diff); changing it is the main session\'s', () => {
+test('state.js: subagents read the state (show, diff, fresh); changing it is the main session\'s', () => {
+    assert.equal(bash('node "/p/scripts/state.js" AB-1 fresh --root "/x"'), null);
     assert.equal(bash('node "/p/scripts/state.js" AB-1 show'), null);
     assert.equal(bash('node /p/scripts/state.js AB-1 show --json'), null);
     assert.equal(bash('node /p/scripts/state.js AB-1 --root "/x" show'), null);

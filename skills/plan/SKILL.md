@@ -97,8 +97,14 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 
    Then fill `plan.md` with Edit, so the baseline entries the runner recorded stay as
    they are: the approach in a paragraph, the ordered steps with the acceptance
-   criteria each one proves, and the proof strategy, with the slow runs left for
-   verify.
+   criteria each one proves, the proof strategy with the slow runs left for verify,
+   and **Criteria and proof**, one row per acceptance criterion: the level of its
+   proof (`runtime`: the running product; `test`; `construction`: read off the code;
+   `manual`: the developer checks), the step that proves it, and the command.
+   `/flow:verify` runs that table as written. Before a row plans a runtime proof, read
+   from the code that the environment or path the criterion names reaches the change
+   (a flag, a hidden entry, a platform with no target). A criterion this ticket will
+   not show, or not at the level it asks for, is a `gap` row with the reason.
 
 4. **Choose who builds each step.** Set each step's **Executor** line to one of:
    - `delegate`: a subagent on Sonnet builds it, so the spec must be buildable without a
@@ -132,8 +138,10 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 Present the plan for the developer's approval: the decision, the proof strategy with
 its baseline durations and the slow runs left for verify, and the ordered steps with
 who builds each, the criteria each proves, and the proofs marked `red first`, any of
-which the developer can change. Say how the steps are committed (one by one, unless
-the developer chose one commit at the end), and what you added to the profile. Ask whether the granularity is right: a step to split or merge, a step that
+which the developer can change. Show the criteria table and name each `gap`: a gap
+stands once the developer accepts it here. Say how the steps are committed (one by
+one, unless the developer chose one commit at the end), and what you added to the
+profile. Ask whether the granularity is right: a step to split or merge, a step that
 cannot be proven on its own.
 Once approved, name the next command from the `Next:` line of the state output, and
 suggest `/clear` before it: the plan is on disk. When the

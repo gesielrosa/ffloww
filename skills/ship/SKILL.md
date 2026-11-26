@@ -20,9 +20,31 @@ was run.
 
 ## Steps
 
-1. **Confirm readiness.** Every step is `done` and each acceptance criterion is met with
-   recorded evidence. When something is missing, stop and name the command that closes
-   the gap (`/flow:execute` or `/flow:verify`): only proven, approved work ships.
+1. **Confirm readiness.** Every step is `done`, and each acceptance criterion is met
+   with recorded evidence or is a `gap` the developer accepted in the plan's criteria
+   table. When something is missing, stop and name the command that closes the gap
+   (`/flow:execute` or `/flow:verify`): only proven, approved work ships.
+
+   Then check that the proofs still describe what ships. Fetch the base
+   (`git fetch <remote> <branch>`: the profile's `Base branch`, else the remote's
+   default) and read the report, from the project root:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/scripts/state.js" <ticket-id> fresh
+   ```
+
+   - `Proven:` on an earlier tree, with the files under `Changed since:`: the code
+     changed after it was proven. Stop here, name the files, and ask the developer
+     whether to prove again first (`/flow:verify`, for the criteria those files touch)
+     or to ship it as it is; the draft waits for the answer.
+   - `Proven: unknown` (proofs recorded before the runner kept their tree, or outside
+     git): go on, and say in the handoff that the report could not tell.
+   - `Behind:` above 0: say it with the time of the fetch, since it holds only until
+     the base moves again. With an `Overlap` or a `Merge` conflict, the ship sequence
+     starts with the developer's rebase or merge, and the proofs run again on its
+     result before the push.
+
+   Log what it said: `state.js <ticket-id> log "ship: <behind count> behind <base> at <time>; <merge result>; <proofs current or not>"`.
 
 2. **Assemble the PR/MR draft** from the specs alone, for a reviewer who sees only the
    PR. The project's format decides its sections, order and length, and the specs fill
@@ -45,7 +67,8 @@ was run.
 
    In any format, a claim of proof carries the command and its result, since `.specs/`
    may stay out of the repository and a log path proves nothing to the reviewer; a
-   format with no room for it gets one line saying where the evidence is kept. Save the
+   format with no room for it gets one line saying where the evidence is kept. A
+   criterion left as a `gap` is named as one. Save the
    draft to `.specs/<ticket-id>/pr.md` and show it to the developer. When they reshape
    it in a way they want every time, offer to record that shape as the profile's
    `Format`.

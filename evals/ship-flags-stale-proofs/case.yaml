@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ship-flags-stale-proofs
+description: On a verified ticket whose code changed after the verify gate, /flow:ship reads the freshness report, names the file that changed since the proofs ran, and stops to ask the developer whether to prove again or ship as it is, before any draft.
+tags: [ship, freshness]
+context:
+  scaffold_script: scaffold.sh

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: verify-stops-behind-base
+description: On a built ticket whose base moved on the remote, with the same file changed on both sides, /flow:verify fetches the base, reads the freshness report and stops before running any proof, leaving the rebase or merge to the developer.
+tags: [verify, freshness]
+context:
+  scaffold_script: scaffold.sh

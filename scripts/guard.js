@@ -16,7 +16,7 @@
  *
  *   In the flow's subagents (agent_type "flow:<name>"):
  *     - git commands that write — only read-only git (status, diff, log, ...) runs;
- *     - state.js commands that change the state (show and diff, which read it, run);
+ *     - state.js commands that change the state (show, diff and fresh, which read it, run);
  *     - changes to a step's Executor line or its Gate section.
  *
  * The main session's git rule stays an instruction, not a block: plugin hooks run in
@@ -72,7 +72,7 @@ function gitCalls(command) {
     return calls;
 }
 
-/** True when the command runs state.js with a command other than `show` or `diff`, which only read. */
+/** True when the command runs state.js with a command other than `show`, `diff` or `fresh`, which only read. */
 function mutatingState(command) {
     const at = command.search(/state\.js["']?(\s|$)/);
     if (at === -1) return false;
@@ -82,7 +82,7 @@ function mutatingState(command) {
         if (['--root', '--reason', '--note'].includes(tokens[i])) i++;
         else if (tokens[i] && !tokens[i].startsWith('--')) words.push(tokens[i]);
     }
-    return words.length >= 2 && !['show', 'diff'].includes(words[1]);
+    return words.length >= 2 && !['show', 'diff', 'fresh'].includes(words[1]);
 }
 
 function stateCommand() {
@@ -164,7 +164,7 @@ function check(event) {
     }
     if (where.rel === 'state.md') {
         return `ffloww guard: state.md changes only through the flow's state script: ${stateCommand()} ` +
-            '(show | diff | phase | set | add-step | remove-step | step | log). It validates transitions and writes the navigation log.';
+            '(show | diff | fresh | phase | set | add-step | remove-step | step | log). It validates transitions and writes the navigation log.';
     }
 
     const isStep = /^steps\/[^/]+\.md$/.test(where.rel) && path.basename(where.rel) !== '_TEMPLATE.md';

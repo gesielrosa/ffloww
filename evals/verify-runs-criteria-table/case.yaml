@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: verify-runs-criteria-table
+description: On a built ticket up to date with its base, /flow:verify checks the base, runs each criterion's command from the plan's criteria table as written, lists the accepted gap as a gap, and stops at the gate.
+tags: [verify, freshness]
+context:
+  scaffold_script: scaffold.sh

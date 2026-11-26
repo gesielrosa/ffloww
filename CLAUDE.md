@@ -91,7 +91,7 @@ human converges and decides.**
   self-contained specs, so they hand off with a `/clear` suggestion. The rule lives in
   `CONVENTIONS.md`; each handoff states its own case.
 - **State changes through a script, never by hand.** `scripts/state.js` (`show`, `diff`,
-  `phase`, `set`, `add-step`, `remove-step`, `step`, `log`, `normalize`) is the only writer of
+  `fresh`, `phase`, `set`, `add-step`, `remove-step`, `step`, `log`, `normalize`) is the only writer of
   `state.md`: canonical YAML front matter, phase moves forward (back only with
   `--reason`, logged as a regression; execute ⇄ verify is free), steps move one status
   at a time with one in progress. Step specs' Status lines stay in sync, the navigation
@@ -129,6 +129,26 @@ human converges and decides.**
   proof command once on the untouched tree (the baseline, target `plan`, recorded in
   `plan.md`) and marks `red first` only the proofs of new behavior that are fast enough
   to run twice, the developer saying what fast is; guards and slow proofs run once.
+- **Evidence is about a tree.** A ticket's proofs ran on a base that was 48 commits behind
+  by the time it shipped, 99 a day later, and its code changed after the verify gate with
+  only a partial re-proof. So `run_proof.js` stamps each entry with the working tree the
+  proof ran on (the same snapshots, about a third of a second per run), and
+  `state.js fresh` (`scripts/lib/freshness.js`, read-only) reports the base as of the
+  last fetch (the profile's `Base branch`, else the remote's default): commits behind,
+  files changed on both sides, and a `git merge-tree` dry run on the work as it is,
+  committed or not; then which whole-ticket proofs ran on the tree as it is now and
+  what changed since the others. `/flow:verify` reads it before the whole-ticket proofs,
+  so a rebase comes before them and not after; `/flow:ship` reads it before the draft.
+  The flow fetches the base and reports; rebasing, merging and proving again stay the
+  developer's call.
+- **Every acceptance criterion has a proof or a named gap.** `plan.md` holds a table,
+  **Criteria and proof**: per criterion, the level of its proof (`runtime`, `test`,
+  `construction`, `manual`), the step and the command, or `gap` with the reason, which
+  the developer accepts at plan approval. Real tickets planned an end-to-end run for an
+  environment that could not reach the feature, closed verify with gaps nobody had
+  chosen, and failed a verify on a command wider than the step's own. So the plan reads
+  reachability from the code before it plans a runtime proof, and `/flow:verify` runs
+  the table as written.
 - **What a project teaches the flow is kept once.** `.specs/PROJECT.md`, the project
   profile (`scripts/lib/profile.js`), holds what every ticket needs and none should learn
   twice: the proof commands with their flags and durations, where a fast proof ends, the
@@ -170,8 +190,8 @@ human converges and decides.**
   `### Run` entry (in a step spec, `verification.md` or `plan.md`), hand edits to
   `state.md`, and hand changes to a step's Status line.
   In the flow's subagents (hook input `agent_type` = `flow:<name>`) it also denies git
-  commands that write, `state.js` commands that change the state (`show` and `diff`
-  only read it), and changes to a step's Executor line or Gate section. The main session's git rule stays an
+  commands that write, `state.js` commands that change the state (`show`, `diff` and
+  `fresh` only read it), and changes to a step's Executor line or Gate section. The main session's git rule stays an
   instruction, because plugin hooks run in every session, flow or not. The guard fails
   open on bad input or internal errors.
 - **`/flow:review` works in any git project, on any host.** A utility outside the
@@ -202,6 +222,7 @@ ffloww/
     lib/redact.js          # secret masking for run_proof.js
     lib/snapshot.js        # working-tree snapshots as git tree ids, for state.js
     lib/profile.js         # the project profile (.specs/PROJECT.md): its template and settings
+    lib/freshness.js       # the base's drift and the proofs' trees, for state.js fresh
     lib/history.js         # recognizes the texts earlier versions wrote (init_spec.js, upgrade.js)
     history/               # every CONVENTIONS.md body and step template shipped, named by digest
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
@@ -257,6 +278,6 @@ independent diff reviewer before the gate, `/flow:upgrade` for records earlier
 versions wrote, `/flow:review` for any change, in any project, and, from three real
 tickets' retros, proofs that have to be able to fail (baseline, `red first`, `--expect`,
 runner notes), per-step snapshots with a commit policy, the project profile, proofs
-sized to the step, and a PR draft in the project's format. Next: the rest of those
-retros' feedback (evidence freshness against the base branch, the runner's shell on
-Windows).
+sized to the step, a PR draft in the project's format, evidence freshness (the tree
+each proof ran on, the base's drift), and the criteria-and-proof table. Next: the rest
+of those retros' feedback (the runner's shell on Windows).

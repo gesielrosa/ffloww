@@ -68,7 +68,9 @@ run git that writes.
   untouched tree (the baseline, recorded in `plan.md`; a slow run the profile already
   times is taken from there); slices the work into vertical, provable steps (tracer
   bullets), each proof sized to its step, with the slow runs left for verify and a
-  runtime tail as a step of its own; marks who
+  runtime tail as a step of its own; writes the criteria table (each acceptance
+  criterion with the level of its proof, its step and its command, or a `gap` with the
+  reason); marks who
   builds each (`delegate` to a Sonnet subagent, `delegate-light` to a Haiku one, or
   `inline`) and which proofs run `red first` (new behavior, fast enough to run twice).
   For a bug, the fixing step's proof is the reproduction, run red before the fix and
@@ -103,7 +105,11 @@ run git that writes.
 ## `/flow:verify` — phase 6
 
 - **When:** to prove a step or the whole ticket.
-- **Does:** runs the proof without changing code, through the plugin's `run_proof.js`,
+- **Does:** for the whole ticket, first fetches the base and reads `state.js fresh`:
+  behind it with files both sides changed, or a merge that would conflict, it stops
+  before any proof and tells you. Then runs the proof without changing code (each
+  criterion's command from the plan's criteria table, as written), through the
+  plugin's `run_proof.js`,
   which records raw evidence (per step, or per acceptance criterion in
   `verification.md` for a whole-ticket check, where the slow runs the plan left for the
   ticket run once); opens the human gate. **Proves, does not fix** — on failure it
@@ -118,8 +124,9 @@ run git that writes.
 - **Does:** assembles a PR/MR draft from the specs, for a reviewer who sees only the PR,
   in the project's format (the profile's `Format`, else a pull-request template in the
   repository), or in the flow's own (the smallest view of the change, each acceptance
-  criterion with its proof inline, merge danger); suggests the ship sequence (branch,
-  push, open PR). **Suggests, never
+  criterion with its proof inline, merge danger); before the draft, fetches the base
+  and reads `state.js fresh`, naming code that changed after its proof and a branch
+  behind its base; suggests the ship sequence (branch, push, open PR). **Suggests, never
   executes** — no git, no assumptions about your VCS host or commit conventions.
 - **Writes:** `pr.md`; sets `phase: ship` (then `done` once you confirm shipped).
 - **Hands off to:** you.

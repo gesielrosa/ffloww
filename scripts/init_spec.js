@@ -93,8 +93,8 @@ advises on the session:
 ## State
 
 \`state.md\` changes only through the flow's state script (\`state.js\`: \`show\`, \`diff\`,
-\`phase\`, \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin blocks hand
-edits. Phases move forward freely; moving back is a regression and needs a reason,
+\`fresh\`, \`phase\`, \`set\`, \`add-step\`, \`remove-step\`, \`step\`, \`log\`); the plugin
+blocks hand edits. Phases move forward freely; moving back is a regression and needs a reason,
 recorded in \`decisions.md\` too. A step moves \`todo → in-progress → proven\` (approved at
 its gate) \`→ done\` (committed), one at a time. Before the gate, a step's proof passes
 or fails; only the developer's approval makes it \`proven\`.
@@ -139,6 +139,15 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
   enough to run every time. A slow run (the whole suite of a large project, a build, an
   end-to-end run) runs once for the ticket: at \`/flow:verify\`, or in the last step on
   the short route. Where fast ends is the developer's line, kept in the profile.
+- Every acceptance criterion has a proof or a named gap. The plan's **Criteria and
+  proof** table says how each one is shown (\`runtime\`, \`test\`, \`construction\`,
+  \`manual\`) and by which step's command; \`/flow:verify\` runs it as written, and a
+  \`gap\` is the developer's to accept.
+- Evidence is about a tree. The runner records the working tree each proof ran on, and
+  \`state.js fresh\` says how far the branch is behind its base, whether the two would
+  merge, and which proofs predate the tree as it is now. \`/flow:verify\` reads it
+  before the whole-ticket proofs and \`/flow:ship\` before the draft: work that changed
+  after its proof, or whose base moved under it, is said at the gate.
 - The developer grades the evidence at the step's \`Gate\`; the assistant presents it
   and records the decision. Recorded evidence is immutable: a new result is a new run.
 - Proofs read credentials from environment variables; the runner masks the secrets it
@@ -146,8 +155,8 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
 
 ## Git & PR
 
-Read git freely (\`status\`, \`diff\`, \`log\`). Commits, branches, pushes and PRs are the
-developer's: \`/flow:execute\` drafts commit messages and \`/flow:ship\` a PR/MR draft, in
+Read git freely (\`status\`, \`diff\`, \`log\`, a \`fetch\` of the base before it is
+compared). Commits, branches, merges, pushes and PRs are the developer's: \`/flow:execute\` drafts commit messages and \`/flow:ship\` a PR/MR draft, in
 the developer's conventions, for whatever VCS host they use.
 
 Principles: give it context · explore before build · you architect, it types · small
@@ -272,6 +281,17 @@ const PLAN_TEMPLATE = `# Plan — {ticket}
 
 1.
 2.
+
+## Criteria and proof
+
+<!-- One row per acceptance criterion: how it is shown, and where. Level: runtime (the
+     running product: the command, the endpoint, the screen), test (a unit or integration
+     test), construction (read off the code: a type, a config, a diff), manual (the
+     developer checks it), or gap (not shown in this ticket: say why; the developer
+     accepts it). /flow:verify runs this table as written. -->
+
+| # | Criterion | Level | Step | Proof |
+|---|-----------|-------|------|-------|
 
 ## Proof strategy
 

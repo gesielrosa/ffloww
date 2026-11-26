@@ -111,6 +111,7 @@ node state.js AB-1234 phase explore --reason "missed a caller"   # back = regres
 node state.js AB-1234 add-step 03 "Add the download link"
 node state.js AB-1234 step 03 in-progress  # one status at a time, one step in progress
 node state.js AB-1234 diff 03              # what step 03 changed, and the git diff for it
+node state.js AB-1234 fresh                # how far behind the base, and which proofs predate the code
 node state.js AB-1234 set commit at-end    # one commit for the ticket, after the last gate
 node state.js AB-1234 normalize 02=todo     # an older state.md, in the current format (/flow:upgrade)
 ```
@@ -125,6 +126,27 @@ out. `diff <step-id>` prints the files between the two and the `git diff <tree> 
 command, new files included: the step's change alone, whether or not the steps before it
 were committed. Outside git, or for a step started before the flow took snapshots, it
 says so and the change is the uncommitted work.
+
+`fresh` reads git and the evidence, and changes nothing. It reports the base (the
+profile's `Base branch`, else the remote's default) as of the last fetch: how many
+commits behind it the branch is, the files both sides changed, and whether the two
+would merge, from a dry run on the working tree as it is, committed or not. Then the
+proofs: which whole-ticket runs in `verification.md` were recorded on the working tree
+as it is now, which on an earlier one, and the files that changed since.
+
+```
+Base: origin/main (from .specs/PROJECT.md), as of the last fetch, 12 min ago (2026-06-22T14:03:10Z)
+Behind: 48 commits (3 ahead; merge base 1a2b3c4d5e)
+Overlap: 2 files changed on both sides
+  src/flags.ts
+  src/worker/dispatch.ts
+Merge: 1 file would conflict in a dry run
+  src/flags.ts
+Proven: 1 of 5 whole-ticket proofs last ran on an earlier tree than the one here now
+  AC 2: the export keeps its filters (2026-06-21T18:42:10Z)
+Changed since: 1 file since the run at 2026-06-21T18:42:10Z
+  M	src/export/filters.ts
+```
 
 Field meanings:
 
@@ -172,6 +194,12 @@ secrets (`*_TOKEN`, `*_PASSWORD`, `*_PAT`, …), auth headers, `key=value` crede
 credentials in URLs, private keys, and well-known token formats. The entry notes how
 many were masked. Proofs should read credentials from environment variables.
 
+In a git work tree each entry also carries the **tree** the proof ran on: a snapshot of
+the working tree as the run left it, `.specs/` and ignored files aside. That is what
+lets `state.js fresh` tell a proof of the code as it is from a proof of an earlier
+state of it, whether or not anything was committed in between. Taking it costs a
+fraction of a second per run.
+
 A proof's exit code is its verdict: each proof command exits non-zero exactly when its
 criterion fails. The runner records what the proof was expected to do beside what it
 did, and notes what an exit code can hide:
@@ -201,6 +229,21 @@ end-to-end run) runs once for the ticket, at `/flow:verify`, or in the last step
 short route. A runtime tail (a build, then a probe or an end-to-end run with its
 controls) is a step of its own, built inline, after the code steps it exercises.
 
+`plan.md` also holds **Criteria and proof**, one row per acceptance criterion:
+
+| # | Criterion | Level | Step | Proof |
+|---|-----------|-------|------|-------|
+| 1 | `--format csv` prints the CSV with its header | runtime | 02 | `node bin/invoice.js list --format csv \| head -1` |
+| 2 | values with commas are quoted | test | 01 | `node --test test/csv.test.js` |
+| 3 | works on the iOS shell | gap | — | no target to run it on; accepted at plan approval |
+
+The level says how the criterion is shown: `runtime` (the running product), `test`,
+`construction` (read off the code), `manual` (you check it), or `gap` (not shown in
+this ticket, with the reason, yours to accept). Before a row plans a runtime proof, the
+plan reads from the code that the environment the criterion names can reach the change.
+`/flow:verify` runs the table as written, so a criterion is proven by the command its
+step already ran, not by a new one written at the gate.
+
 ## Gates — "make it prove it"
 
 A step is not done because the agent says so:
@@ -216,8 +259,8 @@ A step is not done because the agent says so:
   recorded (in a step spec, `verification.md` or `plan.md`), hand edits to `state.md`,
   and hand changes to a step's Status line. In the
   flow's subagents it also blocks git commands that write, `state.js` commands that
-  change the state (`show` and `diff` only read it), and changes to a step's Executor
-  line or Gate section.
+  change the state (`show`, `diff` and `fresh` only read it), and changes to a step's
+  Executor line or Gate section.
 
 ## Navigation — human-driven and bidirectional
 

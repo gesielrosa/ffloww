@@ -11,6 +11,7 @@
  * Usage:
  *   node state.js <ticket-id> show [--json]
  *   node state.js <ticket-id> diff <step-id>
+ *   node state.js <ticket-id> fresh
  *   node state.js <ticket-id> phase <phase> [--reason <text>] [--note <text>]
  *   node state.js <ticket-id> set <design_involved|route|commit|proof_definition|title> <value>
  *   node state.js <ticket-id> add-step <id> <title>
@@ -41,6 +42,10 @@
  * step's own change from them: the files, and the `git diff <tree> <tree>` command. So a
  * step's change stands alone whether or not the steps before it were committed.
  *
+ * Freshness: `fresh` says how far the branch is behind its base (as of the last fetch),
+ * whether the two would merge, and which recorded proof runs predate the working tree as
+ * it is now (lib/freshness.js). It only reads.
+ *
  * normalize rewrites a state.md an earlier version of the flow (or a hand edit) left in
  * another shape in the current format, for /flow:upgrade: canonical front matter, the
  * step specs' Status lines in sync, "Where we are" regenerated. A value the flow does not
@@ -54,6 +59,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { snapshot, exists, changes } = require('./lib/snapshot');
+const { freshness } = require('./lib/freshness');
 
 const PHASES = ['start', 'understand', 'design', 'explore', 'plan', 'execute', 'verify', 'ship', 'done'];
 const STATUSES = ['todo', 'in-progress', 'proven', 'done'];
@@ -551,6 +557,7 @@ function usage() {
     console.log('\nCommands:');
     console.log('  show [--json]');
     console.log('  diff <step-id>');
+    console.log('  fresh');
     console.log('  phase <phase> [--reason <text>] [--note <text>]');
     console.log('  set <design_involved|route|commit|proof_definition|title> <value>');
     console.log('  add-step <id> <title>');
@@ -588,6 +595,10 @@ function main() {
         if (opts.command === 'diff') {
             if (!opts.args[0]) throw new Error('missing step id');
             console.log(stepDiff(state.fields, opts.args[0], path.resolve(opts.root)).join('\n'));
+            process.exit(0);
+        }
+        if (opts.command === 'fresh') {
+            console.log(freshness(path.resolve(opts.root), ticketDir, state.fields.steps, stepSpec).join('\n'));
             process.exit(0);
         }
         const result = apply(state, ticketDir, opts.command, opts.args, { ...opts, root: path.resolve(opts.root) });

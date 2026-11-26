@@ -21,6 +21,9 @@ the files left behind.
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 | `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
 | `plan-short-route` | on the short route, `/flow:plan` maps the change itself (no explore detour), writes a short ADR and one small step, and suggests `/clear` before execute |
+| `verify-stops-behind-base` | on a built ticket whose base moved on the remote, with the same file changed on both sides, `/flow:verify` fetches, reads `state.js fresh` and stops before any proof runs, leaving the rebase or merge to the developer |
+| `verify-runs-criteria-table` | up to date with its base, `/flow:verify` runs each criterion's command from the plan's criteria table as written, lists the accepted gap as a gap, and stops at the gate |
+| `ship-flags-stale-proofs` | on a verified ticket whose code changed after the verify gate, `/flow:ship` names the file that changed since the proofs ran and asks whether to prove again or ship as it is, before any draft |
 | `ship-follows-pr-format` | on a verified ticket in a repository with a pull-request template, `/flow:ship` drafts `pr.md` in the template's sections, with the proof's command in it, and suggests the ship commands without running git |
 | `upgrade-carries-local-edits` | on a record flow 0.1 left, `/flow:upgrade` applies the mechanical changes, carries the team's rule into the current contract, maps the blocked step as the developer says, and leaves the done ticket, the evidence and git alone |
 
@@ -54,3 +57,7 @@ remote in `.remote.git` holds. So are `explore-reproduces-bug` (a seeded `--to` 
 the test that covered it removed) and `retro-reads-the-record` (the rehearsal's own
 INV-42 record, shipped). `upgrade-carries-local-edits/scaffold.sh` is generated from
 `scripts/history/`: the 0.1 contract and step template, with a hand-written state.
+The two `verify-*` cases and `ship-flags-stale-proofs` share one mould: a labels project
+with a bare remote in `.remote.git`, the ticket built on its branch, and its evidence
+stamped with the tree it ran on (`git rev-parse 'HEAD^{tree}'`, which is what the
+runner records there, since the project ignores `.specs/`).

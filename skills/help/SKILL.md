@@ -125,6 +125,17 @@ step move and writes the navigation log.
   project, a build, an end-to-end run) run once for the ticket, at `/flow:verify`, or
   in the last step on the short route. You say where fast ends (`Fast ends at` in
   `.specs/PROJECT.md`).
+- **How do I know every acceptance criterion is covered?** The plan writes a table,
+  **Criteria and proof**, with one row per criterion: how it is shown (the running
+  product, a test, read off the code, checked by you), by which step, with which
+  command. `/flow:verify` runs that table as written. A criterion the ticket will not
+  show is a `gap` row with its reason, which stands once you accept it.
+- **What if the base branch moved, or I changed code after it was proven?** The runner
+  records the working tree each proof ran on. `/flow:verify` fetches the base and tells
+  you, before any proof runs, how far behind it the branch is, which files both sides
+  changed, and whether they would merge, so a rebase comes before the proofs.
+  `/flow:ship` says which proofs predate the code as it is now, and the files that
+  changed since. `state.js <ticket-id> fresh` prints the same report anytime.
 - **Can the PR draft follow my team's template?** Yes. `/flow:ship` fills the format
   the profile names (`Format`), else a pull-request template it finds in the
   repository, else its own draft.
