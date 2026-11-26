@@ -137,6 +137,10 @@ cat > .specs/PRF-1/context.md <<'CONTEXT'
 ## Constraints
 
 - Keep `toSnake` unchanged; the CSV export already depends on it.
+
+## Related work
+
+- Owner: Dana Reyes, who wrote the ticket and owns the export. She has to agree with the approach before it is built.
 CONTEXT
 cat > .specs/PRF-1/discoveries.md <<'DISCOVERIES'
 # Discoveries — PRF-1

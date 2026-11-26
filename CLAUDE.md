@@ -149,6 +149,31 @@ human converges and decides.**
   chosen, and failed a verify on a command wider than the step's own. So the plan reads
   reachability from the code before it plans a runtime proof, and `/flow:verify` runs
   the table as written.
+- **What a gate decides stays decided, and what it defers arrives.** A review finding
+  accepted with "a later step handles it" never reached that step on a real ticket,
+  and was found again after ship. So the Gate records each finding's outcome (fixed,
+  accepted, rejected, deferred to step NN), and a deferred one is written into that
+  step's spec in the same turn, as a `Carried from step NN` line under Changes and a
+  command under Proof; the reviewer reads it as part of what the step has to do, and
+  `/flow:verify` names one that was never taken up.
+- **People outside the session are part of the flow's inputs.** One ticket's design
+  reached the feature's owner only in the PR, and a step was built on a question still
+  open with them: a regression after ship, and half a step reverted. `/flow:understand`
+  asks who else has a say (`Owner:` in `context.md`); `/flow:plan` drafts
+  `decision-summary.md` for the developer to send before the build, puts a step that
+  rests on an open question last, and logs a build that goes on without a reply.
+  Sending and waiting are the developer's call.
+- **A claim that decides is measured.** The same ticket rejected its best option on an
+  engine behavior nobody had run, read in one file while the behavior lived in another.
+  `/flow:explore` checks a claim that would rule an option out before writing it as a
+  fact: a behavior by a probe kept under `.specs/<ticket-id>/spike/`, an absence by a
+  search of the whole repository; one it could not check is marked `unverified`. Only
+  deciding claims pay this, so the map's other claims still rest on lines read.
+- **A port's spec is the code it mirrors.** A step spec told a port to upper-case a
+  value the legacy code does not, and the review, which compares the change with its
+  spec, could not see it. `skills/plan/PORT.md`, read only for ports (like explore's
+  `BUG.md` for bugs), has each transformation cite its legacy line, lists what has none
+  as new behavior for the developer to accept, and proves parity by comparison.
 - **What a project teaches the flow is kept once.** `.specs/PROJECT.md`, the project
   profile (`scripts/lib/profile.js`), holds what every ticket needs and none should learn
   twice: the proof commands with their flags and durations, where a fast proof ends, the
@@ -279,5 +304,7 @@ versions wrote, `/flow:review` for any change, in any project, and, from three r
 tickets' retros, proofs that have to be able to fail (baseline, `red first`, `--expect`,
 runner notes), per-step snapshots with a commit policy, the project profile, proofs
 sized to the step, a PR draft in the project's format, evidence freshness (the tree
-each proof ran on, the base's drift), and the criteria-and-proof table. Next: the rest
-of those retros' feedback (the runner's shell on Windows).
+each proof ran on, the base's drift), the criteria-and-proof table, gate outcomes with
+carried findings, the owner's decision summary, measured deciding claims, the port
+branch of the plan, and the retro's feedback for the flow. Next: the rest of those
+retros' feedback (the runner's shell on Windows).

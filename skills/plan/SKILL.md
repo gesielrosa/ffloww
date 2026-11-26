@@ -19,9 +19,13 @@ Read `.specs/CONVENTIONS.md` and `.specs/PROJECT.md`, the project profile, then 
 ticket's `state.md`, `context.md`, `understanding.md`, and `discoveries.md`. A project
 without a profile gets the empty one from the scaffolder, which leaves the ticket as it
 is: `node "${CLAUDE_PLUGIN_ROOT}/scripts/init_spec.js" <ticket-id> --root "<project-root>"`.
-On the full route, without a context map and
-options in `discoveries.md`, the next command is `/flow:explore <ticket-id>`: say so and
-stop. On the short route (`route: short`), the plan maps the change itself.
+On the full route, without a context map and options in `discoveries.md`, the next
+command is `/flow:explore <ticket-id>`: say so and stop. On the short route
+(`route: short`), the plan maps the change itself.
+
+A ticket that ports behavior the code already has (a migration, a rewrite, a criterion
+that asks for parity with what exists) is planned from the code it mirrors: read
+[PORT.md](PORT.md) and follow it alongside the steps below.
 
 ## Steps
 
@@ -32,6 +36,15 @@ stop. On the short route (`route: short`), the plan maps the change itself.
    `decisions.md` (append-only): the context, the decision and why, in one to three
    sentences, plus the rejected options and the consequences when there was a real
    trade-off.
+
+   When someone else has a say in the approach (an `Owner` in `context.md`, or the
+   developer says so), draft the decision for them before the build starts:
+   `.specs/<ticket-id>/decision-summary.md`, readable in a minute by someone outside
+   this conversation: the problem in two sentences, the decision and why, the options
+   not taken, and what is asked of them (their agreement, or an answer to an open
+   question). The developer sends it their way and decides whether to wait. The reply
+   comes back through `/flow:context` and is an input to this plan; going on without
+   one is logged: `state.js <ticket-id> log "no reply from <owner> on D<n>: going on with <the default>"`.
 
 2. **Agree the proof strategy.** What counts as proof is project-defined (often tests,
    sometimes a command's output or a screenshot). Start from the profile's **Proof
@@ -67,7 +80,9 @@ stop. On the short route (`route: short`), the plan maps the change itself.
    interface nothing calls yet. Refactoring that makes the change easy comes first, as
    its own step. A wide mechanical change (a rename across the codebase) goes
    expand–contract: add the new form, move the callers in batches, then remove the old
-   one. A step too big to prove in one go becomes two.
+   one. A step too big to prove in one go becomes two. A step that rests on a
+   question still open with someone else goes last, and its Spec names the question:
+   the steps whose shape the answer cannot change come first.
 
    Size each step's Proof to the step: the tests of what it changes (a filter the
    baseline showed narrowing the run), and the guards that are fast. A slow run (the
@@ -138,7 +153,9 @@ stop. On the short route (`route: short`), the plan maps the change itself.
 Present the plan for the developer's approval: the decision, the proof strategy with
 its baseline durations and the slow runs left for verify, and the ordered steps with
 who builds each, the criteria each proves, and the proofs marked `red first`, any of
-which the developer can change. Show the criteria table and name each `gap`: a gap
+which the developer can change. When a decision summary was drafted, say who it is
+for and that the build can wait for their answer. Show the criteria table and name
+each `gap`: a gap
 stands once the developer accepts it here. Say how the steps are committed (one by
 one, unless the developer chose one commit at the end), and what you added to the
 profile. Ask whether the granularity is right: a step to split or merge, a step that

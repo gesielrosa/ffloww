@@ -96,7 +96,15 @@ and stop.
    developer's approval is what makes it `proven`. Present the evidence with the
    runner's notes, the step's changed files, and the review findings you confirmed, by
    axis, and ask the developer to validate them: approve / request changes / regress.
-   Record the decision (who + when) in the step's **Gate** section. On approval, run
+   Record the decision (who + when) in the step's **Gate** section, and under it each
+   finding that reached the gate, with its outcome: `fixed` (and the run that shows
+   it), `accepted` (why it stands), `rejected` (why it does not hold), or
+   `deferred to step NN`. A deferred finding is written into that step's spec in the
+   same turn, so the step that inherits it has to build and prove it: a line under its
+   **Changes**, `Carried from step NN: <the finding, with its path:line>`, and under
+   its **Proof** the command that shows it handled. With no later step to take it,
+   it becomes a step of its own (`state.js <ticket-id> add-step`), or a follow-up the
+   developer names, recorded in `context.md`. On approval, run
    `state.js <ticket-id> step <step-id> proven`.
 
 6. **Draft the commit.** On approval, propose a commit message for this step in the

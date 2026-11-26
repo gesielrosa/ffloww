@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: explore-measures-deciding-claim
+description: The option of keeping a vendored CSV writer hinges on whether it quotes fields with line breaks; its README says no, and the rule that does it lives in another file. /flow:explore measures the behavior with a probe under spike/ instead of taking the README's word, and keeps the option open.
+tags: [explore]
+context:
+  scaffold_script: scaffold.sh

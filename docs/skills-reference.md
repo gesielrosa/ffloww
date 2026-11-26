@@ -27,7 +27,8 @@ run git that writes.
 - **When:** after start, to understand the ticket.
 - **Does:** reads the work item via the **azure-devops** MCP; captures its type,
   problem, scope (for a Bug, the symptom as reported), and acceptance criteria; asks you
-  for extra context; actively determines design involvement (does not rely on a Figma
+  for extra context, and who else has a say in the approach; actively determines design
+  involvement (does not rely on a Figma
   link being in the ticket); closes once the open questions that shape the criteria are
   answered or carried forward.
 - **Writes:** `understanding.md`, `context.md`; sets `design_involved`.
@@ -52,18 +53,22 @@ run git that writes.
 - **When:** after understanding (and design, if any).
 - **Does:** maps the relevant code with `file:line` evidence — fanned out to parallel
   `flow:code-mapper` subagents (Haiku), whose leads the main session confirms before
-  relying on them; surfaces at least two viable options with pros/cons and risk/effort.
-  Diverges — does not decide. A **Bug** is explored from a red reproduction first
+  relying on them; surfaces at least two viable options with pros/cons and risk/effort;
+  measures the claims that decide between them (a probe under `spike/` for a behavior,
+  a repository-wide search for an absence), or marks them `unverified`. Diverges — does
+  not decide. A **Bug** is explored from a red reproduction first
   (`skills/explore/BUG.md`, loaded only for bugs): a command that fails on the reported
   symptom, shrunk, then ranked falsifiable hypotheses tested with probes it removes, and
   options whose proof is the reproduction turning green.
-- **Writes:** `discoveries.md`; for a bug, the reproduction under `repro/`.
+- **Writes:** `discoveries.md`; probes under `spike/`; for a bug, the reproduction under
+  `repro/`.
 - **Hands off to:** `/flow:plan`, in the same session.
 
 ## `/flow:plan` — phase 4
 
 - **When:** after exploring, to converge.
-- **Does:** records your chosen approach as an ADR; agrees the proof strategy from the
+- **Does:** records your chosen approach as an ADR, and drafts a decision summary for
+  whoever else has a say in it, for you to send before the build; agrees the proof strategy from the
   project profile's proof commands and runs each kind of proof command once on the
   untouched tree (the baseline, recorded in `plan.md`; a slow run the profile already
   times is taken from there); slices the work into vertical, provable steps (tracer
@@ -76,8 +81,11 @@ run git that writes.
   For a bug, the fixing step's proof is the reproduction, run red before the fix and
   green after. On the short route it reads the few files the change touches itself and
   proposes the one approach; the ADR is one to three sentences unless there was a real
-  trade-off.
-- **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; what the baseline
+  trade-off. A port is planned from the code it mirrors (`skills/plan/PORT.md`, loaded
+  only for ports): each transformation cites its legacy line, and what has none is
+  listed as new behavior.
+- **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; `decision-summary.md`
+  when someone else has a say; what the baseline
   measured, in `.specs/PROJECT.md`; sets `proof_definition` and `steps:` in `state.md`,
   and `commit: at-end` when you prefer one commit for the ticket.
 - **Hands off to:** `/flow:execute`, after `/clear`.
@@ -92,8 +100,9 @@ run git that writes.
   own change (`state.js diff`, from the snapshot taken when the step started) reviewed
   in a fresh context by `flow:diff-reviewer` (Sonnet, read-only), whose
   cited findings on Spec, Proof and Standards the main session checks (a mechanical
-  `delegate-light` step is reviewed by the main session); opens the human gate; on
-  approval **drafts a commit message** (never commits). By default a step starts once
+  `delegate-light` step is reviewed by the main session); opens the human gate and
+  records each finding's outcome there (a finding deferred to a later step is written
+  into that step's spec); on approval **drafts a commit message** (never commits). By default a step starts once
   the previous proven step is committed (`--reason` to start anyway); with
   `commit: at-end` the steps stay `proven` and one commit closes the ticket's build.
 - **Writes:** code; the step's Evidence/Gate; logs under `evidence/`; step status in
@@ -180,7 +189,8 @@ See [the context channel](context-channel.md).
   checks for mechanical mistakes, lines in the project's `CLAUDE.md` for judgement calls,
   lines in the project profile for what the flow had to learn again, and habits for
   planning and proofs. Every proposal cites the record; you pick what to
-  apply.
+  apply. What it finds about the flow itself is written last, as feedback ready to
+  paste as an issue.
 - **Writes:** `retro.md`.
 
 ## `/flow:upgrade` — bring `.specs/` up to date

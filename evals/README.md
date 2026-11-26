@@ -11,13 +11,16 @@ the files left behind.
 | `status-names-next-command` | a plain "where are we?" reaches the status report, read-only, with the next command |
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
-| `plan-sizes-proofs` | with a project profile that times the whole suite at 14 minutes, `/flow:plan` proves each step with its own test file, leaves the suite for verify without running it for the baseline, baselines the linter the developer names and adds it to the profile |
+| `plan-sizes-proofs` | with a project profile that times the whole suite at 14 minutes, `/flow:plan` proves each step with its own test file, leaves the suite for verify without running it for the baseline, baselines the linter the developer names and adds it to the profile, writes the criteria table, and drafts a decision summary for the ticket's owner |
+| `plan-port-cites-legacy` | for a port that must keep the legacy's behavior, `/flow:plan` checks what the developer asked for against the legacy lines and tells them, with the lines cited, that trimming and upper-casing every colour are not what the legacy does, instead of planning them as a port |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
 | `execute-proves-red-first` | a step whose Proof marks its new test `red first` has that test recorded failing before the code exists and passing after, its review reads the step's snapshot diff, and the run stops at the gate (tag `heavy`) |
 | `execute-commit-at-end` | on a ticket committed at the end, with step 01 proven and uncommitted, `/flow:execute` builds step 02 without asking for a commit and takes only step 02's change to the review and the gate (tag `heavy`) |
+| `execute-carries-deferred-finding` | at a step's gate the developer approves and defers one review finding to the next step: `/flow:execute` records the outcome in the Gate, writes the finding into the next step's spec with a proof, marks the step proven and drafts a commit without committing |
 | `review-flags-seeded-flaws` | `flow:diff-reviewer` reads a step's change cold and names, by axis, at least five of the seven flaws seeded in it (tag `heavy`) |
 | `review-pr-without-flow` | in a project without `.specs/`, `/flow:review` fetches a teammate's pull request from the branches the developer names, reviews it against the pasted description, and reports the seeded flaws by axis as comments ready to paste, leaving the checkout on `main` and git otherwise alone (tag `heavy`) |
 | `explore-reproduces-bug` | for a Bug ticket, `/flow:explore` builds a red reproduction under `repro/`, ranks hypotheses, and offers fixes proven by the reproduction turning green, leaving the code and no probes behind |
+| `explore-measures-deciding-claim` | an option hinges on whether a vendored CSV writer quotes line breaks; its README says no and the rule lives in another file: `/flow:explore` measures it with a probe kept under `spike/` and keeps the option open |
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 | `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
 | `plan-short-route` | on the short route, `/flow:plan` maps the change itself (no explore detour), writes a short ADR and one small step, and suggests `/clear` before execute |
@@ -34,7 +37,8 @@ claude plugin eval . --scaffold --trust-plugin --ablation none --model sonnet --
   --allow-tools Bash Edit Write
 ```
 
-Add `--tag smoke` for the quick cases only, or `--case <name>` for one. `--scaffold` is
+Add `--tag smoke` for the quick cases only, or `--case <name>` for one (one glob;
+braces are not expanded), and `--runs 1`: a case runs three times otherwise. `--scaffold` is
 required: every case seeds its project. Grant Bash whole: a run that meets one denied
 command (an `ls`, a `cd … &&`) tends to stop and report that Bash is unavailable, which
 measures the grant rather than the skill; the `no-git-writes` graders still watch git.

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: execute-carries-deferred-finding
+description: At a step's gate the developer approves and defers one review finding to the next step; /flow:execute records the decision and the finding's outcome in the Gate, writes the finding into the next step's spec as a carried check with a proof, marks the step proven and drafts a commit without committing.
+tags: [execute, gate]
+context:
+  scaffold_script: scaffold.sh

@@ -32,13 +32,15 @@ stop.
    - **Acceptance criteria**: from the work item, since they drive the later proof.
      Where the ticket has none, or they are ambiguous, draft candidates, mark them as
      drafts, and confirm each one with the developer.
-   - **Open questions**: anything to resolve before planning.
+   - **Open questions**: anything to resolve before planning, each with who can answer
+     it when that is someone other than the developer.
 
 3. **Gather extra context.** Record the background the developer already gave, then
    present the draft (problem + acceptance criteria) and ask for what the ticket and the
    codebase still do not carry: links (Slack, docs, related PRs or incidents), hard
-   constraints, out-of-ticket decisions, gotchas, related work. Background goes to
-   `context.md`; an answer that refines an acceptance criterion goes into that criterion
+   constraints, out-of-ticket decisions, gotchas, related work, and who else has a say
+   in the approach (the ticket's owner, the owner of the area). Background goes to
+   `context.md`, an owner under Related work as `Owner: <name>, <what they decide>`; an answer that refines an acceptance criterion goes into that criterion
    in `understanding.md`, so each fact lives in one place.
 
 4. **Determine design involvement.** Infer it from the work (screens, components, UI
@@ -67,7 +69,8 @@ stop.
 
 While open questions that shape an acceptance criterion remain, end your turn with
 them: numbered, together, each with your recommended answer. The developer answers
-them, or chooses to carry them forward (they stay under Open questions). Once that is
+them, or chooses to carry them forward (they stay under Open questions; one that
+waits on someone else keeps their name and the date it was asked). Once that is
 settled, summarize the problem and acceptance criteria for a quick sanity check, and
 name the next command from the `Next:` line of the state output. It builds on this
 conversation, so it runs in this session; `/clear` first only when the session has

@@ -16,13 +16,15 @@ so the work survives context compaction and any skill can resume from it.
     context.md              # extra context the developer provides
     discoveries.md          # exploration findings and options
     decisions.md            # ADR log: chosen approach, trade-offs, regression reasons
-    plan.md                 # the step breakdown
+    plan.md                 # the step breakdown, the criteria table, the baseline runs
+    decision-summary.md     # the decision, for someone else with a say (created by /flow:plan)
     steps/
       _TEMPLATE.md          # template /flow:plan copies per step
       NN-<slug>.md          # one spec per step: executor, spec, changes, proof, evidence, gate
     verification.md         # whole-ticket check, one entry per acceptance criterion
     evidence/               # full proof logs, written by the proof runner
     assets/                 # Figma exports, screenshots, reference images
+    spike/                  # probes that measured a deciding claim (created by /flow:explore)
     pr.md                   # PR/MR draft (created by /flow:ship)
 ```
 
@@ -173,6 +175,12 @@ Each step has its own file with an **Executor** line and five parts: **Spec** (w
 delivers), **Changes** (what to touch), **Proof** (how to prove it), **Evidence** (raw
 output from running the proof), and **Gate** (the human decision). `/flow:plan` fills
 Executor/Spec/Changes/Proof; `/flow:execute` and `/flow:verify` fill Evidence and Gate.
+
+The Gate holds the decision (who, when) and each review finding that reached it, with
+its outcome: `fixed`, `accepted`, `rejected`, or `deferred to step NN`. A deferred
+finding is written into that step's spec when the gate closes: a
+`Carried from step NN: …` line under Changes and a command under Proof, so the step
+that inherits it has to build and prove it, and its reviewer checks it.
 
 **Executor** says who builds the step: `delegate` hands it to the `flow:step-executor`
 subagent on Sonnet, which keeps the build's file reads and command output out of the

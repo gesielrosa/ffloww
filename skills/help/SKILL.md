@@ -51,7 +51,8 @@ judgment of "is this proven?" stay with the developer.
   finding.
 - `/flow:retro` — after shipping, look back at the ticket's record (regressions,
   escalations, failed proofs, gate changes) and propose changes to the project's
-  checks and instructions that make the next ticket go better.
+  checks and instructions that make the next ticket go better. What it finds about
+  the flow itself comes as feedback ready to paste as an issue.
 - `/flow:upgrade` — after a plugin update, bring a project's `.specs/` written by an
   earlier version of the flow up to the installed one (a new or cleared session says
   when it is needed).
@@ -125,6 +126,17 @@ step move and writes the navigation log.
   project, a build, an end-to-end run) run once for the ticket, at `/flow:verify`, or
   in the last step on the short route. You say where fast ends (`Fast ends at` in
   `.specs/PROJECT.md`).
+- **What happens to a review finding I do not fix now?** It leaves the gate with an
+  outcome, written in the step's Gate: fixed, accepted, rejected, or deferred to a
+  later step. A deferred one is written into that step's spec as a check of its own,
+  so the step that inherits it has to build and prove it.
+- **Someone else owns this ticket. When do they see the design?** Before the build.
+  Tell `/flow:understand` who has a say (it asks), and `/flow:plan` drafts a decision
+  summary for you to send them; their answer comes back through `/flow:context`. A step
+  that rests on a question still open with them goes last.
+- **I am porting existing behavior. Anything different?** `/flow:plan` then cites, for
+  each transformation, the legacy line it mirrors, lists what has no such line as new
+  behavior for you to accept, and proves parity by comparing the old and new paths.
 - **How do I know every acceptance criterion is covered?** The plan writes a table,
   **Criteria and proof**, with one row per criterion: how it is shown (the running
   product, a test, read off the code, checked by you), by which step, with which

@@ -107,7 +107,7 @@ test('a step Status changes only through state.js; new specs can be written', ()
 test('subagents: Executor line and Gate are off limits; other sections are not', () => {
     const { step, dir } = fixture();
     assert.match(check(ev('Edit', { file_path: step, old_string: '- Executor: delegate', new_string: '- Executor: inline' }, EX)) || '', /Executor line or its Gate/);
-    assert.match(check(ev('Edit', { file_path: step, old_string: 'Who + when. -->', new_string: 'Who + when. -->\nApproved.' }, EX)) || '', /Gate/);
+    assert.match(check(ev('Edit', { file_path: step, old_string: 'carries it). -->', new_string: 'carries it). -->\nApproved.' }, EX)) || '', /Gate/);
     assert.equal(check(ev('Edit', { file_path: step, old_string: '- Executor: delegate', new_string: '- Executor: inline' })), null);
     assert.equal(check(ev('Edit', { file_path: step, old_string: '## Changes', new_string: '## Changes\n\n- a.js' }, EX)), null);
     assert.equal(check(ev('Edit', { file_path: path.join(dir, 'understanding.md'), old_string: '## Design', new_string: '## Design\n\nx' }, 'flow:design-reader')), null);

@@ -56,8 +56,18 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md` and `context.md`.
    with what happened (cited), the change proposed and where it goes (a file, a check, a
    habit), and the cost it removes.
 
+   A candidate about the flow itself (a command that misled, a gate that was missing, a
+   script that got in the way) is not the project's to fix. Put those last, under
+   **Feedback for the flow**, each written to be pasted as an issue as it stands:
+   - a title that names the phase or script and what went wrong;
+   - what happened, in the flow's terms (the command, what it did, what the ticket
+     needed), with the cost it had, and without the project's names, code or data;
+   - the change proposed;
+   - the flow's version, from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`.
+
 ## Handoff
 
 Present the candidates and ask which to apply; applying one is a change of its own, made
-by the developer or at their request. A candidate about the flow itself (a skill that
-misled, a missing gate) is feedback for the ffloww plugin rather than for the project.
+by the developer or at their request. When there is feedback for the flow, say so and
+name where it goes: the issue tracker of the plugin's repository (the `repository` in
+that manifest). Posting it is the developer's.

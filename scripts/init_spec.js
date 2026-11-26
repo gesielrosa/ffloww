@@ -114,6 +114,8 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
 ## Roles
 
 - The developer decides: the approach, the slicing, and whether each proof holds.
+  Someone else with a say in the approach (the ticket's owner, the area's) hears the
+  decision before the build: \`/flow:plan\` drafts a summary for the developer to send.
 - The main session talks to the developer, opens the gates, and changes state.
   Subagents build or read, then report back; a report is a lead to check.
 - A step's \`Executor\` line says who builds it: \`delegate\` (a subagent on Sonnet),
@@ -150,6 +152,9 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
   after its proof, or whose base moved under it, is said at the gate.
 - The developer grades the evidence at the step's \`Gate\`; the assistant presents it
   and records the decision. Recorded evidence is immutable: a new result is a new run.
+- A review finding leaves the gate with an outcome, written in the step's \`Gate\`:
+  fixed, accepted, rejected, or deferred to a later step, whose spec then carries it as
+  a check of its own.
 - Proofs read credentials from environment variables; the runner masks the secrets it
   recognizes before recording.
 
@@ -333,7 +338,9 @@ const STEP_TEMPLATE = `# Step <n> — <title>
 
 ## Gate
 
-<!-- Human decision: approved / changes requested / regress. Who + when. -->
+<!-- Human decision: approved / changes requested / regress. Who + when. Then each review
+     finding that reached the gate, with its outcome: fixed, accepted (why), rejected
+     (why), or deferred to step NN (that step's spec carries it). -->
 `;
 
 const CONTEXT_TEMPLATE = `# Context — {ticket}
@@ -361,7 +368,8 @@ const CONTEXT_TEMPLATE = `# Context — {ticket}
 
 ## Related work
 
-<!-- Adjacent tickets, past changes, people who know this area. -->
+<!-- Adjacent tickets, past changes, people who know this area, and who else has a say
+     in the approach (the ticket's owner, the area's): "Owner: <name>, <what they decide>". -->
 `;
 
 /** Write a file, creating parent dirs. Returns true if written, false if skipped. */

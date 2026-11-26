@@ -45,7 +45,8 @@ Captures *what* must be built and *why*, before any code is explored.
 - Fills `understanding.md`: ticket link, problem, scope/non-goals, and **acceptance
   criteria**. It never invents acceptance criteria — it confirms gaps with you.
 - **Asks for extra context** after drafting the understanding — links, constraints,
-  out-of-ticket decisions, gotchas — and saves it to `context.md`; an answer that refines
+  out-of-ticket decisions, gotchas, and who else has a say in the approach (the
+  ticket's owner, the area's) — and saves it to `context.md`; an answer that refines
   an acceptance criterion goes into the criterion itself.
 - Closes once the open questions that shape the acceptance criteria are answered (or
   you choose to carry them forward), asking the remaining ones together, each with a
@@ -76,6 +77,12 @@ The divergent phase. Build breadth, then options — not a decision.
 - Lays out the viable approaches, each with pros/cons and risk/effort; when the code
   leaves a single sane one, it records that one with the evidence that rules out the
   rest, instead of inventing a second.
+- **Measures what decides.** A claim that would rule an option out, or leave only one,
+  is checked before it counts: a claim about behavior (what a library, an engine or a
+  service does when it runs) by a probe kept under `.specs/<ticket-id>/spike/`, with
+  its output; a claim that something is absent by a search of the whole repository. A
+  deciding claim it could not check is marked `unverified` and reaches you with the
+  options.
 - A **Bug** is explored from a **red reproduction** first: one command that fails on
   the reported symptom, kept under `.specs/<ticket-id>/repro/` and shrunk to its
   smallest red case; then three to five ranked, falsifiable hypotheses, tested with
@@ -90,7 +97,14 @@ The convergent phase. You architect, it types.
 - You pick an approach from the options (on the short route, the plan reads the few
   files itself and proposes the one approach); the skill records it as an **ADR** in
   `decisions.md`: context, decision and why in one to three sentences, plus the rejected
-  options and consequences when there was a real trade-off.
+  options and consequences when there was a real trade-off. When someone else has a say
+  in the approach, it drafts a **decision summary** for you to send them before the
+  build (`decision-summary.md`); a step that rests on a question still open with them
+  goes last.
+- A **port** (a migration, a rewrite, parity with what exists) is planned from the code
+  it mirrors: each transformation in a step spec cites the legacy line, what has no
+  such line is listed as new behavior for you to accept, and parity is proven by
+  comparing the old and the new path.
 - Agrees the **proof strategy** (project-defined; often tests), starting from the
   proof commands in the project profile (`.specs/PROJECT.md`), and writes it to
   `state.md` as `proof_definition`. Then takes the **baseline**: each kind of proof
@@ -153,7 +167,10 @@ Builds one step, proves it, and stops at the human gate.
   Per-step reviews miss what spans steps, so once a ticket of several steps is built,
   the `Next:` line offers `/flow:review <ticket-id>` before verify (optional).
 - **Human gate:** you validate the evidence and the findings, and decide approve /
-  changes / regress. Only on approval does the step become `proven`.
+  changes / regress. Only on approval does the step become `proven`. Each finding
+  leaves the gate with an outcome, written in the step's Gate: fixed, accepted,
+  rejected, or deferred to a later step, whose spec then carries it as a check of its
+  own.
 - On approval it **suggests a commit message** — it never commits. You commit your
   way; then the step is `done`. With `commit: at-end`, the step stays `proven`, the
   next one starts, and after the last gate it suggests one message for the whole
@@ -212,7 +229,8 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
   escalations, failed proof runs, review findings, gate changes) and proposes changes to
   the environment: automated checks for mechanical mistakes, `CLAUDE.md` lines for
   judgement calls, and lines in the project profile for what the flow had to learn
-  again. Writes `retro.md`; you pick what to apply.
+  again. What it finds about the flow itself comes last, as feedback ready to paste as
+  an issue on the plugin's repository. Writes `retro.md`; you pick what to apply.
 - **`/flow:upgrade`** — after a plugin update, brings a `.specs/` an earlier version
   wrote up to the installed one: the mechanical changes once you agree, your edits to
   `CONVENTIONS.md` merged into the new contract, and step statuses the flow no longer

@@ -10,7 +10,8 @@ argument-hint: "<ticket-id>"
 
 The divergent phase: build a broad picture of the relevant code and surface *options*.
 Choosing among them happens in `/flow:plan`, and it is the developer's call. This phase
-writes `discoveries.md`; a bug adds its reproduction under `repro/` and probes that are
+writes `discoveries.md`; a claim that decides between options adds its probe under
+`spike/`, and a bug its reproduction under `repro/`, with probes in the code that are
 gone before the phase ends.
 
 ## Before you start
@@ -49,10 +50,26 @@ options.
    developer. When the code leaves a single sane approach, record it as the only option
    with the `file:line` evidence that rules out the others, and say so.
 
-4. **Note constraints and gotchas.** Existing patterns to follow, prior art, landmines:
+4. **Measure what decides.** A claim that would rule an option out, or leave one as
+   the only choice, is checked before it is written as a fact; the rest of the map
+   stands on the lines you read.
+   - A claim about behavior (what a library, an engine, a service or another module
+     does when it runs) is measured: a probe under `.specs/<ticket-id>/spike/` that
+     runs the real thing and prints what it does, kept there, with its command and
+     output in `discoveries.md`. Reading one file of it is not a measurement: the
+     behavior may live in another.
+   - A claim that something is absent ("nothing calls it", "it has no such option")
+     is searched across the whole repository, not only the files read: extensions,
+     partial classes, generated code and other languages live elsewhere. Record the
+     search and its count.
+   - A deciding claim this phase could not check is marked `unverified` beside the
+     option it affects, and reaches the developer with the options; a first step in
+     the plan can settle it.
+
+5. **Note constraints and gotchas.** Existing patterns to follow, prior art, landmines:
    anything that would shape the choice.
 
-5. **Update state.** With everything saved in `discoveries.md`, set the phase through the
+6. **Update state.** With everything saved in `discoveries.md`, set the phase through the
    state script, from the project root:
 
    ```bash
@@ -61,7 +78,8 @@ options.
 
 ## Handoff
 
-Present the options as a short comparison. Then name the next command from the `Next:`
+Present the options as a short comparison, with what was measured and what stays
+`unverified`. Then name the next command from the `Next:`
 line of the state output, where the developer picks the approach and it becomes a
 recorded decision. The choice builds on this conversation, so it runs in this session;
 `/clear` first only when the session has grown long.

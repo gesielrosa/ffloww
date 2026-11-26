@@ -27,7 +27,8 @@ The project root and one of:
 
 - **The intent**, what the change was asked to do:
   - for a step, its `.specs/<ticket-id>/steps/NN-<slug>.md` (Spec, Changes, Proof, and any
-    Evidence the runner recorded), and the ticket's `understanding.md` (the acceptance
+    Evidence the runner recorded; a `Carried from step NN` line is a finding an earlier
+    gate deferred to this step, and part of what it has to do), and the ticket's `understanding.md` (the acceptance
     criteria), `decisions.md` (the chosen approach) and `plan.md` (the criteria this step proves);
   - for a brief, the sources it names.
 - **The project's standards**: `CLAUDE.md` or `AGENTS.md` and the guides they point to,

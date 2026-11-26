@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: plan-port-cites-legacy
+description: For a ticket that ports pen matching to a new module with the same behavior, /flow:plan reads the port guide, checks what the developer asked for against the legacy lines, and tells them that trimming and upper-casing every colour are not what the legacy does, for them to accept or drop, instead of planning them as a port.
+tags: [plan, port]
+context:
+  scaffold_script: scaffold.sh

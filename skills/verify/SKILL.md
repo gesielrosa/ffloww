@@ -76,7 +76,9 @@ steps are done.
      to fix the step (log it with `state.js <ticket-id> log "<what failed>"`).
 
 4. **Open the human gate.** Present the evidence, criterion by criterion, with the gaps
-   and what the freshness report said, and ask the developer to validate it.
+   and what the freshness report said, and ask the developer to validate it. For the
+   whole ticket, also name any finding a step's gate deferred (`deferred to step NN`
+   in its Gate) that the later step's spec does not carry: it was never taken up.
    Record their decision (who + when) in the **Gate** section of the step or of
    `verification.md`. On approval of a step, move it forward with
    `state.js <ticket-id> step <step-id> proven`.
