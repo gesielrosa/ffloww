@@ -5,7 +5,9 @@
  * run_proof.js — Run a proof and record its raw evidence for the ffloww dev flow.
  *
  * Inside the TARGET project it:
- *   - runs the proof command from the project root, through the shell;
+ *   - runs the proof command from the project root, in bash where there is one (Git
+ *     Bash on Windows) and in the platform's shell otherwise (lib/shell.js;
+ *     FFLOWW_PROOF_SHELL overrides it);
  *   - saves the full output to .specs/<ticket-id>/evidence/<target>-<timestamp>.log;
  *   - appends an entry to the Evidence section of the target spec — a step's
  *     .specs/<ticket-id>/steps/<step-id>-*.md; for the target `ticket`, the whole-ticket
@@ -46,10 +48,10 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 const { headings, runHeading } = require('./lib/markdown');
 const { redact } = require('./lib/redact');
 const { snapshot, head } = require('./lib/snapshot');
+const { pickShell, execute } = require('./lib/shell');
 
 const DEFAULT_TAIL = 40;
 
@@ -241,8 +243,8 @@ function appendEvidence(specFile, entryLines) {
     fs.writeFileSync(specFile, out.join(eol), 'utf8');
 }
 
-/** Run the proof, save the log, append the evidence entry. Returns the run summary. */
-function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = null, red = false }) {
+/** Run the proof, save the log, append the evidence entry. Resolves to the run summary. */
+async function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = null, red = false, shell = pickShell() }) {
     const ticketDir = path.resolve(root, '.specs', ticket);
     if (!fs.existsSync(ticketDir)) throw new Error(`${path.join('.specs', ticket)} not found — run /flow:start first`);
 
@@ -264,25 +266,13 @@ function runProof({ ticket, target, cmd, label, root, tail, timeout, expect = nu
         `# target: ${target}`,
         `# command: ${shown.text}`,
         `# cwd: ${path.resolve(root)}`,
+        `# shell: ${shell.name}`,
         `# started: ${isoStamp(started)}`,
         '',
     ].join('\n') + '\n';
     const logFile = createLog(evidenceDir, `${target}-${fileStamp(started)}`, header);
 
-    // Output goes straight to the log file, so stdout and stderr stay interleaved
-    // and no buffer limit truncates a long run.
-    const fd = fs.openSync(logFile, 'a');
-    let result;
-    try {
-        result = spawnSync(cmd, {
-            cwd: path.resolve(root),
-            shell: true,
-            stdio: ['ignore', fd, fd],
-            timeout: timeout ? timeout * 1000 : undefined,
-        });
-    } finally {
-        fs.closeSync(fd);
-    }
+    const result = await execute(cmd, { cwd: path.resolve(root), logFile, timeout, shell });
     const finished = new Date();
     const seconds = ((finished - started) / 1000).toFixed(1);
     // The working tree as the run left it, .specs/ and ignored files aside: what this evidence is about.
@@ -379,7 +369,7 @@ function usage() {
     console.log('  node run_proof.js AB-1234 plan --label "baseline: lint" --cmd "npm run lint"');
 }
 
-function main() {
+async function main() {
     const args = parseArgs(process.argv.slice(2));
 
     if (!args.ticket || !args.target || !args.cmd.trim()) {
@@ -403,7 +393,7 @@ function main() {
 
     let run;
     try {
-        run = runProof(args);
+        run = await runProof(args);
     } catch (err) {
         console.log(`[error] ${err.message}`);
         process.exit(1);
@@ -424,4 +414,6 @@ function main() {
     process.exit(0);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { runProof };

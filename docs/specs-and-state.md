@@ -202,6 +202,17 @@ secrets (`*_TOKEN`, `*_PASSWORD`, `*_PAT`, …), auth headers, `key=value` crede
 credentials in URLs, private keys, and well-known token formats. The entry notes how
 many were masked. Proofs should read credentials from environment variables.
 
+The runner runs each command from the project root, in **bash** where the machine has
+one (Git Bash on Windows, found through `CLAUDE_CODE_GIT_BASH_PATH`, the usual install
+folders, then `PATH`), and in the platform's shell (`/bin/sh`, `cmd.exe`) otherwise. A
+proof is written in the shell the session works in, so it runs as written: process
+substitution, `[[ ]]`, the Unix tools Git Bash brings. The shell reads no profile, so
+an alias or a function of your terminal is not a command there (the runner notes a
+command the shell did not find). On Windows the output comes back through pipes,
+because Git Bash cannot write to the log handle directly. The log's header names the
+shell that ran. `FFLOWW_PROOF_SHELL` overrides the choice: `default` for the platform's
+shell, as before, or the path of a POSIX shell.
+
 In a git work tree each entry also carries the **tree** the proof ran on: a snapshot of
 the working tree as the run left it, `.specs/` and ignored files aside. That is what
 lets `state.js fresh` tell a proof of the code as it is from a proof of an earlier

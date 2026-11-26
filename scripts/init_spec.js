@@ -132,6 +132,9 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
   \`; echo $?\` is needed, and it notes what can hide the verdict: a command chained with
   \`;\`, \`||\` or a pipe (the exit code is its last part's), a command negated with \`!\`,
   a command the shell did not find. A note goes to the gate with the result.
+- The runner runs each command from the project root, in bash where the machine has one
+  (Git Bash on Windows), without your terminal's profile: an alias or a function
+  defined there is not a command here.
 - A proof has to be able to fail. A Proof command the plan marks \`red first\` (new
   behavior, fast enough to run twice) runs once before the change, with the runner's
   \`--red\`, and has to fail there; a proof that passes without the change proves nothing

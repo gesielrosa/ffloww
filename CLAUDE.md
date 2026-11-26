@@ -119,6 +119,16 @@ human converges and decides.**
   secrets first (`scripts/lib/redact.js`: secret-named env var values, auth headers,
   `key=value` credentials, URL credentials, private keys, known token formats) and the
   entry notes the count.
+- **A proof runs in the shell it was written for.** Proof commands are written in the
+  session's shell, bash; the runner used the platform's (`/bin/sh`, with no process
+  substitution; `cmd.exe` on Windows, where a `P=…; git diff …` proof failed for its own
+  sake and Git Bash printed nothing into the runner's append-only log handle). So
+  `scripts/lib/shell.js` picks bash where it finds one (Git Bash on Windows, never WSL's
+  launcher) and the platform's shell otherwise, and on Windows takes the output through
+  pipes and writes the log itself. `FFLOWW_PROOF_SHELL=default` restores the earlier
+  behavior exactly, or names another shell. The choice is unit-tested with the platform
+  injected and the pipe path runs in the tests on POSIX; it has not run on a real
+  Windows machine.
 - **A proof has to be able to fail.** A proof's exit code is its verdict, and three real
   tickets showed how it lies: `! tool` passes when the tool is missing, a search skips
   what it should read, a test passes without the change. So the runner records the
@@ -248,6 +258,7 @@ ffloww/
     lib/snapshot.js        # working-tree snapshots as git tree ids, for state.js
     lib/profile.js         # the project profile (.specs/PROJECT.md): its template and settings
     lib/freshness.js       # the base's drift and the proofs' trees, for state.js fresh
+    lib/shell.js           # the shell a proof runs in (bash where found), for run_proof.js
     lib/history.js         # recognizes the texts earlier versions wrote (init_spec.js, upgrade.js)
     history/               # every CONVENTIONS.md body and step template shipped, named by digest
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
@@ -306,5 +317,6 @@ runner notes), per-step snapshots with a commit policy, the project profile, pro
 sized to the step, a PR draft in the project's format, evidence freshness (the tree
 each proof ran on, the base's drift), the criteria-and-proof table, gate outcomes with
 carried findings, the owner's decision summary, measured deciding claims, the port
-branch of the plan, and the retro's feedback for the flow. Next: the rest of those
-retros' feedback (the runner's shell on Windows).
+branch of the plan, the retro's feedback for the flow, and bash as the proof runner's
+shell. Next: a run of the runner on a real Windows machine (Git Bash found, output
+through pipes), which the tests here cannot give.
