@@ -13,9 +13,10 @@ ship it. The developer runs them, in their conventions and on their VCS host.
 
 ## Before you start
 
-Read `.specs/CONVENTIONS.md`, then the ticket's `state.md`, `context.md`,
-`understanding.md`, `decisions.md`, `plan.md`, the `steps/` specs (with their evidence),
-and `verification.md` when a whole-ticket check was run.
+Read `.specs/CONVENTIONS.md` and `.specs/PROJECT.md` (the project profile), then the
+ticket's `state.md`, `context.md`, `understanding.md`, `decisions.md`, `plan.md`, the
+`steps/` specs (with their evidence), and `verification.md` when a whole-ticket check
+was run.
 
 ## Steps
 
@@ -23,19 +24,31 @@ and `verification.md` when a whole-ticket check was run.
    recorded evidence. When something is missing, stop and name the command that closes
    the gap (`/flow:execute` or `/flow:verify`): only proven, approved work ships.
 
-2. **Assemble the PR/MR draft** from the specs alone, for a reviewer who sees only the PR:
-   - **Summary**: the problem and scope (from `understanding.md`), then the smallest view
-     that makes the change clear: a call tree, a file tree, or a diff sketch.
-   - **Approach**: the decision and trade-offs (from `decisions.md`).
-   - **Acceptance criteria**: the checklist, each with its proof inline: the command, its
-     exit code, and the decisive output line. `.specs/` may stay out of the repository,
-     so a log path alone proves nothing to the reviewer.
-   - **Merge danger**: a one-way or two-way door (how hard it is to roll back), and the
-     blast radius (what else it can affect).
-   - **Steps**: one line each.
-   - **Work item**: the link.
+2. **Assemble the PR/MR draft** from the specs alone, for a reviewer who sees only the
+   PR. The project's format decides its sections, order and length, and the specs fill
+   them. Take the format from the first of these the project has:
+   - the profile's `Format` (Pull requests): a template's path, or the shape the
+     developer described;
+   - a pull-request template in the repository (`pull_request_template.md` at the
+     root, in `docs/`, or in `.github/`, `.azuredevops/` or `.gitlab/` and their
+     template folders);
+   - otherwise, the flow's own draft:
+     - **Summary**: the problem and scope (from `understanding.md`), then the smallest
+       view that makes the change clear: a call tree, a file tree, or a diff sketch.
+     - **Approach**: the decision and trade-offs (from `decisions.md`).
+     - **Acceptance criteria**: the checklist, each with its proof inline: the
+       command, its exit code, and the decisive output line.
+     - **Merge danger**: a one-way or two-way door (how hard it is to roll back), and
+       the blast radius (what else it can affect).
+     - **Steps**: one line each.
+     - **Work item**: the link.
 
-   Save it to `.specs/<ticket-id>/pr.md` and show it to the developer.
+   In any format, a claim of proof carries the command and its result, since `.specs/`
+   may stay out of the repository and a log path proves nothing to the reviewer; a
+   format with no room for it gets one line saying where the evidence is kept. Save the
+   draft to `.specs/<ticket-id>/pr.md` and show it to the developer. When they reshape
+   it in a way they want every time, offer to record that shape as the profile's
+   `Format`.
 
 3. **Suggest the ship sequence**, built from what `git branch` and `git remote -v` show:
    create a branch (a name suggested from the ticket) when the work sits on the default

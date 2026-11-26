@@ -42,6 +42,10 @@ Read `.specs/CONVENTIONS.md`, then the ticket's `state.md` and `context.md`.
      regression; what the plan could have known.
    - **Proof**: runs that failed for the proof's own sake, an exit code that was not the
      verdict, a test the review called tautological.
+   - **The project profile**: what the flow had to learn again here, and every ticket
+     will need: a proof command's flags or duration, a slow run that belonged at
+     verify, the commit policy, the PR format. It becomes a line in
+     `.specs/PROJECT.md`, which the next plan reads.
    - **Context**: what the developer had to add after understand that the ticket could
      carry next time.
 

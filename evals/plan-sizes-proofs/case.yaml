@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: plan-sizes-proofs
+description: With a project profile that times the whole suite at 14 minutes, /flow:plan proves each step with its own test file, leaves the suite to run once at verify without running it for the baseline, baselines the linter the developer names and adds it to the profile.
+tags: [plan, profile]
+context:
+  scaffold_script: scaffold.sh

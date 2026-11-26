@@ -32,8 +32,8 @@ session is told where each ticket stands.
 ## Entry — `/flow:start`
 
 Begins or resumes a ticket. Collects the ticket id (and an optional title) and runs
-the bundled `init_spec.js` to scaffold `.specs/<ticket-id>/` and the repo-level
-`CONVENTIONS.md`. If the ticket already exists, it resumes: it reads `state.md` and
+the bundled `init_spec.js` to scaffold `.specs/<ticket-id>/`, the repo-level
+`CONVENTIONS.md` and, once per project, the profile `PROJECT.md`. If the ticket already exists, it resumes: it reads `state.md` and
 points to the skill for the current phase. On a new ticket it suggests a ticket branch
 when you are on the default branch, before the first commit. It does no analysis itself.
 
@@ -91,11 +91,14 @@ The convergent phase. You architect, it types.
   files itself and proposes the one approach); the skill records it as an **ADR** in
   `decisions.md`: context, decision and why in one to three sentences, plus the rejected
   options and consequences when there was a real trade-off.
-- Agrees the **proof strategy** (project-defined; often tests) and writes it to
+- Agrees the **proof strategy** (project-defined; often tests), starting from the
+  proof commands in the project profile (`.specs/PROJECT.md`), and writes it to
   `state.md` as `proof_definition`. Then takes the **baseline**: each kind of proof
   command runs once on the untouched tree, through the runner, recorded in `plan.md`,
   so a flag the tool ignores, a guard that is already red or a twenty-minute suite
-  shows up before any step depends on it.
+  shows up before any step depends on it. A slow run the profile already times is
+  taken from there, and what the baseline measured goes back into the profile, for the
+  next ticket.
 - Slices the work into **vertical** steps (tracer bullets): each a narrow path through
   every layer it touches, provable on its own through the entry point the acceptance
   criteria use; refactoring that makes the change easy comes first, and a wide
@@ -103,12 +106,17 @@ The convergent phase. You architect, it types.
   `steps/_TEMPLATE.md`), mirrored into `state.md`'s `steps:`, and each proof command
   exits non-zero exactly when its step fails. It asks you whether the granularity is
   right before you approve.
+- **Sizes each step's proof to the step**: the tests of what it changes, and the guards
+  that are fast. A slow run (the whole suite of a large project, a build, an end-to-end
+  run) runs once for the ticket, at verify, or in the last step on the short route; a
+  runtime tail (a build, then a probe or an end-to-end run with its controls) becomes
+  a step of its own, built inline. You say where fast ends.
 - Marks the proofs that run **red first**: a proof of new behavior that is fast enough
   to run twice (you say what fast is) runs before the change too, where it has to fail.
   Guards (lint, typecheck, the existing suite), mechanical steps and slow proofs run
   once.
 - Records how the ticket is committed when you prefer one commit at the end over one
-  per step (`commit: at-end`).
+  per step (`commit: at-end`); the profile's `Policy` makes it the project's default.
 - Marks who builds each step: `delegate` (a subagent on Sonnet; the spec must need no
   decision), `delegate-light` (a lighter subagent on Haiku, for mechanical steps), or
   `inline` (the main session). You can change any of them.
@@ -151,7 +159,8 @@ Proves work meets its requirements — it **proves, it does not fix**.
 
 - Scope: one step, or the whole ticket against its acceptance criteria.
 - Runs the proof without changing production code, through `run_proof.js`; records raw
-  evidence per step, or per acceptance criterion in `verification.md`.
+  evidence per step, or per acceptance criterion in `verification.md`. The slow runs the
+  plan left for the whole ticket (the suite, a build, an end-to-end run) run here, once.
 - If it fails, it reports and recommends regressing to `/flow:execute`.
 
 ## 7. Ship — `/flow:ship`
@@ -159,12 +168,13 @@ Proves work meets its requirements — it **proves, it does not fix**.
 Prepares to ship. It **suggests, it does not execute** — no `git`, no branches, no PRs.
 
 - Confirms every step is `done` and the acceptance criteria are met with evidence.
-- Assembles a PR/MR draft **from the specs**, for a reviewer who sees only the PR:
-  summary with the smallest view of the change (a call tree, a file tree, a diff
-  sketch), approach + trade-offs, acceptance criteria each with its proof inline
-  (command, exit code, decisive output line), merge danger (one-way or two-way door,
-  blast radius), one line per step, and the work-item link — into
-  `.specs/<ticket-id>/pr.md`.
+- Assembles a PR/MR draft **from the specs**, for a reviewer who sees only the PR, into
+  `.specs/<ticket-id>/pr.md`. The project's format decides the sections and the length:
+  the `Format` the profile names, else a pull-request template in the repository. With
+  neither, the flow's own draft: summary with the smallest view of the change (a call
+  tree, a file tree, a diff sketch), approach + trade-offs, acceptance criteria each
+  with its proof inline (command, exit code, decisive output line), merge danger
+  (one-way or two-way door, blast radius), one line per step, and the work-item link.
 - Suggests the ship sequence (branch, push, open PR) as commands you run — it does not
   assume your VCS host or commit conventions.
 
@@ -183,7 +193,8 @@ Prepares to ship. It **suggests, it does not execute** — no `git`, no branches
 - **`/flow:retro`** — after shipping, reads the ticket's record (regressions,
   escalations, failed proof runs, review findings, gate changes) and proposes changes to
   the environment: automated checks for mechanical mistakes, `CLAUDE.md` lines for
-  judgement calls. Writes `retro.md`; you pick what to apply.
+  judgement calls, and lines in the project profile for what the flow had to learn
+  again. Writes `retro.md`; you pick what to apply.
 - **`/flow:upgrade`** — after a plugin update, brings a `.specs/` an earlier version
   wrote up to the installed one: the mechanical changes once you agree, your edits to
   `CONVENTIONS.md` merged into the new contract, and step statuses the flow no longer

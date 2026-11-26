@@ -86,8 +86,12 @@ phase can resume. Per ticket: `state.md` (phase, steps, navigation log),
 `understanding.md`, `context.md`, `discoveries.md`, `decisions.md`, `plan.md`,
 `steps/NN-*.md`, `verification.md`, `evidence/` (full proof logs), and `assets/`. The
 shared contract is `.specs/CONVENTIONS.md`, which `/flow:start` keeps current until you
-edit it; `/flow:upgrade` carries your edits into a newer contract. `state.md` changes only through the flow's state script (`state.js`), which
-checks every phase and step move and writes the navigation log.
+edit it; `/flow:upgrade` carries your edits into a newer contract. `.specs/PROJECT.md`
+is the project profile, yours to edit: the proof commands with their flags and
+durations, where a fast proof ends, the commit policy, the PR format. `/flow:plan` reads
+it and adds what it measures, so the next ticket does not learn it again. `state.md`
+changes only through the flow's state script (`state.js`), which checks every phase and
+step move and writes the navigation log.
 
 ## Common questions
 
@@ -106,7 +110,8 @@ checks every phase and step move and writes the navigation log.
 - **Do I have to commit after every step?** No. That is the default, so each step is its
   own commit. Say you prefer one commit for the ticket and it is recorded as
   `commit: at-end`: steps stay `proven` while the next ones are built, and one commit
-  after the last gate makes them `done`. Either way each step is reviewed on its own
+  after the last gate makes them `done`. Set `Policy: at-end` in `.specs/PROJECT.md`
+  and every new ticket in the project starts that way. Either way each step is reviewed on its own
   change: the state script snapshots the working tree when a step starts, and
   `state.js <ticket-id> diff <step-id>` shows what that step changed.
 - **How do I know a proof can fail?** The plan runs each proof command once on the
@@ -115,6 +120,14 @@ checks every phase and step move and writes the navigation log.
   counts as fast; guards (lint, typecheck, the suite) and slow proofs run once. The
   runner also notes what an exit code can hide: a chained or negated command, a command
   the shell did not find, a code other than the one the proof expects.
+- **Does every step run the whole test suite?** No. A step's proof is the tests of what
+  it changes plus the guards that are fast. The slow runs (the whole suite of a large
+  project, a build, an end-to-end run) run once for the ticket, at `/flow:verify`, or
+  in the last step on the short route. You say where fast ends (`Fast ends at` in
+  `.specs/PROJECT.md`).
+- **Can the PR draft follow my team's template?** Yes. `/flow:ship` fills the format
+  the profile names (`Format`), else a pull-request template it finds in the
+  repository, else its own draft.
 - **Who writes the code?** `/flow:plan` marks each step `delegate`, `delegate-light`,
   or `inline`. A delegated step is built by an executor subagent — `flow:step-executor`
   on Sonnet, or `flow:step-executor-light` on Haiku for mechanical steps; the main

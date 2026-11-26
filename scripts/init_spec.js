@@ -6,6 +6,7 @@
  *
  * Creates, inside the TARGET project:
  *   .specs/CONVENTIONS.md              (shared contract; kept current until someone edits it)
+ *   .specs/PROJECT.md                  (the project profile; written once, then the project's)
  *   .specs/<ticket-id>/state.md        (single source of truth for this ticket)
  *   .specs/<ticket-id>/understanding.md
  *   .specs/<ticket-id>/discoveries.md
@@ -28,12 +29,14 @@
  * before the stamp existed, a re-run refreshes it to this version of the flow. An edited
  * file is kept as is; when it was edited on an earlier contract, a warning points to
  * /flow:upgrade, which merges the edits into the current one (--print-conventions prints
- * it).
+ * it). PROJECT.md is written when missing and never replaced; a new ticket takes its
+ * commit policy from it.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { digest, template, shipped, nearest } = require('./lib/history');
+const { PROFILE_TEMPLATE, profilePath, readProfile } = require('./lib/profile');
 
 /** Replace {key} placeholders in a template string. */
 function fill(template, vars) {
@@ -63,6 +66,11 @@ start in a fresh context.
 - \`plan.md\` — the breakdown · \`steps/NN-<slug>.md\` — one spec per step
 - \`verification.md\` — whole-ticket check · \`evidence/\` — proof logs · \`assets/\` — design exports
 
+\`.specs/PROJECT.md\` is the project profile: what every ticket here needs and none
+should learn twice (the proof commands with their flags and durations, where a fast proof
+ends, the commit policy, the PR format). \`/flow:plan\` reads it and adds what its
+baseline shows.
+
 Flow: start → understand → design (if any) → explore → plan → execute ⇄ verify → ship.
 Short route: start → understand → design (if any) → plan → execute → ship.
 
@@ -91,12 +99,13 @@ recorded in \`decisions.md\` too. A step moves \`todo → in-progress → proven
 its gate) \`→ done\` (committed), one at a time. Before the gate, a step's proof passes
 or fails; only the developer's approval makes it \`proven\`.
 
-How the ticket is committed is the developer's choice. By default each step is
-committed before the next one starts (\`commit: per-step\`). With
-\`state.js set commit at-end\`, steps stay \`proven\` while the next ones are built, and
-one commit after the last gate makes them all \`done\`. Either way a step's change
-stands alone: the state script snapshots the working tree when the step starts, and
-\`state.js diff <step-id>\` prints the step's files and its \`git diff\` from there.
+How the ticket is committed is the developer's choice; a new ticket takes the profile's
+Policy. By default each step is committed before the next one starts
+(\`commit: per-step\`). With \`state.js set commit at-end\`, steps stay \`proven\` while
+the next ones are built, and one commit after the last gate makes them all \`done\`.
+Either way a step's change stands alone: the state script snapshots the working tree
+when the step starts, and \`state.js diff <step-id>\` prints the step's files and its
+\`git diff\` from there.
 
 A small, clear change can take the **short route**, when the developer chooses it
 (\`state.js set route short\`): the plan maps the change itself instead of a separate
@@ -126,6 +135,10 @@ explore, and the last step's gate leads to ship, without a whole-ticket verify.
   \`--red\`, and has to fail there; a proof that passes without the change proves nothing
   about it. Guards that are green before and after (lint, typecheck, the existing
   suite) carry no mark.
+- A step's proof is sized to the step: the tests of what it changes, and the guards fast
+  enough to run every time. A slow run (the whole suite of a large project, a build, an
+  end-to-end run) runs once for the ticket: at \`/flow:verify\`, or in the last step on
+  the short route. Where fast ends is the developer's line, kept in the profile.
 - The developer grades the evidence at the step's \`Gate\`; the assistant presents it
   and records the decision. Recorded evidence is immutable: a new result is a new run.
 - Proofs read credentials from environment variables; the runner masks the secrets it
@@ -148,7 +161,7 @@ created: "{date}"
 phase: start
 design_involved: unknown
 route: full
-commit: per-step
+commit: {commit}
 proof_definition: ""
 current_step: null
 steps: []
@@ -263,8 +276,9 @@ const PLAN_TEMPLATE = `# Plan — {ticket}
 ## Proof strategy
 
 <!-- How each step and the whole are proven. Project-defined; confirm with a human.
-     Which proofs run red first (new behavior, fast enough to run twice), and what
-     "fast" means for this ticket. -->
+     Which proofs run red first (new behavior, fast enough to run twice), and which slow
+     runs (the whole suite, a build, an end-to-end run) wait for verify, where they run
+     once. -->
 
 ## Evidence
 
@@ -389,19 +403,26 @@ function ensureConventions(specsRoot) {
     }
 }
 
+/** Write .specs/PROJECT.md, the project profile, when the project has none. */
+function ensureProfile(root) {
+    if (writeFile(profilePath(root), PROFILE_TEMPLATE, { overwrite: false })) console.log('[ok] Created .specs/PROJECT.md, the project profile');
+}
+
 /** Scaffold a ticket folder. Returns the ticket dir, or null on error/no-op. */
 function initSpec(ticket, root, title) {
     const specsRoot = path.resolve(root, '.specs');
     const ticketDir = path.join(specsRoot, ticket);
 
     ensureConventions(specsRoot);
+    ensureProfile(path.resolve(root));
 
     if (fs.existsSync(ticketDir)) {
         console.log(`[skip] ${path.join('.specs', ticket)} already initialized — skipping (no files overwritten).`);
         return null;
     }
 
-    const vars = { ticket, title: title || ticket, date: today() };
+    const policy = readProfile(path.resolve(root)).commit;
+    const vars = { ticket, title: title || ticket, date: today(), commit: policy || 'per-step' };
     // Front-matter values are JSON strings, which YAML reads as double-quoted scalars.
     Object.assign(vars, { ticketYaml: JSON.stringify(vars.ticket), titleYaml: JSON.stringify(vars.title) });
 
@@ -415,6 +436,7 @@ function initSpec(ticket, root, title) {
     writeFile(path.join(ticketDir, 'assets', '.gitkeep'), '');
 
     console.log(`[ok] Scaffolded ${path.join('.specs', ticket)}/ (state.md, understanding.md, context.md, discoveries.md, decisions.md, plan.md, steps/, assets/)`);
+    if (policy === 'at-end') console.log('[ok] Commit policy at-end, from .specs/PROJECT.md: one commit for the ticket, after its last gate');
     return ticketDir;
 }
 

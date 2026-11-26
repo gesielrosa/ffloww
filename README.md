@@ -56,6 +56,7 @@ State never lives only in the model's context. Each ticket gets a folder in the
 ```
 .specs/
   CONVENTIONS.md          # the shared contract (kept current until edited)
+  PROJECT.md              # the project profile: proof commands, commit policy, PR format
   <ticket-id>/
     state.md              # phase, steps, gate state, navigation log
     understanding.md      # problem + acceptance criteria (+ design notes)

@@ -9,6 +9,7 @@ so the work survives context compaction and any skill can resume from it.
 ```
 .specs/
   CONVENTIONS.md            # shared contract, kept current until edited
+  PROJECT.md                # the project profile: proof commands, commit policy, PR format
   <ticket-id>/
     state.md                # single source of truth (see below)
     understanding.md        # problem, scope, acceptance criteria (+ design notes)
@@ -41,6 +42,26 @@ does for an unedited contract written before the stamp existed. It is safe to ed
 fit local conventions: an edited file is kept as is. When the edits sit on an earlier
 contract, `/flow:start` warns and `/flow:upgrade` merges them into the current one
 (`init_spec.js --print-conventions` prints it).
+
+## `PROJECT.md` — the project profile
+
+What the flow has learned about the project that every ticket needs and none should
+learn twice. `/flow:start` writes it once, empty, and from then on it is yours:
+
+- **Proof commands**: each command the flow uses as proof here, with the flags that
+  make its output valid evidence and how long it takes, and `Fast ends at`, the longest
+  a proof may take and still run in every step. `/flow:plan` starts its proof strategy
+  from these, takes a slow run the profile already times from there, and adds what its
+  baseline measured.
+- **Commits**: `Policy` (`per-step` or `at-end`), which a new ticket starts with, and
+  the message convention commit drafts follow.
+- **Pull requests**: the `Base branch` tickets merge into, and the `Format` a PR draft
+  fills: a template's path, or the shape you describe. `/flow:ship` uses it, then a
+  pull-request template it finds in the repository, then its own draft.
+- **Notes**: anything else every ticket should know.
+
+The lines written as `- Name: value` are settings the scripts read (`Policy`,
+`Base branch`); the rest is prose for the phases. `/flow:retro` proposes changes to it.
 
 ## `state.md` — the single source of truth
 
@@ -113,8 +134,9 @@ Field meanings:
   route for a small, clear change and you choose it: the plan maps the change itself
   instead of a separate explore, and the last step's gate leads to ship, without a
   whole-ticket verify. `/flow:ship` still checks every criterion has evidence.
-- **`commit`** — `per-step` (the default) or `at-end`. Per step, each proven step is
-  committed, and so `done`, before the next one starts (`--reason` starts it anyway).
+- **`commit`** — `per-step` (the default) or `at-end`; a new ticket takes the profile's
+  `Policy`. Per step, each proven step is committed, and so `done`, before the next one
+  starts (`--reason` starts it anyway).
   At the end, which you choose with `set commit at-end`, steps stay `proven` while the
   next ones are built; after the last gate `/flow:execute` drafts one commit message
   for the ticket, and that commit makes them all `done`.
@@ -173,6 +195,12 @@ untouched tree (`run_proof.js <ticket-id> plan --label "baseline: …"`), record
 `plan.md`: the command works with its flags, is green before the ticket, and its
 duration is known, which is what decides `red first`.
 
+The duration also sizes the proofs. A step's proof is the tests of what it changes and
+the guards that are fast; a slow run (the whole suite of a large project, a build, an
+end-to-end run) runs once for the ticket, at `/flow:verify`, or in the last step on the
+short route. A runtime tail (a build, then a probe or an end-to-end run with its
+controls) is a step of its own, built inline, after the code steps it exercises.
+
 ## Gates — "make it prove it"
 
 A step is not done because the agent says so:
@@ -213,6 +241,7 @@ by item, and changes nothing; `--apply` then makes the mechanical part:
 - an unedited earlier `CONVENTIONS.md` or `steps/_TEMPLATE.md` is replaced by the
   current one, recognized from `scripts/history/` (every contract and step template
   the flow has written);
+- a project without a profile gets the empty `PROJECT.md`;
 - a `state.md` in an older shape is rewritten in the current format by
   `state.js normalize`: canonical front matter (a missing `route` becomes `full`), the
   step specs' Status lines in sync, "Where we are" regenerated, one log entry.

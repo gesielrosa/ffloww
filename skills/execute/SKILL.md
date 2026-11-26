@@ -100,7 +100,8 @@ and stop.
    `state.js <ticket-id> step <step-id> proven`.
 
 6. **Draft the commit.** On approval, propose a commit message for this step in the
-   developer's conventions; the developer commits. Once they confirm the commit, run
+   developer's conventions (the project profile, `.specs/PROJECT.md`, names them under
+   Commits when the project has set them); the developer commits. Once they confirm the commit, run
    `state.js <ticket-id> step <step-id> done`. On a ticket committed at the end
    (`commit: at-end` in the state), the step stays `proven` and the next one starts
    without a commit; once the last step is proven, propose one commit message for the

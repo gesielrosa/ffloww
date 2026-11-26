@@ -9,8 +9,9 @@
  *   [ok]      already current;
  *   [apply]   a mechanical change --apply makes: CONVENTIONS.md or a ticket's
  *             steps/_TEMPLATE.md that an earlier version wrote and nobody edited is
- *             replaced by the current one, and a state.md in an older shape is rewritten
- *             in the current format (through state.js normalize);
+ *             replaced by the current one, a state.md in an older shape is rewritten
+ *             in the current format (through state.js normalize), and a project
+ *             without a profile (PROJECT.md) gets the empty one;
  *   [decide]  a change only the developer can make: local edits on an earlier contract
  *             to merge, a step status the flow does not know, a state.md it cannot read;
  *   [note]    a difference the flow works with as is.
@@ -33,6 +34,7 @@ const { STEP_TEMPLATE, conventionsFile, conventionsState, digest, writeFile } = 
 const { STATUSES, parseState, normalize, stepSpec } = require('./state');
 const { shipped } = require('./lib/history');
 const { headings, runEntries } = require('./lib/markdown');
+const { PROFILE_TEMPLATE, profilePath } = require('./lib/profile');
 
 const INIT_SPEC = path.join(__dirname, 'init_spec.js');
 const STATE = path.join(__dirname, 'state.js');
@@ -87,6 +89,17 @@ function conventionsItem(root) {
                 ].join('\n'),
             };
     }
+}
+
+/** The PROJECT.md item: the profile is the project's once written, so only a missing one is an item. */
+function profileItem(root) {
+    if (fs.existsSync(profilePath(root))) return { level: 'ok', text: "the project's profile" };
+    return {
+        level: 'apply',
+        text: 'missing: write the empty profile, for /flow:plan to fill (proof commands, commit policy, PR format)',
+        done: 'the empty profile written',
+        run: () => writeFile(profilePath(root), PROFILE_TEMPLATE, { overwrite: false }),
+    };
 }
 
 /** The status recorded on a spec's "- Status:" line, or null. */
@@ -228,7 +241,10 @@ function main() {
     }
 
     console.log(`[upgrade] .specs/ in ${opts.root}, to flow ${version()}${opts.apply ? '' : ' (report only; --apply makes the [apply] changes)'}`);
-    const groups = [{ label: '.specs/CONVENTIONS.md', items: [conventionsItem(opts.root)] }];
+    const groups = [
+        { label: '.specs/CONVENTIONS.md', items: [conventionsItem(opts.root)] },
+        { label: '.specs/PROJECT.md', items: [profileItem(opts.root)] },
+    ];
     for (const name of ticketNames(specs)) groups.push(ticketItems(opts.root, name));
 
     const count = { applied: 0, apply: 0, decide: 0, failed: 0 };

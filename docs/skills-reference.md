@@ -15,7 +15,8 @@ run git that writes.
 
 - **When:** starting or resuming a ticket.
 - **Does:** collects the ticket id (+ optional title); runs `init_spec.js` to scaffold
-  `.specs/<ticket-id>/` and the repo-level `CONVENTIONS.md` (refreshed while unedited);
+  `.specs/<ticket-id>/`, the repo-level `CONVENTIONS.md` (refreshed while unedited) and,
+  once per project, the profile `PROJECT.md`;
   orients from `state.md`. On an existing ticket it resumes and points to the current
   phase; on a new one it suggests a ticket branch when you are on the default branch.
 - **Writes:** the `.specs/` scaffold.
@@ -62,18 +63,21 @@ run git that writes.
 ## `/flow:plan` — phase 4
 
 - **When:** after exploring, to converge.
-- **Does:** records your chosen approach as an ADR; agrees the proof strategy and runs
-  each kind of proof command once on the untouched tree (the baseline, recorded in
-  `plan.md`); slices the work into vertical, provable steps (tracer bullets); marks who
+- **Does:** records your chosen approach as an ADR; agrees the proof strategy from the
+  project profile's proof commands and runs each kind of proof command once on the
+  untouched tree (the baseline, recorded in `plan.md`; a slow run the profile already
+  times is taken from there); slices the work into vertical, provable steps (tracer
+  bullets), each proof sized to its step, with the slow runs left for verify and a
+  runtime tail as a step of its own; marks who
   builds each (`delegate` to a Sonnet subagent, `delegate-light` to a Haiku one, or
   `inline`) and which proofs run `red first` (new behavior, fast enough to run twice).
   For a bug, the fixing step's proof is the reproduction, run red before the fix and
   green after. On the short route it reads the few files the change touches itself and
   proposes the one approach; the ADR is one to three sentences unless there was a real
   trade-off.
-- **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; sets
-  `proof_definition` and `steps:` in `state.md`, and `commit: at-end` when you prefer
-  one commit for the ticket.
+- **Writes:** `decisions.md`, `plan.md`, `steps/NN-<slug>.md`; what the baseline
+  measured, in `.specs/PROJECT.md`; sets `proof_definition` and `steps:` in `state.md`,
+  and `commit: at-end` when you prefer one commit for the ticket.
 - **Hands off to:** `/flow:execute`, after `/clear`.
 
 ## `/flow:execute` — phase 5
@@ -101,8 +105,9 @@ run git that writes.
 - **When:** to prove a step or the whole ticket.
 - **Does:** runs the proof without changing code, through the plugin's `run_proof.js`,
   which records raw evidence (per step, or per acceptance criterion in
-  `verification.md` for a whole-ticket check); opens the human gate. **Proves,
-  does not fix** — on failure it recommends regressing to `/flow:execute`.
+  `verification.md` for a whole-ticket check, where the slow runs the plan left for the
+  ticket run once); opens the human gate. **Proves, does not fix** — on failure it
+  recommends regressing to `/flow:execute`.
 - **Writes:** the step's Evidence/Gate or `verification.md`; logs under `evidence/`;
   status in `state.md`.
 - **Hands off to:** `/flow:execute` (a step) or `/flow:ship` (whole ticket approved).
@@ -110,9 +115,11 @@ run git that writes.
 ## `/flow:ship` — phase 7
 
 - **When:** all steps done and verified.
-- **Does:** assembles a PR/MR draft from the specs, for a reviewer who sees only the PR
-  (the smallest view of the change, each acceptance criterion with its proof inline,
-  merge danger); suggests the ship sequence (branch, push, open PR). **Suggests, never
+- **Does:** assembles a PR/MR draft from the specs, for a reviewer who sees only the PR,
+  in the project's format (the profile's `Format`, else a pull-request template in the
+  repository), or in the flow's own (the smallest view of the change, each acceptance
+  criterion with its proof inline, merge danger); suggests the ship sequence (branch,
+  push, open PR). **Suggests, never
   executes** — no git, no assumptions about your VCS host or commit conventions.
 - **Writes:** `pr.md`; sets `phase: ship` (then `done` once you confirm shipped).
 - **Hands off to:** you.
@@ -164,7 +171,8 @@ See [the context channel](context-channel.md).
   that failed before passing, review findings, changes requested at gates, context added
   late) and proposes changes to the **environment**, most severe first: automated
   checks for mechanical mistakes, lines in the project's `CLAUDE.md` for judgement calls,
-  and habits for planning and proofs. Every proposal cites the record; you pick what to
+  lines in the project profile for what the flow had to learn again, and habits for
+  planning and proofs. Every proposal cites the record; you pick what to
   apply.
 - **Writes:** `retro.md`.
 
@@ -174,7 +182,8 @@ See [the context channel](context-channel.md).
   the flow wrote; a new or cleared session suggests it while work is in progress.
 - **Does:** runs `upgrade.js` for a report (`[ok]`, `[apply]`, `[decide]`, `[note]`),
   then, once you agree, `--apply`: unedited earlier `CONVENTIONS.md` and step
-  templates are replaced, older `state.md` files are rewritten in the current format.
+  templates are replaced, older `state.md` files are rewritten in the current format,
+  and a project without a profile gets the empty `PROJECT.md`.
   With you, it merges local edits on an earlier contract into the current one and maps
   values the flow no longer knows (a step status like `blocked`). Done tickets stay as
   they are. Ends with each ticket's next command.

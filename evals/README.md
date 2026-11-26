@@ -11,6 +11,7 @@ the files left behind.
 | `status-names-next-command` | a plain "where are we?" reaches the status report, read-only, with the next command |
 | `context-captures-background` | background shared in plain words lands in `context.md`, phase unchanged |
 | `plan-slices-vertically` | given the developer's choices, `/flow:plan` slices INV-42 into vertical steps provable through the CLI, asks about granularity, and writes no code (judged by an LLM on `plan.md`) |
+| `plan-sizes-proofs` | with a project profile that times the whole suite at 14 minutes, `/flow:plan` proves each step with its own test file, leaves the suite for verify without running it for the baseline, baselines the linter the developer names and adds it to the profile |
 | `execute-stops-at-gate` | a `delegate-light` step is built by its executor, proven by the runner, reviewed, and stopped at the gate with no commit (tag `heavy`) |
 | `execute-proves-red-first` | a step whose Proof marks its new test `red first` has that test recorded failing before the code exists and passing after, its review reads the step's snapshot diff, and the run stops at the gate (tag `heavy`) |
 | `execute-commit-at-end` | on a ticket committed at the end, with step 01 proven and uncommitted, `/flow:execute` builds step 02 without asking for a commit and takes only step 02's change to the review and the gate (tag `heavy`) |
@@ -20,6 +21,7 @@ the files left behind.
 | `retro-reads-the-record` | on a shipped ticket's real record, `/flow:retro` proposes environment changes that cite the record, and leaves the product code alone |
 | `understand-offers-short-route` | for a one-line change, `/flow:understand` offers the short route, leaves the choice (and `route: full`) to the developer, and keeps the next phase in the session |
 | `plan-short-route` | on the short route, `/flow:plan` maps the change itself (no explore detour), writes a short ADR and one small step, and suggests `/clear` before execute |
+| `ship-follows-pr-format` | on a verified ticket in a repository with a pull-request template, `/flow:ship` drafts `pr.md` in the template's sections, with the proof's command in it, and suggests the ship commands without running git |
 | `upgrade-carries-local-edits` | on a record flow 0.1 left, `/flow:upgrade` applies the mechanical changes, carries the team's rule into the current contract, maps the blocked step as the developer says, and leaves the done ticket, the evidence and git alone |
 
 Run from the repository root:

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ship-follows-pr-format
+description: On a verified ticket in a repository with a pull-request template, /flow:ship drafts pr.md in the template's sections with the proof's command and result, suggests the ship commands and runs none.
+tags: [ship, profile]
+context:
+  scaffold_script: scaffold.sh

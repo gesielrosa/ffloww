@@ -129,6 +129,23 @@ human converges and decides.**
   proof command once on the untouched tree (the baseline, target `plan`, recorded in
   `plan.md`) and marks `red first` only the proofs of new behavior that are fast enough
   to run twice, the developer saying what fast is; guards and slow proofs run once.
+- **What a project teaches the flow is kept once.** `.specs/PROJECT.md`, the project
+  profile (`scripts/lib/profile.js`), holds what every ticket needs and none should learn
+  twice: the proof commands with their flags and durations, where a fast proof ends, the
+  commit policy, the base branch and the PR format. `init_spec.js` writes it once, empty,
+  and it is the project's from then on (never replaced, so it has no stamp and no
+  history). The scripts read only its settings, lines written `- Name: value`: a new
+  ticket takes its `Policy`. `/flow:plan` starts the proof strategy from it and writes
+  back what the baseline measured; `/flow:ship` drafts the PR in its `Format`, else in a
+  pull-request template the repository holds, else in the flow's own; `/flow:retro`
+  proposes changes to it.
+- **A step's proof is sized to the step.** One real ticket ran a 7–15 minute suite about
+  twenty times, and two steps of another ran out of executor turns waiting on a build
+  and an end-to-end run. So a step's Proof holds the tests of what it changes and the
+  guards that are fast; a slow run happens once for the ticket, at `/flow:verify` (in the
+  last step on the short route), and a runtime tail is a step of its own, built inline.
+  The developer's line for fast (`Fast ends at`, in the profile) serves this and
+  `red first` alike. The bar for any new rule is the same: it adds no slow run per step.
 - **A cleared session resumes from disk.** A `SessionStart` hook
   (`scripts/session_start.js`) adds one line per ticket that is not done — phase, step,
   next move from `nextMove()` — on startup, resume, `/clear`, and compaction. It adds
@@ -137,7 +154,8 @@ human converges and decides.**
 - **Earlier records are upgraded, not abandoned.** `scripts/upgrade.js`, behind
   `/flow:upgrade`, reports what a project's `.specs/` needs to match the installed
   version; `--apply` makes the mechanical part (an unedited earlier `CONVENTIONS.md` or
-  `steps/_TEMPLATE.md` is replaced; an older `state.md` is rewritten by
+  `steps/_TEMPLATE.md` is replaced; a project without a profile gets the empty one; an
+  older `state.md` is rewritten by
   `state.js normalize`, which also takes the developer's mapping of values the flow
   does not know, like a step status `blocked`). Local edits on an earlier contract are
   merged with the developer, against the contract they started from. Earlier texts are
@@ -183,6 +201,7 @@ ffloww/
     lib/markdown.js        # evidence-entry format shared by run_proof.js and guard.js
     lib/redact.js          # secret masking for run_proof.js
     lib/snapshot.js        # working-tree snapshots as git tree ids, for state.js
+    lib/profile.js         # the project profile (.specs/PROJECT.md): its template and settings
     lib/history.js         # recognizes the texts earlier versions wrote (init_spec.js, upgrade.js)
     history/               # every CONVENTIONS.md body and step template shipped, named by digest
   hooks/hooks.json         # PreToolUse → guard.js; SessionStart → session_start.js
@@ -237,6 +256,7 @@ masking in the runner, a self-refreshing `CONVENTIONS.md`, the eval suite, the
 independent diff reviewer before the gate, `/flow:upgrade` for records earlier
 versions wrote, `/flow:review` for any change, in any project, and, from three real
 tickets' retros, proofs that have to be able to fail (baseline, `red first`, `--expect`,
-runner notes) and per-step snapshots with a commit policy. Next: the rest of those
+runner notes), per-step snapshots with a commit policy, the project profile, proofs
+sized to the step, and a PR draft in the project's format. Next: the rest of those
 retros' feedback (evidence freshness against the base branch, the runner's shell on
 Windows).

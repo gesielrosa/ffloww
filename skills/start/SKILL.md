@@ -25,7 +25,8 @@ next phase. Reading the ticket itself starts in `/flow:understand`.
 
    Pass `--title` only when a title was given. The script is idempotent: an existing
    ticket keeps every file and is reported as skipped. It also keeps
-   `.specs/CONVENTIONS.md` current; relay any `[warn]` line it prints.
+   `.specs/CONVENTIONS.md` current, and writes the project profile,
+   `.specs/PROJECT.md`, when the project has none; relay any `[warn]` line it prints.
 
 3. **Read the contract and the state**: `.specs/CONVENTIONS.md`, then
 

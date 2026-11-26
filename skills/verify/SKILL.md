@@ -15,8 +15,8 @@ production code as it is; a fix belongs to `/flow:execute`.
 ## Before you start
 
 Read `.specs/CONVENTIONS.md`, then the ticket's `state.md` (`proof_definition`),
-`context.md`, `understanding.md` (acceptance criteria), and the relevant
-`steps/NN-<slug>.md`. Verification needs something built: a step, or a ticket whose
+`context.md`, `understanding.md` (acceptance criteria), `plan.md` (the proof strategy)
+and the relevant `steps/NN-<slug>.md`. Verification needs something built: a step, or a ticket whose
 steps are done.
 
 ## Steps
@@ -38,6 +38,10 @@ steps are done.
      ```bash
      node "${CLAUDE_PLUGIN_ROOT}/scripts/run_proof.js" <ticket-id> ticket --label "AC <n>: <criterion>" --root "<project-root>" --tail 15 --cmd "<command>"
      ```
+
+     The slow runs the plan left for here (the whole suite, a build, an end-to-end
+     run) run now, once each, as entries of their own (`--label "guard: <what>"`), one
+     at a time.
 
    Each command exits non-zero exactly when its criterion fails, or runs plain with
    `--expect <code>` when it passes on another one. The runner saves the full output to

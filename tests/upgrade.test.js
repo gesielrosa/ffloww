@@ -9,6 +9,7 @@ const { run } = require('./helpers');
 const { CONVENTIONS_TEMPLATE, STEP_TEMPLATE, conventionsFile } = require('../scripts/init_spec');
 const { DIR, digest, all } = require('../scripts/lib/history');
 const { needsUpgrade, pastedEvidence } = require('../scripts/upgrade');
+const { PROFILE_TEMPLATE } = require('../scripts/lib/profile');
 
 const shippedText = (kind, hash) => fs.readFileSync(path.join(DIR, kind, `${hash}.md`), 'utf8');
 
@@ -131,6 +132,21 @@ test('a state.md in the 0.2 shape is rewritten by --apply; a current project has
     assert.match(run('upgrade.js', ['--apply', '--root', root]).out, /\[ok\] state\.md rewritten in the current format/);
     assert.match(fs.readFileSync(file, 'utf8'), /^route: full$/m);
     assert.match(run('upgrade.js', ['--root', root]).out, /Summary: nothing to apply or decide/);
+});
+
+test('a project without a profile gets the empty one from --apply, and an existing one is kept', () => {
+    const { root, specs } = legacy();
+    const file = path.join(specs, 'PROJECT.md');
+    assert.match(run('upgrade.js', ['--root', root]).out, /\.specs\/PROJECT\.md\n {2}\[ok\] the project's profile/);
+    fs.writeFileSync(file, '# Project profile\n\n- Policy: at-end\n');
+    run('upgrade.js', ['--apply', '--root', root]);
+    assert.equal(fs.readFileSync(file, 'utf8'), '# Project profile\n\n- Policy: at-end\n');
+
+    fs.rmSync(file);
+    assert.match(run('upgrade.js', ['--root', root]).out, /\.specs\/PROJECT\.md\n {2}\[apply\] missing: write the empty profile[\s\S]*Summary: 1 change\(s\) to apply/);
+    assert.equal(fs.existsSync(file), false, 'the report changes nothing');
+    assert.match(run('upgrade.js', ['--apply', '--root', root]).out, /\[ok\] the empty profile written/);
+    assert.equal(fs.readFileSync(file, 'utf8'), PROFILE_TEMPLATE);
 });
 
 test('a project without .specs has nothing to upgrade', () => {
