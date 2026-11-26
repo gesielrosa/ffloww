@@ -49,9 +49,10 @@ itself.
   step's change before its gate, and the change `/flow:review` names, `flow:design-reader` (Sonnet) reads the Figma nodes,
   and `flow:code-mapper` (Haiku, read-only) maps code during exploration. Their models
   are pinned in their definitions.
-- **Scripts** — `init_spec.js` scaffolds `.specs/`; `state.js` is the only way
-  `state.md` changes; `run_proof.js` runs proofs and records their evidence;
-  `upgrade.js` brings a `.specs/` from an earlier version up to date.
+- **Scripts** — `init_spec.js` scaffolds `.specs/`, with the project profile; `state.js`
+  is the only way `state.md` changes, and reports a step's own change (`diff`) and how
+  fresh the evidence is (`fresh`); `run_proof.js` runs proofs and records their
+  evidence; `upgrade.js` brings a `.specs/` from an earlier version up to date.
 - **A resume hook** — at session start, after `/clear`, and after compaction,
   `scripts/session_start.js` adds one line per ticket in progress (phase, step,
   next move) to the session. In a project without `.specs/` it adds nothing.
@@ -120,3 +121,8 @@ Start with `/flow:start` on a ticket — see [the flow](the-flow.md).
   start a new session, and that you signed in with an account that can access it.
 - **`node` not found when scaffolding or proving.** Install Node.js and make sure it is
   on the `PATH` of the shell Claude Code uses.
+- **A proof behaves differently from the same command in your terminal.** The proof
+  runner uses bash where it finds one (Git Bash on Windows) and reads no shell profile,
+  so an alias or a function of your terminal is not a command there. The log's first
+  lines name the shell that ran (`# shell:`). `FFLOWW_PROOF_SHELL=default` goes back to
+  the platform's shell (`/bin/sh`, `cmd.exe`), and a path picks another one.

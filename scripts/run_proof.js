@@ -277,6 +277,7 @@ async function runProof({ ticket, target, cmd, label, root, tail, timeout, expec
     const seconds = ((finished - started) / 1000).toFixed(1);
     // The working tree as the run left it, .specs/ and ignored files aside: what this evidence is about.
     const tree = snapshot(path.resolve(root));
+    const treeSeconds = (new Date() - finished) / 1000;
     const commit = tree ? head(path.resolve(root)) : null;
 
     const masked = redact(fs.readFileSync(logFile).subarray(Buffer.byteLength(header, 'utf8')).toString('utf8'));
@@ -338,7 +339,7 @@ async function runProof({ ticket, target, cmd, label, root, tail, timeout, expec
     ];
     appendEvidence(found.file, entry);
 
-    return { specFile: found.file, logFile, exit, expected, notes, seconds, tree, total: lines.length, excerpt, command: shown.text, redacted };
+    return { specFile: found.file, logFile, exit, expected, notes, seconds, tree, treeSeconds, total: lines.length, excerpt, command: shown.text, redacted };
 }
 
 function parseArgs(argv) {
@@ -408,6 +409,8 @@ async function main() {
     console.log(`   Duration:  ${run.seconds}s`);
     console.log(`   Log:       ${path.relative(root, run.logFile)} (${plural(run.total, 'line')})`);
     if (run.redacted > 0) console.log(`   Redacted:  ${plural(run.redacted, 'secret')}`);
+    // Said only when it costs something: the tree is read after every run.
+    if (run.treeSeconds >= 2) console.log(`   Tree:      recorded in ${run.treeSeconds.toFixed(1)}s; git reads every untracked file it does not ignore, so ignoring build output keeps this short`);
     console.log(`\n--- last ${run.excerpt.length} lines ---`);
     console.log(run.excerpt.join('\n'));
     // Exit 0 even when the proof failed — the exit code above is the result; grading is the human's.

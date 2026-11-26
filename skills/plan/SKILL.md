@@ -34,8 +34,8 @@ that asks for parity with what exists) is planned from the code it mirrors: read
    short route, read the files the change touches and propose its one approach, with
    `file:line` evidence, for the developer to confirm. Once chosen, append an ADR entry to
    `decisions.md` (append-only): the context, the decision and why, in one to three
-   sentences, plus the rejected options and the consequences when there was a real
-   trade-off.
+   sentences. Where there was a real trade-off, add the rejected options and the
+   consequences; with a single sane approach, the entry ends at those sentences.
 
    When someone else has a say in the approach (an `Owner` in `context.md`, or the
    developer says so), draft the decision for them before the build starts:
